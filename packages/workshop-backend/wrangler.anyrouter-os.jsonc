@@ -28,6 +28,13 @@
   ],
   "worker_loaders": [{ "binding": "LOADER" }],
   "ai": { "binding": "WORKERS_AI" },
+  "services": [
+    {
+      "binding": "GATEKEEPER_GITHUB",
+      "service": "anyrouter-os-gatekeeper-github",
+      "entrypoint": "GatekeeperVendor"
+    }
+  ],
   "vars": {
     "ADMINS": ["duyet.cs@gmail.com"],
     "CF_ACCESS_AUD": "d107359d5ba7650db93916e7325f624451be010baedd266111f9a980b2a27102",

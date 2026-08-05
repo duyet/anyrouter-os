@@ -20,6 +20,10 @@ packages/workshop-backend/src/generated/browser-export-runtime.txt
 # Cloudflare Workers
 .wrangler/
 .env
+.env.local
+.env.*.local
+**/.env.local
+**/.env.*.local
 
 # Local dev secrets (loaded by run-dev-server.js)
 .dev.vars*

@@ -6,7 +6,8 @@
   "workers_dev": true,
   "preview_urls": false,
   "services": [
-    { "binding": "WORKSHOP_BACKEND", "service": "anyrouter-os-backend" }
+    { "binding": "WORKSHOP_BACKEND", "service": "anyrouter-os-backend" },
+    { "binding": "GATEKEEPER_GITHUB", "service": "anyrouter-os-gatekeeper-github" }
   ],
   "routes": [
     { "pattern": "os.anyrouter.dev", "custom_domain": true }

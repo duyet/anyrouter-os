@@ -16,8 +16,15 @@ export CLOUDFLARE_ACCOUNT_ID=23050adb6c92e313643a29e1ba64c88a
 # Frontend (Access-mode SPA)
 cd packages/workshop-frontend && VITE_CF_ACCESS_MODE=true pnpm build && cd ../..
 
+# GitHub gatekeeper (OAuth secrets live here, not on the backend)
+cd packages/gatekeeper-github
+pnpm run build:configurator
+pnpm exec wrangler deploy --config wrangler.anyrouter-os.jsonc
+# printf '%s' "$GITHUB_CLIENT_ID" | pnpm exec wrangler secret put CLIENT_ID --config wrangler.anyrouter-os.jsonc
+# printf '%s' "$GITHUB_CLIENT_SECRET" | pnpm exec wrangler secret put CLIENT_SECRET --config wrangler.anyrouter-os.jsonc
+
 # Backend
-cd packages/workshop-backend
+cd ../workshop-backend
 pnpm exec wrangler deploy --config wrangler.anyrouter-os.jsonc
 # First time / rotated token:
 # printf '%s' "$CF_AI_GATEWAY_API_TOKEN" | pnpm exec wrangler secret put CF_AI_GATEWAY_API_TOKEN --config wrangler.anyrouter-os.jsonc
@@ -26,6 +33,17 @@ pnpm exec wrangler deploy --config wrangler.anyrouter-os.jsonc
 cd ../router
 pnpm exec wrangler deploy --config wrangler.anyrouter-os.jsonc
 ```
+
+## Workers
+
+| Piece | Worker name |
+|-------|-------------|
+| Router | `anyrouter-os` |
+| Backend | `anyrouter-os-backend` |
+| GitHub gatekeeper | `anyrouter-os-gatekeeper-github` |
+
+GitHub OAuth App callback: `https://os.anyrouter.dev/gatekeeper/github/oauth`
+
 
 ## Preserved storage
 

@@ -21,10 +21,10 @@ const ROOT = dirname(fileURLToPath(import.meta.url));
 const PACKAGES_DIR = join(ROOT, "packages");
 const WORKSHOP_BACKEND_DIR = join(PACKAGES_DIR, "workshop-backend");
 
-// Load a root `.dev.vars` file (KEY=VALUE lines) into process.env for local development. Existing
-// shell environment values take precedence. This file is gitignored and may hold local secrets.
-function loadDevVars() {
-  const path = join(ROOT, ".dev.vars");
+// Load root secret files (KEY=VALUE lines) into process.env for local development. Existing shell
+// environment values take precedence. Both files are gitignored. Later files only fill unset keys.
+// Prefer `.env.local` (common local-secret name) and keep `.dev.vars` for Wrangler-style layouts.
+function loadEnvFile(path) {
   if (!existsSync(path)) return;
   for (const rawLine of readFileSync(path, "utf8").split("\n")) {
     const line = rawLine.trim();
@@ -40,6 +40,11 @@ function loadDevVars() {
     }
     if (process.env[key] === undefined) process.env[key] = value;
   }
+}
+function loadDevVars() {
+  // `.env.local` first so it can supply values; `.dev.vars` fills any remaining gaps.
+  loadEnvFile(join(ROOT, ".env.local"));
+  loadEnvFile(join(ROOT, ".dev.vars"));
 }
 loadDevVars();
 
