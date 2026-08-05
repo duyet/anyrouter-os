@@ -1,17 +1,47 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   AiGatewayLogRetryableError,
+  getAiGatewayConfig,
   getAiGatewayLogCost,
+  getDirectModelConfig,
 } from "../src/ai-gateway.js";
 
 function env(overrides: Partial<Cloudflare.Env> = {}): Cloudflare.Env {
   return {
     CF_AI_GATEWAY: "platform-gateway",
+    CF_AI_GATEWAY_ACCOUNT_ID: "gateway-account-id",
+    CF_AI_GATEWAY_API_TOKEN: "gateway-token",
     CF_AI_GATEWAY_PROVIDERS: "anthropic,openai,google",
     WORKERS_AI: {} as Ai,
     ...overrides,
   } as Cloudflare.Env;
 }
+
+describe("getAiGatewayConfig / getDirectModelConfig", () => {
+  it("returns null when CF_AI_GATEWAY is unset", () => {
+    expect(getAiGatewayConfig(env({ CF_AI_GATEWAY: undefined }))).toBeNull();
+  });
+
+  it("parses gateway providers from env", () => {
+    const gw = getAiGatewayConfig(env())!;
+    expect(gw.providers.has("anthropic")).toBe(true);
+    expect(gw.providers.has("anyrouter")).toBe(false);
+  });
+
+  it("always exposes direct providers and allows them alongside gateway mode", () => {
+    const direct = getDirectModelConfig();
+    expect(direct.includes("anyrouter")).toBe(true);
+    expect(direct.includes("ollama")).toBe(true);
+    expect(direct.includes("openai")).toBe(false);
+
+    const gw = getAiGatewayConfig(env())!;
+    expect(direct.mayAddProvider("cloudflare", gw)).toBe(false); // not in CF_AI_GATEWAY_PROVIDERS
+    expect(direct.mayAddProvider("anthropic", gw)).toBe(true);
+    expect(direct.mayAddProvider("anyrouter", gw)).toBe(true);
+    expect(direct.mayAddProvider("ollama", gw)).toBe(true);
+    expect(direct.mayAddProvider("openai", null)).toBe(true);
+  });
+});
 
 describe("getAiGatewayLogCost", () => {
   afterEach(() => vi.unstubAllGlobals());

@@ -1,4 +1,11 @@
-import { AiChatAuthorInfo, AiModelConfig, SUGGESTED_MODELS } from "@gadgets/workshop-shared/api";
+import {
+  AiChatAuthorInfo,
+  AiModelConfig,
+  AiModelProvider,
+  DIRECT_MODEL_PROVIDERS,
+  SUGGESTED_MODELS,
+  isDirectModelProvider,
+} from "@gadgets/workshop-shared/api";
 import { UserAiModelRecord } from "./user.js";
 
 // The model used for quick tasks like title generation when AI Gateway mode is active.
@@ -96,6 +103,45 @@ export class AiGatewayConfig {
 export function getAiGatewayConfig(env: Cloudflare.Env): AiGatewayConfig | null {
   if (!env.CF_AI_GATEWAY) return null;
   return new AiGatewayConfig(env);
+}
+
+/**
+ * Providers that always use the model config's own credentials and base URL — never the
+ * platform or user AI Gateway. Mirrors {@link getAiGatewayConfig}: one chokepoint for
+ * "how does this provider attach?" decisions (addModel allowlist, getModel routing, UI).
+ *
+ * Unlike the gateway config, this is not env-gated: direct providers are always offered
+ * for user BYOK / custom bases (Ollama, AnyRouter, …).
+ */
+export class DirectModelConfig {
+  /** Provider ids that never use Cloudflare AI Gateway. */
+  readonly providers: ReadonlySet<AiModelProvider> =
+      new Set(DIRECT_MODEL_PROVIDERS);
+
+  /** Whether `provider` is direct-only (same as {@link isDirectModelProvider}). */
+  includes(provider: AiModelProvider): boolean {
+    return isDirectModelProvider(provider);
+  }
+
+  /**
+   * Whether the user may add a model for `provider` when the deployment may be in
+   * AI Gateway mode. Gateway-listed providers are allowed; direct providers are also
+   * allowed (they ignore the gateway). Everything else is rejected under gateway mode.
+   */
+  mayAddProvider(provider: AiModelProvider, gateway: AiGatewayConfig | null): boolean {
+    if (!gateway) return true;
+    return gateway.providers.has(provider) || this.includes(provider);
+  }
+}
+
+const DIRECT_MODEL_CONFIG = new DirectModelConfig();
+
+/**
+ * Return the shared direct-provider policy (always available; not env-gated).
+ * Pair with {@link getAiGatewayConfig} when deciding add/list/route behavior.
+ */
+export function getDirectModelConfig(): DirectModelConfig {
+  return DIRECT_MODEL_CONFIG;
 }
 
 /** Identifies the Gateway and credentials needed to retrieve an inference log. */

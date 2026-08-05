@@ -943,6 +943,33 @@ export type AiModelProvider =
   | "ollama"
   | "anyrouter";
 
+/**
+ * Providers that never route through Cloudflare AI Gateway. They always use the
+ * credentials and optional `apiUrl` on `AiModelConfig` (user-local servers, third-party
+ * multi-provider gateways, etc.). Single source of truth for backend + frontend.
+ */
+export const DIRECT_MODEL_PROVIDERS = ["ollama", "anyrouter"] as const;
+
+/** Subset of {@link AiModelProvider} that is direct-only. */
+export type DirectModelProvider = (typeof DIRECT_MODEL_PROVIDERS)[number];
+
+/** True when the provider must not be routed via AI Gateway / unified billing. */
+export function isDirectModelProvider(provider: AiModelProvider): boolean {
+  return (DIRECT_MODEL_PROVIDERS as readonly AiModelProvider[]).includes(provider);
+}
+
+/**
+ * Default API base URL for a direct provider when the user leaves `apiUrl` empty.
+ * Gateway-served providers return undefined (they ignore config.apiUrl in gateway mode).
+ */
+export function defaultDirectModelApiUrl(provider: AiModelProvider): string | undefined {
+  switch (provider) {
+    case "ollama": return "http://localhost:11434";
+    case "anyrouter": return "https://anyrouter.dev/api/v1";
+    default: return undefined;
+  }
+}
+
 /** A suggested model row for the AnyRouter provider picker (live or fallback). */
 export type AnyRouterSuggestedModel = {
   /** Catalog id in `provider/model` form (e.g. `openai/gpt-5.4-mini`). */

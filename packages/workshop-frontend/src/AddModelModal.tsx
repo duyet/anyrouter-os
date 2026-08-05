@@ -8,6 +8,8 @@ import {
   AnyRouterDeviceLoginStart,
   AnyRouterSuggestedModel,
   SUGGESTED_MODELS,
+  defaultDirectModelApiUrl,
+  isDirectModelProvider,
 } from '@gadgets/workshop-shared/api'
 import { RpcStub } from 'capnweb'
 import { AuthenticatedApi } from '@gadgets/workshop-shared/api'
@@ -31,15 +33,6 @@ const PROVIDER_LABELS: Record<AiModelProvider, string> = {
   cloudflare: 'Cloudflare Workers AI',
   ollama: 'Ollama',
   anyrouter: 'AnyRouter',
-}
-
-// Providers that never go through Cloudflare AI Gateway — always offer them in the picker and
-// always collect their own credentials, even when the deployment is in gateway mode. Keep in
-// sync with isDirectModelProvider() in workshop-backend/src/ai-models.ts.
-const DIRECT_MODEL_PROVIDERS = new Set<AiModelProvider>(['ollama', 'anyrouter'])
-
-function isDirectModelProvider(provider: AiModelProvider): boolean {
-  return DIRECT_MODEL_PROVIDERS.has(provider)
 }
 
 // Placeholder hinting at the shape of each provider's API token.
@@ -351,11 +344,7 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
       setApiToken('')
     }
     setAccountId('')
-    setApiUrl(
-      sel.provider === 'ollama' ? 'http://localhost:11434' :
-      sel.provider === 'anyrouter' ? 'https://anyrouter.dev/api/v1' :
-      '',
-    )
+    setApiUrl(defaultDirectModelApiUrl(sel.provider) ?? '')
   }
 
   const validate = (): boolean => {

@@ -15,8 +15,10 @@ import { OPENAI_MODELS } from "@earendil-works/pi-ai/providers/openai.models";
 import { ApprovalQueue, Gatekeeper, ResourceDescription } from '@gadgets/workshop-shared/gatekeeper';
 import { LanguageModelBinding } from "./ai-model-binding";
 import AI_MODEL_BINDING_TYPES from "./ai-model-binding.txt";
-import { AiChatAuthorInfo, AiModelConfig, SUGGESTED_MODELS, WORKERS_AI_OUTPUT_LIMIT }
-  from "@gadgets/workshop-shared/api";
+import {
+  AiChatAuthorInfo, AiModelConfig, SUGGESTED_MODELS, WORKERS_AI_OUTPUT_LIMIT,
+  defaultDirectModelApiUrl, isDirectModelProvider,
+} from "@gadgets/workshop-shared/api";
 import { AiGatewayConfig, getAiGatewayConfig, type AiGatewayLogRoute } from "./ai-gateway.js";
 import { completeText } from "./ai-invoke.js";
 import { bridgePdfAttachments } from "./chat-attachment-pdf.js";
@@ -340,13 +342,6 @@ function makeHandle(args: HandleArgs): ModelHandle {
   return handle;
 }
 
-// Providers that never route through Cloudflare AI Gateway (platform or user). They use the
-// credentials in the model config and hit their own OpenAI-compatible endpoint. Keep in sync
-// with DIRECT_MODEL_PROVIDERS in the frontend AddModelModal.
-function isDirectModelProvider(provider: AiModelConfig["provider"]): boolean {
-  return provider === "ollama" || provider === "anyrouter";
-}
-
 /**
  * Resolve an AiModelConfig to a ModelHandle, choosing among three routing modes: the user's own
  * AI Gateway (BYOK unified billing), the platform's AI Gateway (free tier), or direct provider
@@ -356,8 +351,7 @@ function isDirectModelProvider(provider: AiModelConfig["provider"]): boolean {
 export function getModel(env: Cloudflare.Env, config: AiModelConfig,
                          initiator: AiChatAuthorInfo,
                          options: ModelRoutingOptions = {}): ModelHandle {
-  // Direct-only providers (Ollama, AnyRouter) ignore gateway routing entirely: they are not
-  // Cloudflare AI Gateway native routes, and users attach their own base URL + API token.
+  // Direct-only providers ignore gateway routing (see isDirectModelProvider / getDirectModelConfig).
   if (isDirectModelProvider(config.provider)) {
     return getModelDirect(config, options.sessionAffinity);
   }
@@ -608,16 +602,11 @@ function getModelDirect(config: AiModelConfig, sessionAffinity?: string): ModelH
         sessionAffinity,
       });
     case "anyrouter": {
-      // AnyRouter is a multi-provider OpenAI-compatible gateway
-      // (https://anyrouter.dev/docs). Default base is the OpenAI-compat root
-      // `https://anyrouter.dev/api/v1` so openai-completions hits
-      // `/chat/completions`. Model ids are `provider/model` (e.g.
-      // openai/gpt-5.4-mini). We intentionally unify all traffic on
-      // chat-completions rather than Anthropic-native `/messages` (which would
-      // need base `https://anyrouter.dev/api` without the `/v1` suffix) so one
-      // path covers every upstream AnyRouter can route. Auth is the config's
-      // apiToken (Bearer); never hardcode a key.
-      const baseUrl = (config.apiUrl ?? "https://anyrouter.dev/api/v1").replace(/\/+$/, "");
+      // Multi-provider OpenAI-compatible gateway (https://anyrouter.dev/docs). Base is
+      // …/api/v1 so openai-completions hits /chat/completions for every upstream id
+      // (provider/model). Auth: config.apiToken only — never hardcode a key.
+      const baseUrl = (config.apiUrl ?? defaultDirectModelApiUrl("anyrouter")!)
+          .replace(/\/+$/, "");
       return makeHandle({
         model: {
           id: config.model,

@@ -6,7 +6,7 @@ import { CloudflareGatekeeperUser } from "@gadgets/workshop-shared/cloudflare-ga
 import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
 import { createTypedStorage, collection } from "@gadgets/typed-storage";
 import { createWorkshopLogger } from "./observability";
-import { getAiGatewayConfig } from "./ai-gateway.js";
+import { getAiGatewayConfig, getDirectModelConfig } from "./ai-gateway.js";
 import { utcDayKey, nextUtcMidnightIso, DailyQuotaResult } from "./ai-gateway-billing/limits/config.js";
 import type { AdminSettings } from "./admin-settings.js";
 import { isReservedBlueprintKey, readBlueprintKvRecord } from "./blueprint-archive.js";
@@ -526,11 +526,7 @@ export class UserDurableObject extends DurableObject<Cloudflare.Env> {
 
   async addModel(profile: AiChatAuthorInfo, config: AiModelConfig): Promise<void> {
     let gwConfig = getAiGatewayConfig(this.env);
-    // Gateway mode only restricts providers that would use the platform AI Gateway. Direct-only
-    // providers (AnyRouter, Ollama) always use the config's own credentials / base URL and are
-    // allowed alongside built-in gateway models — same rule as the Add Model UI.
-    const isDirectProvider = config.provider === "anyrouter" || config.provider === "ollama";
-    if (gwConfig && !gwConfig.providers.has(config.provider) && !isDirectProvider) {
+    if (!getDirectModelConfig().mayAddProvider(config.provider, gwConfig)) {
       throw new Error(`Provider "${config.provider}" is not available in AI Gateway mode.`);
     }
 
