@@ -1,0 +1,47 @@
+{
+  "name": "anyrouter-os-backend",
+  "account_id": "23050adb6c92e313643a29e1ba64c88a",
+  "main": ".wrangler/validate/src/server.ts",
+  "build": {
+    "command": "pnpm run build:format-blueprints && pnpm run build:worker",
+    "watch_dir": "src"
+  },
+  "compatibility_date": "2026-02-02",
+  "compatibility_flags": [
+    "allow_irrevocable_stub_storage",
+    "enhanced_error_serialization",
+    "global_fetch_strictly_public",
+    "nodejs_compat"
+  ],
+  "browser": { "binding": "BROWSER" },
+  "migrations": [
+    { "tag": "v0", "new_sqlite_classes": ["UserDurableObject", "OverseerDurableObject"] },
+    { "tag": "v1", "new_sqlite_classes": ["AdminSettings"] },
+    { "tag": "v2", "new_sqlite_classes": ["PendingLogin"] }
+  ],
+  "kv_namespaces": [
+    { "binding": "BLUEPRINTS", "id": "8cf665d809904fb0943ba11dab6bae91" },
+    { "binding": "AVATARS", "id": "2627a086155246e0b92507ed111eb930" }
+  ],
+  "r2_buckets": [
+    { "binding": "BLUEPRINT_CONTENT", "bucket_name": "cowork-blueprint-content" }
+  ],
+  "worker_loaders": [{ "binding": "LOADER" }],
+  "ai": { "binding": "WORKERS_AI" },
+  "vars": {
+    "ADMINS": ["duyet.cs@gmail.com"],
+    "CF_ACCESS_AUD": "d107359d5ba7650db93916e7325f624451be010baedd266111f9a980b2a27102",
+    "CF_ACCESS_ISS": "https://duyet.cloudflareaccess.com",
+    "CF_AI_GATEWAY": "cowork-ai",
+    "CF_AI_GATEWAY_ACCOUNT_ID": "23050adb6c92e313643a29e1ba64c88a",
+    "CF_AI_GATEWAY_PROVIDERS": "cloudflare",
+    "DEPLOY_URL": "https://os.cloudflare.app/deploy/?instance=d638574e-856d-47b8-a671-65cd9c463840",
+    "PUBLIC_BASE_URL": "https://os.anyrouter.dev"
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1,
+    "logs": { "invocation_logs": false }
+  },
+  "workers_dev": true
+}
