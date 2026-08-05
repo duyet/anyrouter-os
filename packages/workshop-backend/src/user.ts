@@ -526,7 +526,11 @@ export class UserDurableObject extends DurableObject<Cloudflare.Env> {
 
   async addModel(profile: AiChatAuthorInfo, config: AiModelConfig): Promise<void> {
     let gwConfig = getAiGatewayConfig(this.env);
-    if (gwConfig && !gwConfig.providers.has(config.provider)) {
+    // Gateway mode only restricts providers that would use the platform AI Gateway. Direct-only
+    // providers (AnyRouter, Ollama) always use the config's own credentials / base URL and are
+    // allowed alongside built-in gateway models — same rule as the Add Model UI.
+    const isDirectProvider = config.provider === "anyrouter" || config.provider === "ollama";
+    if (gwConfig && !gwConfig.providers.has(config.provider) && !isDirectProvider) {
       throw new Error(`Provider "${config.provider}" is not available in AI Gateway mode.`);
     }
 
