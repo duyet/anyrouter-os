@@ -121,9 +121,7 @@ function buildOptions(
         for (const model of anyRouterModels) {
           options.push({
             value: encodeSelection(provider, model.id),
-            label: model.rank != null
-              ? `${model.name} · #${model.rank} usage`
-              : model.name,
+            label: `${model.name} · ${model.id}`,
             provider,
           })
         }
@@ -481,9 +479,6 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
                 )}
                 <div className="px-3 py-1.5 text-xs font-medium text-kumo-subtle select-none">
                   {PROVIDER_LABELS[group.provider as AiModelProvider] || group.provider}
-                  {group.provider === 'anyrouter' && (
-                    <span className="ml-1 font-normal text-kumo-inactive">· top usage</span>
-                  )}
                 </div>
                 {group.items.map(opt => (
                   <Select.Option key={opt.value} value={opt.value}>
