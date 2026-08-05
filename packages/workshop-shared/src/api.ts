@@ -326,6 +326,24 @@ export interface AuthenticatedApi extends RpcTarget {
   // are available. The frontend uses this to adjust the model management UI.
   getAiConfig(): Promise<AiGatewayInfo>;
 
+  /**
+   * Live top AnyRouter models by network-wide usage (public catalog), for the Add Model picker.
+   * Falls back to a short static list when AnyRouter is unreachable.
+   */
+  listAnyRouterSuggestedModels(): Promise<AnyRouterSuggestedModel[]>;
+
+  /**
+   * Start AnyRouter device-code login (RFC 8628). The user opens the verification URL and either
+   * picks an existing API key or creates a new one; poll with `pollAnyRouterDeviceLogin`.
+   */
+  startAnyRouterDeviceLogin(): Promise<AnyRouterDeviceLoginStart>;
+
+  /**
+   * Poll an in-flight AnyRouter device login. When `status` is `"ready"`, `accessToken` is the
+   * `sk-ar-…` secret to store on the model config (shown only once by AnyRouter).
+   */
+  pollAnyRouterDeviceLogin(deviceCode: string): Promise<AnyRouterDeviceLoginPoll>;
+
   // Resolve UI feature flags for the authenticated user.
   getUiFeatureFlags(): Promise<UiFeatureFlags>;
 
@@ -924,6 +942,40 @@ export type AiModelProvider =
   | "cloudflare"
   | "ollama"
   | "anyrouter";
+
+/** A suggested model row for the AnyRouter provider picker (live or fallback). */
+export type AnyRouterSuggestedModel = {
+  /** Catalog id in `provider/model` form (e.g. `openai/gpt-5.4-mini`). */
+  id: string;
+  /** Human-readable name for the UI. */
+  name: string;
+  /** Context window in tokens when known; used for compaction budgets. */
+  contextWindow: number;
+  /** Rank in the live network top-usage list, when available. */
+  rank?: number;
+};
+
+/** Device-code login start payload from AnyRouter (proxied by the Workshop backend). */
+export type AnyRouterDeviceLoginStart = {
+  deviceCode: string;
+  userCode: string;
+  verificationUri: string;
+  verificationUriComplete: string;
+  expiresIn: number;
+  interval: number;
+};
+
+/**
+ * One poll result for an AnyRouter device login. `"ready"` carries the one-time
+ * `sk-ar-…` secret chosen or minted on the consent screen.
+ */
+export type AnyRouterDeviceLoginPoll =
+  | { status: "pending"; interval: number }
+  | { status: "slow_down"; interval: number }
+  | { status: "denied"; message: string }
+  | { status: "expired"; message: string }
+  | { status: "ready"; accessToken: string; scope?: string; userId?: string }
+  | { status: "error"; message: string };
 
 // Information about the AI gateway configuration. Returned by `AuthenticatedApi.getAiConfig()`.
 export type AiGatewayInfo = {

@@ -16,6 +16,11 @@ export { PendingLogin, LoginConnectCallbackImpl };
 import { GatekeeperUiFrame } from "@gadgets/workshop-shared/gatekeeper";
 import { LanguageModelGatekeeper } from "./ai-models";
 import { getAiGatewayConfig } from "./ai-gateway.js";
+import {
+  fetchAnyRouterSuggestedModels,
+  pollAnyRouterDeviceLogin,
+  startAnyRouterDeviceLogin,
+} from "./anyrouter-oauth.js";
 import { AdminSettings, AdminApiImpl } from "./admin-settings.js";
 import { BlueprintKvRecord, buildBlueprintArchiveStream, sanitizeBlueprintOutput, listFeaturedBlueprintsFromKv, parseBlueprintArchive, randomBlueprintId, readBlueprintContent, readBlueprintKvRecord } from "./blueprint-archive.js";
 import { GatekeeperConnectCallbackImpl, normalizeUsername, UserDurableObject, CLOUDFLARE_VENDOR_ID } from "./user";
@@ -196,6 +201,21 @@ class AuthenticatedApiImpl extends RpcTarget implements AuthenticatedApi {
     } else {
       return Promise.resolve({ enabled: false });
     }
+  }
+
+  listAnyRouterSuggestedModels() {
+    return fetchAnyRouterSuggestedModels();
+  }
+
+  startAnyRouterDeviceLogin() {
+    return startAnyRouterDeviceLogin({
+      clientName: "Cloudflare OS",
+      keyLabel: "Cloudflare OS",
+    });
+  }
+
+  pollAnyRouterDeviceLogin(deviceCode: string) {
+    return pollAnyRouterDeviceLogin(deviceCode);
   }
 
   getUiFeatureFlags(): Promise<UiFeatureFlags> {

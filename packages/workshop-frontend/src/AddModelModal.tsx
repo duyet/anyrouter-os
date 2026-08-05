@@ -1,6 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Dialog, Button, Input, Select, SensitiveInput, Collapsible, useKumoToastManager } from '@cloudflare/kumo'
-import { AiChatAuthorInfo, AiModelConfig, AiModelProvider, AiGatewayInfo, SUGGESTED_MODELS } from '@gadgets/workshop-shared/api'
+import {
+  AiChatAuthorInfo,
+  AiModelConfig,
+  AiModelProvider,
+  AiGatewayInfo,
+  AnyRouterDeviceLoginStart,
+  AnyRouterSuggestedModel,
+  SUGGESTED_MODELS,
+} from '@gadgets/workshop-shared/api'
 import { RpcStub } from 'capnweb'
 import { AuthenticatedApi } from '@gadgets/workshop-shared/api'
 
@@ -49,7 +57,13 @@ const API_TOKEN_PLACEHOLDERS: Record<AiModelProvider, string> = {
 const FALLBACK_EXAMPLE_MODEL = { modelId: 'gemma4:31b', name: 'Gemma 4 31B' }
 
 // Pick an example model to show in the custom-model placeholders for the given provider.
-function exampleModel(provider: AiModelProvider): { modelId: string, name: string } {
+function exampleModel(
+  provider: AiModelProvider,
+  anyRouterModels: AnyRouterSuggestedModel[],
+): { modelId: string, name: string } {
+  if (provider === 'anyrouter' && anyRouterModels[0]) {
+    return { modelId: anyRouterModels[0].id, name: anyRouterModels[0].name }
+  }
   const first = Object.entries(SUGGESTED_MODELS[provider])[0]
   return first ? { modelId: first[0], name: first[1].name } : FALLBACK_EXAMPLE_MODEL
 }
@@ -60,19 +74,37 @@ function encodeSelection(provider: AiModelProvider, modelId?: string): string {
 }
 
 // Decode a Select value back into a SelectionType.
-function decodeSelection(value: string): SelectionType {
+function decodeSelection(
+  value: string,
+  anyRouterById: Record<string, AnyRouterSuggestedModel>,
+): SelectionType {
   if (value.startsWith('other-')) {
     return { type: 'custom', provider: value.substring(6) as AiModelProvider }
   }
   const colonIndex = value.indexOf(':')
   const provider = value.substring(0, colonIndex) as AiModelProvider
   const modelId = value.substring(colonIndex + 1)
+  if (provider === 'anyrouter') {
+    const live = anyRouterById[modelId]
+    if (live) {
+      return { type: 'suggested', provider, modelId, displayName: live.name }
+    }
+    const staticName = SUGGESTED_MODELS.anyrouter[modelId]?.name
+    if (staticName) {
+      return { type: 'suggested', provider, modelId, displayName: staticName }
+    }
+    return { type: 'suggested', provider, modelId, displayName: modelId }
+  }
   const displayName = SUGGESTED_MODELS[provider][modelId].name
   return { type: 'suggested', provider, modelId, displayName }
 }
 
 // Build the flat list of options for the Select dropdown.
-function buildOptions(gatewayMode: boolean, enabledProviders: Set<string> | null) {
+function buildOptions(
+  gatewayMode: boolean,
+  enabledProviders: Set<string> | null,
+  anyRouterModels: AnyRouterSuggestedModel[],
+) {
   const options: { value: string; label: string; provider: string }[] = []
   const providerOrder = Object.keys(SUGGESTED_MODELS) as AiModelProvider[]
 
@@ -85,12 +117,24 @@ function buildOptions(gatewayMode: boolean, enabledProviders: Set<string> | null
     // In gateway mode, gateway-served suggested models are already built-in, so don't list them.
     // Direct providers still list suggestions (they are never "built-in" via the gateway).
     if (!gatewayMode || direct) {
-      for (const [modelId, model] of Object.entries(SUGGESTED_MODELS[provider])) {
-        options.push({
-          value: encodeSelection(provider, modelId),
-          label: model.name,
-          provider,
-        })
+      if (provider === 'anyrouter') {
+        for (const model of anyRouterModels) {
+          options.push({
+            value: encodeSelection(provider, model.id),
+            label: model.rank != null
+              ? `${model.name} · #${model.rank} usage`
+              : model.name,
+            provider,
+          })
+        }
+      } else {
+        for (const [modelId, model] of Object.entries(SUGGESTED_MODELS[provider])) {
+          options.push({
+            value: encodeSelection(provider, modelId),
+            label: model.name,
+            provider,
+          })
+        }
       }
     }
 
@@ -103,6 +147,17 @@ function buildOptions(gatewayMode: boolean, enabledProviders: Set<string> | null
 
   return options
 }
+
+type AnyRouterLoginUi =
+  | { phase: 'idle' }
+  | { phase: 'starting' }
+  | {
+      phase: 'waiting'
+      start: AnyRouterDeviceLoginStart
+      statusText: string
+    }
+  | { phase: 'connected' }
+  | { phase: 'error'; message: string }
 
 export default function AddModelModal({ visible, onCancel, onSuccess, authenticatedApi, aiConfig }: AddModelModalProps) {
   const toasts = useKumoToastManager()
@@ -123,11 +178,53 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
 
   // Advanced settings collapsible state
   const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [pasteKeyOpen, setPasteKeyOpen] = useState(false)
+
+  // Live AnyRouter suggestions + device login
+  const [anyRouterModels, setAnyRouterModels] = useState<AnyRouterSuggestedModel[]>(() =>
+    Object.entries(SUGGESTED_MODELS.anyrouter).map(([id, m]) => ({
+      id,
+      name: m.name,
+      contextWindow: m.contextWindow,
+    })),
+  )
+  const [anyRouterLogin, setAnyRouterLogin] = useState<AnyRouterLoginUi>({ phase: 'idle' })
+  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const activeDeviceCodeRef = useRef<string | null>(null)
 
   const gatewayMode = aiConfig?.enabled === true
   const enabledProviders: Set<string> | null = gatewayMode
     ? new Set(aiConfig.enabledProviders)
     : null
+
+  const anyRouterById = Object.fromEntries(anyRouterModels.map((m) => [m.id, m]))
+
+  const clearPollTimer = useCallback(() => {
+    if (pollTimerRef.current != null) {
+      clearTimeout(pollTimerRef.current)
+      pollTimerRef.current = null
+    }
+  }, [])
+
+  const stopAnyRouterLogin = useCallback(() => {
+    clearPollTimer()
+    activeDeviceCodeRef.current = null
+    setAnyRouterLogin({ phase: 'idle' })
+  }, [clearPollTimer])
+
+  // Load live top-usage models when the dialog opens.
+  useEffect(() => {
+    if (!visible) return
+    let cancelled = false
+    authenticatedApi.listAnyRouterSuggestedModels()
+      .then((models) => {
+        if (!cancelled && models.length > 0) setAnyRouterModels(models)
+      })
+      .catch((err) => {
+        console.warn('Failed to load AnyRouter top models:', err)
+      })
+    return () => { cancelled = true }
+  }, [visible, authenticatedApi])
 
   // Reset all state when dialog closes
   useEffect(() => {
@@ -141,13 +238,104 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
       setApiUrl('')
       setErrors({})
       setAdvancedOpen(false)
+      setPasteKeyOpen(false)
+      stopAnyRouterLogin()
     }
-  }, [visible])
+  }, [visible, stopAnyRouterLogin])
+
+  // Cleanup poll on unmount
+  useEffect(() => () => clearPollTimer(), [clearPollTimer])
+
+  const schedulePoll = useCallback((deviceCode: string, intervalSec: number) => {
+    clearPollTimer()
+    pollTimerRef.current = setTimeout(async () => {
+      if (activeDeviceCodeRef.current !== deviceCode) return
+      try {
+        const result = await authenticatedApi.pollAnyRouterDeviceLogin(deviceCode)
+        if (activeDeviceCodeRef.current !== deviceCode) return
+
+        switch (result.status) {
+          case 'pending':
+            setAnyRouterLogin((prev) =>
+              prev.phase === 'waiting'
+                ? { ...prev, statusText: 'Waiting for approval in the AnyRouter tab…' }
+                : prev,
+            )
+            schedulePoll(deviceCode, result.interval)
+            break
+          case 'slow_down':
+            setAnyRouterLogin((prev) =>
+              prev.phase === 'waiting'
+                ? { ...prev, statusText: 'Slowing poll rate…' }
+                : prev,
+            )
+            schedulePoll(deviceCode, result.interval)
+            break
+          case 'ready':
+            clearPollTimer()
+            activeDeviceCodeRef.current = null
+            setApiToken(result.accessToken)
+            setPasteKeyOpen(false)
+            setErrors((prev) => ({ ...prev, apiToken: '' }))
+            setAnyRouterLogin({ phase: 'connected' })
+            toasts.add({
+              title: 'AnyRouter connected — pick a model and add it',
+              variant: 'success',
+            })
+            break
+          case 'denied':
+            clearPollTimer()
+            activeDeviceCodeRef.current = null
+            setAnyRouterLogin({ phase: 'error', message: result.message })
+            break
+          case 'expired':
+            clearPollTimer()
+            activeDeviceCodeRef.current = null
+            setAnyRouterLogin({ phase: 'error', message: result.message })
+            break
+          case 'error':
+            clearPollTimer()
+            activeDeviceCodeRef.current = null
+            setAnyRouterLogin({ phase: 'error', message: result.message })
+            break
+        }
+      } catch (err) {
+        console.error('AnyRouter poll failed:', err)
+        if (activeDeviceCodeRef.current === deviceCode) {
+          // Transient network blip — keep trying.
+          schedulePoll(deviceCode, Math.max(intervalSec, 5))
+        }
+      }
+    }, Math.max(intervalSec, 1) * 1000)
+  }, [authenticatedApi, clearPollTimer, toasts])
+
+  const startAnyRouterConnect = async () => {
+    setAnyRouterLogin({ phase: 'starting' })
+    setErrors((prev) => ({ ...prev, apiToken: '' }))
+    try {
+      const start = await authenticatedApi.startAnyRouterDeviceLogin()
+      activeDeviceCodeRef.current = start.deviceCode
+      setAnyRouterLogin({
+        phase: 'waiting',
+        start,
+        statusText: 'Complete sign-in in the AnyRouter tab. You can pick an existing key or create a new one.',
+      })
+      // Open consent page (user picks existing key or generates a new one).
+      window.open(start.verificationUriComplete, '_blank', 'noopener,noreferrer')
+      schedulePoll(start.deviceCode, start.interval)
+    } catch (err) {
+      console.error('AnyRouter device login failed:', err)
+      setAnyRouterLogin({
+        phase: 'error',
+        message: err instanceof Error ? err.message : 'Failed to start AnyRouter login',
+      })
+    }
+  }
 
   const handleModelSelect = (value: string) => {
     setSelectValue(value)
     setErrors({})
-    const sel = decodeSelection(value)
+    const sel = decodeSelection(value, anyRouterById)
     setSelection(sel)
 
     if (sel.type === 'custom') {
@@ -157,7 +345,13 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
       setModelId(sel.modelId)
       setDisplayName(sel.displayName)
     }
-    setApiToken('')
+    // Keep a connected AnyRouter token when switching models under the same provider.
+    if (sel.provider !== 'anyrouter') {
+      setApiToken('')
+      stopAnyRouterLogin()
+    } else if (anyRouterLogin.phase !== 'connected') {
+      setApiToken('')
+    }
     setAccountId('')
     setApiUrl(
       sel.provider === 'ollama' ? 'http://localhost:11434' :
@@ -185,7 +379,9 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
     const showCredentials = !gatewayMode || direct
 
     if (showCredentials && selection && !isOllama && !apiToken.trim()) {
-      newErrors.apiToken = 'Please enter your API token'
+      newErrors.apiToken = selection.provider === 'anyrouter'
+        ? 'Connect with AnyRouter or paste an API key'
+        : 'Please enter your API token'
     }
 
     if (showCredentials && isCloudflare && !accountId.trim()) {
@@ -238,9 +434,9 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
     }
   }
 
-  const options = buildOptions(gatewayMode, enabledProviders)
+  const options = buildOptions(gatewayMode, enabledProviders, anyRouterModels)
   const showCustomFields = selection?.type === 'custom'
-  const example = selection ? exampleModel(selection.provider) : null
+  const example = selection ? exampleModel(selection.provider, anyRouterModels) : null
   const isOllama = selection?.provider === 'ollama'
   const isCloudflare = selection?.provider === 'cloudflare'
   const isAnyRouter = selection?.provider === 'anyrouter'
@@ -285,6 +481,9 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
                 )}
                 <div className="px-3 py-1.5 text-xs font-medium text-kumo-subtle select-none">
                   {PROVIDER_LABELS[group.provider as AiModelProvider] || group.provider}
+                  {group.provider === 'anyrouter' && (
+                    <span className="ml-1 font-normal text-kumo-inactive">· top usage</span>
+                  )}
                 </div>
                 {group.items.map(opt => (
                   <Select.Option key={opt.value} value={opt.value}>
@@ -333,8 +532,108 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
             />
           )}
 
-          {/* API Token */}
-          {showCredentials && selection && (
+          {/* AnyRouter: device login (pick existing key or mint new) + optional paste */}
+          {showCredentials && isAnyRouter && (
+            <div className="space-y-3 rounded-lg border border-kumo-line bg-kumo-tint/40 p-3">
+              <div className="text-sm font-medium tracking-[-0.25px] text-kumo-default">
+                AnyRouter API key
+              </div>
+              <p className="text-[12px] leading-[16px] tracking-[-0.2px] text-kumo-subtle">
+                Sign in with AnyRouter to pick an existing key or create a new one. Your key stays
+                on this deployment and is never shared with AnyRouter again after connect.
+              </p>
+
+              {anyRouterLogin.phase === 'connected' ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-[rgba(16,185,129,0.12)] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.4px] text-emerald-700">
+                    Connected
+                  </span>
+                  <span className="text-[12px] text-kumo-subtle">
+                    Key ready · {apiToken ? `${apiToken.slice(0, 10)}…` : 'stored'}
+                  </span>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setApiToken('')
+                      stopAnyRouterLogin()
+                      setPasteKeyOpen(false)
+                    }}
+                  >
+                    Disconnect
+                  </Button>
+                </div>
+              ) : anyRouterLogin.phase === 'waiting' ? (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="rounded-md border border-kumo-line bg-kumo-base px-3 py-2 font-mono text-lg font-semibold tracking-[0.15em] text-kumo-default">
+                      {anyRouterLogin.start.userCode}
+                    </div>
+                    <Button
+                      variant="secondary"
+                      onClick={() =>
+                        window.open(
+                          anyRouterLogin.start.verificationUriComplete,
+                          '_blank',
+                          'noopener,noreferrer',
+                        )
+                      }
+                    >
+                      Open AnyRouter
+                    </Button>
+                    <Button variant="secondary" onClick={stopAnyRouterLogin}>
+                      Cancel
+                    </Button>
+                  </div>
+                  <p className="text-[12px] text-kumo-subtle">{anyRouterLogin.statusText}</p>
+                </div>
+              ) : anyRouterLogin.phase === 'error' ? (
+                <div className="space-y-2">
+                  <p className="text-[12px] text-red-600">{anyRouterLogin.message}</p>
+                  <Button variant="primary" onClick={startAnyRouterConnect}>
+                    Try again
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="primary"
+                  onClick={startAnyRouterConnect}
+                  loading={anyRouterLogin.phase === 'starting'}
+                >
+                  Connect with AnyRouter
+                </Button>
+              )}
+
+              {errors.apiToken && (
+                <p className="text-[12px] text-red-600">{errors.apiToken}</p>
+              )}
+
+              <Collapsible.Root open={pasteKeyOpen} onOpenChange={setPasteKeyOpen}>
+                <Collapsible.DefaultTrigger>
+                  Or paste an API key manually
+                </Collapsible.DefaultTrigger>
+                <Collapsible.DefaultPanel>
+                  <SensitiveInput
+                    label="API Token"
+                    placeholder={API_TOKEN_PLACEHOLDERS.anyrouter}
+                    description="From https://anyrouter.dev/dashboard (starts with sk-ar-)"
+                    value={apiToken}
+                    onValueChange={(v) => {
+                      setApiToken(v)
+                      setErrors((prev) => ({ ...prev, apiToken: '' }))
+                      if (v.trim()) {
+                        setAnyRouterLogin({ phase: 'connected' })
+                      }
+                    }}
+                    error={errors.apiToken}
+                    variant={errors.apiToken ? 'error' : 'default'}
+                  />
+                </Collapsible.DefaultPanel>
+              </Collapsible.Root>
+            </div>
+          )}
+
+          {/* API Token (non-AnyRouter providers) */}
+          {showCredentials && selection && !isAnyRouter && (
             <SensitiveInput
               label="API Token"
               placeholder={API_TOKEN_PLACEHOLDERS[selection.provider]}
@@ -343,8 +642,6 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
                   ? 'Optional for local Ollama access'
                   : isCloudflare
                   ? 'An API token with Workers AI Read + Edit permissions (in the dashboard: Workers AI > Use REST API > Create a Workers AI API Token)'
-                  : isAnyRouter
-                  ? 'Your AnyRouter API key from https://anyrouter.dev/dashboard (starts with sk-ar-)'
                   : `Your ${PROVIDER_LABELS[selection.provider]} API token for billing`
               }
               value={apiToken}
