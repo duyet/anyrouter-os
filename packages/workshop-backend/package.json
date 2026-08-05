@@ -14,7 +14,8 @@
     "test:integration": "node build-browser-runtime.mjs && node scripts/build-format-blueprints.mjs && vitest run --config vitest.integration.config.ts",
     "test:watch": "node build-browser-runtime.mjs && node scripts/build-format-blueprints.mjs && vitest",
     "build:format-blueprints": "node scripts/build-format-blueprints.mjs",
-    "import:format-blueprint": "node --experimental-strip-types --no-warnings scripts/import-format-blueprint.mjs"
+    "import:format-blueprint": "node --experimental-strip-types --no-warnings scripts/import-format-blueprint.mjs",
+    "smoke:anyrouter": "node scripts/anyrouter-smoke.mjs"
   },
   "dependencies": {
     "@earendil-works/pi-agent-core": "0.83.0",

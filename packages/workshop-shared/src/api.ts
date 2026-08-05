@@ -917,7 +917,13 @@ export type CloudflareAccountOption = {
 };
 
 // Supported AI providers.
-export type AiModelProvider = "openai" | "anthropic" | "google" | "cloudflare" | "ollama";
+export type AiModelProvider =
+  | "openai"
+  | "anthropic"
+  | "google"
+  | "cloudflare"
+  | "ollama"
+  | "anyrouter";
 
 // Information about the AI gateway configuration. Returned by `AuthenticatedApi.getAiConfig()`.
 export type AiGatewayInfo = {
@@ -984,6 +990,16 @@ export const SUGGESTED_MODELS: Record<
     "gemini-3.6-flash": {name: "Gemini 3.6 Flash", contextWindow: 1048576},
   },
   "ollama": {
+  },
+  // AnyRouter is a multi-provider OpenAI-compatible gateway. Model ids use the
+  // `provider/model` form (e.g. openai/gpt-5.4-mini, anthropic/claude-sonnet-4.6).
+  "anyrouter": {
+    "openai/gpt-5.4-mini": {
+      name: "GPT 5.4 Mini (AnyRouter)", contextWindow: 128000, outputLimit: 16384,
+    },
+    "anthropic/claude-sonnet-4.6": {
+      name: "Claude Sonnet 4.6 (AnyRouter)", contextWindow: 200000,
+    },
   },
 };
 

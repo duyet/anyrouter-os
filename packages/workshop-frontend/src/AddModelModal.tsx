@@ -22,6 +22,16 @@ const PROVIDER_LABELS: Record<AiModelProvider, string> = {
   google: 'Google',
   cloudflare: 'Cloudflare Workers AI',
   ollama: 'Ollama',
+  anyrouter: 'AnyRouter',
+}
+
+// Providers that never go through Cloudflare AI Gateway — always offer them in the picker and
+// always collect their own credentials, even when the deployment is in gateway mode. Keep in
+// sync with isDirectModelProvider() in workshop-backend/src/ai-models.ts.
+const DIRECT_MODEL_PROVIDERS = new Set<AiModelProvider>(['ollama', 'anyrouter'])
+
+function isDirectModelProvider(provider: AiModelProvider): boolean {
+  return DIRECT_MODEL_PROVIDERS.has(provider)
 }
 
 // Placeholder hinting at the shape of each provider's API token.
@@ -31,6 +41,7 @@ const API_TOKEN_PLACEHOLDERS: Record<AiModelProvider, string> = {
   google: 'AIza...',
   cloudflare: 'Cloudflare API token',
   ollama: '(optional)',
+  anyrouter: 'sk-ar-...',
 }
 
 // Example used in the custom-model placeholders for providers that have no suggested models
@@ -66,10 +77,14 @@ function buildOptions(gatewayMode: boolean, enabledProviders: Set<string> | null
   const providerOrder = Object.keys(SUGGESTED_MODELS) as AiModelProvider[]
 
   for (const provider of providerOrder) {
-    if (enabledProviders && !enabledProviders.has(provider)) continue
+    const direct = isDirectModelProvider(provider)
+    // Gateway mode only lists CF AI Gateway providers — plus direct-only providers (AnyRouter,
+    // Ollama), which users always add with their own tokens.
+    if (enabledProviders && !enabledProviders.has(provider) && !direct) continue
 
-    // In gateway mode, suggested models are already built-in, so don't list them.
-    if (!gatewayMode) {
+    // In gateway mode, gateway-served suggested models are already built-in, so don't list them.
+    // Direct providers still list suggestions (they are never "built-in" via the gateway).
+    if (!gatewayMode || direct) {
       for (const [modelId, model] of Object.entries(SUGGESTED_MODELS[provider])) {
         options.push({
           value: encodeSelection(provider, modelId),
@@ -144,7 +159,11 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
     }
     setApiToken('')
     setAccountId('')
-    setApiUrl(sel.provider === 'ollama' ? 'http://localhost:11434' : '')
+    setApiUrl(
+      sel.provider === 'ollama' ? 'http://localhost:11434' :
+      sel.provider === 'anyrouter' ? 'https://anyrouter.dev/api/v1' :
+      '',
+    )
   }
 
   const validate = (): boolean => {
@@ -161,7 +180,9 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
 
     const isOllama = selection?.provider === 'ollama'
     const isCloudflare = selection?.provider === 'cloudflare'
-    const showCredentials = !gatewayMode
+    const direct = selection ? isDirectModelProvider(selection.provider) : false
+    // Direct providers always need their own credentials, including under AI Gateway mode.
+    const showCredentials = !gatewayMode || direct
 
     if (showCredentials && selection && !isOllama && !apiToken.trim()) {
       newErrors.apiToken = 'Please enter your API token'
@@ -187,6 +208,10 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
       const isSuggested = selection!.type === 'suggested'
       const finalModelId = isSuggested ? selection!.modelId : modelId.trim()
       const finalDisplayName = isSuggested ? selection!.displayName : displayName.trim()
+      const direct = isDirectModelProvider(selection!.provider)
+      // Platform AI Gateway ignores apiToken/apiUrl for gateway-served providers; direct-only
+      // providers always store and use the user's own credentials.
+      const collectCredentials = !gatewayMode || direct
 
       const profile: AiChatAuthorInfo = {
         type: 'agent',
@@ -197,9 +222,9 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
       const config: AiModelConfig = {
         provider: selection!.provider,
         model: finalModelId,
-        apiToken: gatewayMode ? '' : apiToken.trim(),
-        ...(!gatewayMode && accountId.trim() && { accountId: accountId.trim() }),
-        ...(!gatewayMode && apiUrl.trim() && { apiUrl: apiUrl.trim() }),
+        apiToken: collectCredentials ? apiToken.trim() : '',
+        ...(collectCredentials && accountId.trim() && { accountId: accountId.trim() }),
+        ...(collectCredentials && apiUrl.trim() && { apiUrl: apiUrl.trim() }),
       }
 
       await authenticatedApi.addModel(profile, config)
@@ -218,7 +243,8 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
   const example = selection ? exampleModel(selection.provider) : null
   const isOllama = selection?.provider === 'ollama'
   const isCloudflare = selection?.provider === 'cloudflare'
-  const showCredentials = !gatewayMode
+  const isAnyRouter = selection?.provider === 'anyrouter'
+  const showCredentials = !gatewayMode || (selection != null && isDirectModelProvider(selection.provider))
 
   // Group options by provider for rendering with visual separators.
   const groupedOptions: { provider: string; items: typeof options }[] = []
@@ -317,6 +343,8 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
                   ? 'Optional for local Ollama access'
                   : isCloudflare
                   ? 'An API token with Workers AI Read + Edit permissions (in the dashboard: Workers AI > Use REST API > Create a Workers AI API Token)'
+                  : isAnyRouter
+                  ? 'Your AnyRouter API key from https://anyrouter.dev/dashboard (starts with sk-ar-)'
                   : `Your ${PROVIDER_LABELS[selection.provider]} API token for billing`
               }
               value={apiToken}
@@ -339,8 +367,19 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
             />
           )}
 
-          {/* Advanced Settings for non-Ollama, non-Cloudflare providers */}
-          {showCredentials && selection && !isOllama && !isCloudflare && (
+          {/* AnyRouter API URL (default prefilled; always visible so users can override) */}
+          {showCredentials && isAnyRouter && (
+            <Input
+              label="API URL"
+              placeholder="https://anyrouter.dev/api/v1"
+              description="AnyRouter OpenAI-compatible base URL (model ids use provider/model form)"
+              value={apiUrl}
+              onChange={(e) => setApiUrl(e.target.value)}
+            />
+          )}
+
+          {/* Advanced Settings for non-Ollama, non-Cloudflare, non-AnyRouter providers */}
+          {showCredentials && selection && !isOllama && !isCloudflare && !isAnyRouter && (
             <Collapsible.Root
               open={advancedOpen}
               onOpenChange={setAdvancedOpen}

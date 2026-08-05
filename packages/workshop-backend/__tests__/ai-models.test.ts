@@ -364,6 +364,74 @@ describe("getModel direct routing (no gateway)", () => {
       expect(handle.model.baseUrl).toBe("http://my-ollama:11434/v1");
     }
   });
+
+  it("routes AnyRouter via openai-completions to the default base URL", async () => {
+    const handle = getModel(env({ CF_AI_GATEWAY: undefined }), {
+      provider: "anyrouter",
+      model: "openai/gpt-5.4-mini",
+      apiToken: "sk-ar-test-token",
+    }, INITIATOR);
+
+    expect(handle.model.api).toBe("openai-completions");
+    expect(handle.model.id).toBe("openai/gpt-5.4-mini");
+    expect(handle.model.provider).toBe("anyrouter");
+    expect(handle.model.baseUrl).toBe("https://anyrouter.dev/api/v1");
+    expect(handle.aiGatewayLogRoute).toBeUndefined();
+
+    const request = await captureRequest(handle);
+    expect(request.url).toBe("https://anyrouter.dev/api/v1/chat/completions");
+    expect(request.headers.get("authorization")).toBe("Bearer sk-ar-test-token");
+    expect(request.headers.get("cf-aig-metadata")).toBeNull();
+    const body = JSON.parse(request.body) as { model: string };
+    expect(body.model).toBe("openai/gpt-5.4-mini");
+  }, 15000);
+
+  it("honors an AnyRouter apiUrl override and strips a trailing slash", async () => {
+    const handle = getModel(env({ CF_AI_GATEWAY: undefined }), {
+      provider: "anyrouter",
+      model: "anthropic/claude-sonnet-4.6",
+      apiToken: "sk-ar-override",
+      apiUrl: "https://proxy.example.com/api/v1/",
+    }, INITIATOR);
+
+    expect(handle.model.baseUrl).toBe("https://proxy.example.com/api/v1");
+    const request = await captureRequest(handle);
+    expect(request.url).toBe("https://proxy.example.com/api/v1/chat/completions");
+    expect(request.headers.get("authorization")).toBe("Bearer sk-ar-override");
+  }, 15000);
+
+  it("routes AnyRouter direct even when the platform AI Gateway is configured", async () => {
+    // AnyRouter is not a Cloudflare AI Gateway native route; use the config's credentials and
+    // base URL rather than failing or mis-routing through the platform gateway.
+    const handle = getModel(env(), {
+      provider: "anyrouter",
+      model: "openai/gpt-5.4-mini",
+      apiToken: "sk-ar-with-gateway-env",
+    }, INITIATOR);
+
+    expect(handle.model.baseUrl).toBe("https://anyrouter.dev/api/v1");
+    expect(handle.aiGatewayLogRoute).toBeUndefined();
+
+    const request = await captureRequest(handle);
+    expect(request.url).toBe("https://anyrouter.dev/api/v1/chat/completions");
+    expect(request.headers.get("authorization")).toBe("Bearer sk-ar-with-gateway-env");
+    expect(request.headers.get("cf-aig-authorization")).toBeNull();
+  }, 15000);
+
+  it("routes AnyRouter direct even when a userGateway (unified billing) is set", async () => {
+    const handle = getModel(env({ CF_AI_GATEWAY: undefined }), {
+      provider: "anyrouter",
+      model: "openai/gpt-5.4-mini",
+      apiToken: "sk-ar-user-gw",
+    }, INITIATOR, {
+      userGateway: { accountId: "user-account-id", apiKey: "user-token" },
+    });
+
+    const request = await captureRequest(handle);
+    expect(request.url).toBe("https://anyrouter.dev/api/v1/chat/completions");
+    expect(request.headers.get("authorization")).toBe("Bearer sk-ar-user-gw");
+    expect(request.headers.get("cf-aig-authorization")).toBeNull();
+  }, 15000);
 });
 
 describe("PDF attachment bridging", () => {

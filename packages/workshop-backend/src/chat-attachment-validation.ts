@@ -38,6 +38,8 @@ const ATTACHMENT_SUPPORT_BY_PROVIDER = {
   google: isTextImageOrPdfMime,
   cloudflare: isTextOrImageMime,
   ollama: isTextOrImageMime,
+  // AnyRouter chat-completions accepts vision models' image inputs; no document bridge.
+  anyrouter: isTextOrImageMime,
 } satisfies Record<AiModelProvider, (mimeType: string) => boolean>;
 
 function sanitizeChatAttachmentMimeType(mimeType: string | undefined): string {

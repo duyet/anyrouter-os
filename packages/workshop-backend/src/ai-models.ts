@@ -124,6 +124,8 @@ function catalogModel(provider: AiModelConfig["provider"], modelId: string): Mod
     case "google": return (GOOGLE_MODELS as Record<string, Model<Api>>)[modelId];
     case "cloudflare": return (CLOUDFLARE_WORKERS_AI_MODELS as Record<string, Model<Api>>)[modelId];
     case "ollama": return undefined;
+    // AnyRouter hosts cross-provider `provider/model` ids; none are in pi's per-vendor catalogs.
+    case "anyrouter": return undefined;
     default: return undefined;
   }
 }
@@ -162,7 +164,7 @@ function workersAiCompat(catalog: Model<Api> | undefined): OpenAICompletionsComp
 // provider's native API, and the translation drops provider features pi relies on (extended
 // thinking, Anthropic cache_control prompt caching, the OpenAI Responses API). Billing --
 // including unified billing on a user's own gateway -- is orthogonal to which API a request
-// speaks. Returns undefined for providers AI Gateway cannot serve (ollama).
+// speaks. Returns undefined for providers AI Gateway cannot serve (ollama, anyrouter).
 function gatewayNativeModel(config: AiModelConfig, gatewayUrl: string): Model<Api> | undefined {
   const catalog = catalogModel(config.provider, config.model);
   const window = modelTokenWindow(config, catalog);
@@ -231,6 +233,11 @@ function gatewayNativeModel(config: AiModelConfig, gatewayUrl: string): Model<Ap
         ...window,
         compat: workersAiCompat(catalog),
       };
+    case "ollama":
+    case "anyrouter":
+      // Direct-only providers: Ollama is a user-local OpenAI-compat server; AnyRouter is its
+      // own multi-provider gateway (not a Cloudflare AI Gateway native route).
+      return undefined;
     default:
       return undefined;
   }
@@ -333,6 +340,13 @@ function makeHandle(args: HandleArgs): ModelHandle {
   return handle;
 }
 
+// Providers that never route through Cloudflare AI Gateway (platform or user). They use the
+// credentials in the model config and hit their own OpenAI-compatible endpoint. Keep in sync
+// with DIRECT_MODEL_PROVIDERS in the frontend AddModelModal.
+function isDirectModelProvider(provider: AiModelConfig["provider"]): boolean {
+  return provider === "ollama" || provider === "anyrouter";
+}
+
 /**
  * Resolve an AiModelConfig to a ModelHandle, choosing among three routing modes: the user's own
  * AI Gateway (BYOK unified billing), the platform's AI Gateway (free tier), or direct provider
@@ -342,6 +356,12 @@ function makeHandle(args: HandleArgs): ModelHandle {
 export function getModel(env: Cloudflare.Env, config: AiModelConfig,
                          initiator: AiChatAuthorInfo,
                          options: ModelRoutingOptions = {}): ModelHandle {
+  // Direct-only providers (Ollama, AnyRouter) ignore gateway routing entirely: they are not
+  // Cloudflare AI Gateway native routes, and users attach their own base URL + API token.
+  if (isDirectModelProvider(config.provider)) {
+    return getModelDirect(config, options.sessionAffinity);
+  }
+
   // BYOK: a connected user's own Cloudflare account pays for everything (all providers, including
   // Workers AI), routed through the user's own AI Gateway with unified billing. Honored regardless
   // of whether a platform AI Gateway is configured, so connected users are always billed correctly.
@@ -587,6 +607,33 @@ function getModelDirect(config: AiModelConfig, sessionAffinity?: string): ModelH
         apiKey: config.apiToken,
         sessionAffinity,
       });
+    case "anyrouter": {
+      // AnyRouter is a multi-provider OpenAI-compatible gateway
+      // (https://anyrouter.dev/docs). Default base is the OpenAI-compat root
+      // `https://anyrouter.dev/api/v1` so openai-completions hits
+      // `/chat/completions`. Model ids are `provider/model` (e.g.
+      // openai/gpt-5.4-mini). We intentionally unify all traffic on
+      // chat-completions rather than Anthropic-native `/messages` (which would
+      // need base `https://anyrouter.dev/api` without the `/v1` suffix) so one
+      // path covers every upstream AnyRouter can route. Auth is the config's
+      // apiToken (Bearer); never hardcode a key.
+      const baseUrl = (config.apiUrl ?? "https://anyrouter.dev/api/v1").replace(/\/+$/, "");
+      return makeHandle({
+        model: {
+          id: config.model,
+          name: catalog?.name ?? config.model,
+          api: "openai-completions",
+          provider: "anyrouter",
+          baseUrl,
+          reasoning: true,
+          input: ["text", "image"],
+          cost: ZERO_COST,
+          ...window,
+        },
+        apiKey: config.apiToken,
+        sessionAffinity,
+      });
+    }
     default:
       config.provider satisfies never;
       throw new Error(`Unknown provider "${config.provider}".`);
