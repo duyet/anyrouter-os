@@ -1044,13 +1044,20 @@ export const SUGGESTED_MODELS: Record<
   "ollama": {
   },
   // AnyRouter is a multi-provider OpenAI-compatible gateway. Model ids use the
-  // `provider/model` form (e.g. openai/gpt-5.4-mini, anthropic/claude-sonnet-4.6).
+  // `provider/model` form (e.g. z-ai/glm-5.2). Static list is the offline fallback;
+  // the Add Model dialog prefers live top-usage models when available.
   "anyrouter": {
-    "openai/gpt-5.4-mini": {
-      name: "GPT 5.4 Mini (AnyRouter)", contextWindow: 128000, outputLimit: 16384,
+    "z-ai/glm-5.2": {
+      name: "GLM-5.2 (AnyRouter)", contextWindow: 1000000,
     },
-    "anthropic/claude-sonnet-4.6": {
-      name: "Claude Sonnet 4.6 (AnyRouter)", contextWindow: 200000,
+    "moonshotai/kimi-k3": {
+      name: "Kimi K3 (AnyRouter)", contextWindow: 1048576,
+    },
+    "stepfun-ai/step-3.7-flash": {
+      name: "Step 3.7 Flash (AnyRouter)", contextWindow: 128000,
+    },
+    "meituan/longcat-2.0": {
+      name: "LongCat-2.0 (AnyRouter)", contextWindow: 1048576,
     },
   },
 };

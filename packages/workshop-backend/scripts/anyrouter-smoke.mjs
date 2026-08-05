@@ -7,7 +7,7 @@
  *   base:  https://anyrouter.dev/api/v1  (or ANYROUTER_BASE_URL)
  *   path:  /chat/completions
  *   auth:  Authorization: Bearer $ANYROUTER_API_KEY
- *   model: provider/model id (default openai/gpt-5.4-mini)
+ *   model: provider/model id (default z-ai/glm-5.2)
  *
  * Routing/auth assembly is unit-tested against the real `getModel` stream stack
  * in `__tests__/ai-models.test.ts`; this script only proves the live upstream
@@ -15,7 +15,7 @@
  *
  * Env:
  *   ANYROUTER_API_KEY   required (prefix sk-ar-)
- *   ANYROUTER_MODEL     optional (default openai/gpt-5.4-mini)
+ *   ANYROUTER_MODEL     optional (default z-ai/glm-5.2)
  *   ANYROUTER_BASE_URL  optional (default https://anyrouter.dev/api/v1)
  *
  * Prints the assistant text on stdout. Exit 1 if the key is missing or the
@@ -23,7 +23,7 @@
  */
 
 const apiKey = process.env.ANYROUTER_API_KEY;
-const modelId = process.env.ANYROUTER_MODEL ?? "openai/gpt-5.4-mini";
+const modelId = process.env.ANYROUTER_MODEL ?? "z-ai/glm-5.2";
 const baseUrl = (process.env.ANYROUTER_BASE_URL ?? "https://anyrouter.dev/api/v1")
   .replace(/\/+$/, "");
 

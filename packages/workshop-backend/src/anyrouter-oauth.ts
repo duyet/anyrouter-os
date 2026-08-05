@@ -61,9 +61,12 @@ type ModelsListResponse = {
 };
 
 // Fallback when the live network stats endpoint is unreachable.
+// Keep in sync with SUGGESTED_MODELS.anyrouter in workshop-shared.
 const FALLBACK_SUGGESTED: AnyRouterSuggestedModel[] = [
-  { id: "openai/gpt-5.4-mini", name: "GPT 5.4 Mini (AnyRouter)", contextWindow: 128_000 },
-  { id: "anthropic/claude-sonnet-4.6", name: "Claude Sonnet 4.6 (AnyRouter)", contextWindow: 200_000 },
+  { id: "z-ai/glm-5.2", name: "GLM-5.2 (AnyRouter)", contextWindow: 1_000_000 },
+  { id: "moonshotai/kimi-k3", name: "Kimi K3 (AnyRouter)", contextWindow: 1_048_576 },
+  { id: "stepfun-ai/step-3.7-flash", name: "Step 3.7 Flash (AnyRouter)", contextWindow: 128_000 },
+  { id: "meituan/longcat-2.0", name: "LongCat-2.0 (AnyRouter)", contextWindow: 1_048_576 },
 ];
 
 let suggestedCache: { at: number; models: AnyRouterSuggestedModel[] } | null = null;
