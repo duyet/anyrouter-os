@@ -23,6 +23,11 @@ pnpm exec wrangler deploy --config wrangler.anyrouter-os.jsonc
 # printf '%s' "$GITHUB_CLIENT_ID" | pnpm exec wrangler secret put CLIENT_ID --config wrangler.anyrouter-os.jsonc
 # printf '%s' "$GITHUB_CLIENT_SECRET" | pnpm exec wrangler secret put CLIENT_SECRET --config wrangler.anyrouter-os.jsonc
 
+# MCP gatekeeper (BYO endpoints — users paste a URL; no static OAuth app secrets)
+cd ../gatekeeper-mcp
+pnpm run build:configurator
+pnpm exec wrangler deploy --config wrangler.anyrouter-os.jsonc
+
 # Backend
 cd ../workshop-backend
 pnpm exec wrangler deploy --config wrangler.anyrouter-os.jsonc
@@ -41,8 +46,23 @@ pnpm exec wrangler deploy --config wrangler.anyrouter-os.jsonc
 | Router | `anyrouter-os` |
 | Backend | `anyrouter-os-backend` |
 | GitHub gatekeeper | `anyrouter-os-gatekeeper-github` |
+| MCP gatekeeper | `anyrouter-os-gatekeeper-mcp` |
 
 GitHub OAuth App callback: `https://os.anyrouter.dev/gatekeeper/github/oauth`
+
+### AnyRouter MCP
+
+[AnyRouter MCP Gateway](https://anyrouter.dev/mcp) Streamable HTTP endpoint:
+
+```text
+https://anyrouter.dev/api/v1/mcp
+```
+
+(`https://anyrouter.dev/mcp` is the product page, not the MCP protocol URL.)
+
+In the Workshop: **Connections → + New Connection → MCP** (or open Connectors), connect an
+account, paste that URL, complete AnyRouter OAuth once. Tools from the gateway (native + servers
+you connected in the AnyRouter dashboard) become grantable resources.
 
 
 ## Preserved storage

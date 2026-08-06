@@ -33,6 +33,11 @@
       "binding": "GATEKEEPER_GITHUB",
       "service": "anyrouter-os-gatekeeper-github",
       "entrypoint": "GatekeeperVendor"
+    },
+    {
+      "binding": "GATEKEEPER_MCP",
+      "service": "anyrouter-os-gatekeeper-mcp",
+      "entrypoint": "GatekeeperVendor"
     }
   ],
   "vars": {

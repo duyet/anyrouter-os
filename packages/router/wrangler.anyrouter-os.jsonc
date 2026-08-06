@@ -7,7 +7,8 @@
   "preview_urls": false,
   "services": [
     { "binding": "WORKSHOP_BACKEND", "service": "anyrouter-os-backend" },
-    { "binding": "GATEKEEPER_GITHUB", "service": "anyrouter-os-gatekeeper-github" }
+    { "binding": "GATEKEEPER_GITHUB", "service": "anyrouter-os-gatekeeper-github" },
+    { "binding": "GATEKEEPER_MCP", "service": "anyrouter-os-gatekeeper-mcp" }
   ],
   "routes": [
     { "pattern": "os.anyrouter.dev", "custom_domain": true }
