@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useKumoToastManager } from '@cloudflare/kumo'
 import { useAuthenticatedApi } from './AuthContext'
 import {
@@ -11,12 +11,8 @@ import { persistSelectedModel } from './modelSelection'
 import { useServerConfig, useSiteName } from './ServerConfigContext'
 import SiteLogo from './components/SiteLogo'
 import { useDocumentTitle } from './useDocumentTitle'
-import {
-  ANYROUTER_OAUTH_CHANNEL,
-  ANYROUTER_PRICING_URL,
-  beginAnyRouterOAuth,
-  isAnyRouterGrantExpired,
-} from './anyrouterOAuth'
+import { ANYROUTER_PRICING_URL, isAnyRouterGrantExpired } from './anyrouterOAuth'
+import { useAnyRouterConnect } from './useAnyRouterConnect'
 
 // Shown on the connect step, where there is nothing to configure yet and the user may never have
 // seen the product before.
@@ -55,7 +51,6 @@ type KeyState =
   // default.
   | { phase: 'existing-models' }
   | { phase: 'disconnected' }
-  | { phase: 'waiting' }
   | { phase: 'error'; message: string }
 
 export default function OnboardingWizard({
@@ -87,21 +82,10 @@ export default function OnboardingWizard({
   )
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
-  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
   // Entrance animation
   useEffect(() => {
     requestAnimationFrame(() => setMounted(true))
   }, [])
-
-  const clearPollTimer = useCallback(() => {
-    if (pollTimerRef.current != null) {
-      clearInterval(pollTimerRef.current)
-      pollTimerRef.current = null
-    }
-  }, [])
-
-  useEffect(() => () => clearPollTimer(), [clearPollTimer])
 
   // Bootstrap: load live suggestions, and either reuse existing models or check the AnyRouter
   // connection.
@@ -141,54 +125,15 @@ export default function OnboardingWizard({
 
   // ── connect flow ──────────────────────────────────────────────────────────────
 
-  // While the consent popup is open, learn about the completed grant via the callback route's
-  // broadcast, with polling as the fallback (BroadcastChannel can be unavailable).
-  const watchForConnection = useCallback(() => {
-    const check = async () => {
-      try {
-        const connection = await authenticatedApi.getAnyRouterConnection()
-        if (connection.connected && !isAnyRouterGrantExpired(connection.expiresAt)) {
-          clearPollTimer()
-          setKeyState({ phase: 'connected' })
-        }
-      } catch {
-        // Transient — keep polling.
-      }
-    }
-    clearPollTimer()
-    pollTimerRef.current = setInterval(check, 2500)
-    try {
-      const channel = new BroadcastChannel(ANYROUTER_OAUTH_CHANNEL)
-      channel.addEventListener('message', () => {
-        channel.close()
-        check()
-      }, { once: true })
-    } catch {
-      // Polling covers it.
-    }
-  }, [authenticatedApi, clearPollTimer])
-
-  const startConnect = async () => {
-    const clientId = serverConfig?.anyrouterOauthClientId
-    if (!clientId) {
-      setKeyState({
-        phase: 'error',
-        message: 'AnyRouter sign-in is not configured on this deployment '
-          + '(ANYROUTER_OAUTH_CLIENT_ID is missing).',
-      })
-      return
-    }
-    const popup = await beginAnyRouterOAuth(clientId)
-    if (!popup) {
-      setKeyState({
-        phase: 'error',
-        message: 'The browser blocked the AnyRouter window. Allow pop-ups and try again.',
-      })
-      return
-    }
-    setKeyState({ phase: 'waiting' })
-    watchForConnection()
-  }
+  const connect = useAnyRouterConnect({
+    clientId: serverConfig?.anyrouterOauthClientId,
+    read: useCallback(
+      () => authenticatedApi.getAnyRouterConnection(),
+      [authenticatedApi],
+    ),
+    onConnected: () => setKeyState({ phase: 'connected' }),
+    onError: (message) => setKeyState({ phase: 'error', message }),
+  })
 
   // ── model selection ───────────────────────────────────────────────────────────
 
@@ -240,7 +185,6 @@ export default function OnboardingWizard({
   // Before the AnyRouter grant exists there is nothing to pick yet, so the step introduces the
   // product instead: what it is on the left, the one-click connect on the right.
   const connectStep = keyState.phase === 'disconnected'
-    || keyState.phase === 'waiting'
     || keyState.phase === 'error'
 
   return (
@@ -304,9 +248,7 @@ export default function OnboardingWizard({
               <div className="flex items-center justify-center py-20">
                 <div className="w-6 h-6 border-2 border-kumo-brand border-t-transparent rounded-full animate-spin" />
               </div>
-            ) : keyState.phase === 'disconnected'
-              || keyState.phase === 'waiting'
-              || keyState.phase === 'error' ? (
+            ) : keyState.phase === 'disconnected' || keyState.phase === 'error' ? (
               <div className="grid md:grid-cols-2 gap-8 md:gap-10">
                 {/* What this is */}
                 <div>
@@ -339,14 +281,14 @@ export default function OnboardingWizard({
                     One click grants {siteName} a key on your own AnyRouter account — usage is
                     billed to you, and you can revoke it any time from the AnyRouter dashboard.
                   </p>
-                  {keyState.phase === 'waiting' ? (
+                  {connect.state === 'waiting' ? (
                     <div className="mt-5 flex flex-col items-center gap-3">
                       <div className="w-6 h-6 border-2 border-kumo-brand border-t-transparent rounded-full animate-spin" />
                       <p className="text-xs text-kumo-subtle">
                         Approve access in the AnyRouter tab…
                       </p>
                       <button
-                        onClick={startConnect}
+                        onClick={() => connect.start()}
                         className="text-sm text-kumo-brand hover:underline"
                       >
                         Reopen the AnyRouter tab
@@ -358,7 +300,7 @@ export default function OnboardingWizard({
                         <p className="mt-3 text-sm text-kumo-danger">{keyState.message}</p>
                       )}
                       <button
-                        onClick={startConnect}
+                        onClick={() => connect.start()}
                         className="mt-5 self-center flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg text-kumo-inverse bg-kumo-brand hover:bg-kumo-brand-hover transition-all duration-150"
                       >
                         Connect with AnyRouter

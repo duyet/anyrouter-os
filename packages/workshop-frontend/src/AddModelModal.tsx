@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Dialog, Button, Input, Select, SensitiveInput, Collapsible, useKumoToastManager } from '@cloudflare/kumo'
 import {
   AiChatAuthorInfo,
@@ -11,11 +11,8 @@ import {
 import { RpcStub } from 'capnweb'
 import { AuthenticatedApi } from '@gadgets/workshop-shared/api'
 import { useServerConfig } from './ServerConfigContext'
-import {
-  ANYROUTER_OAUTH_CHANNEL,
-  beginAnyRouterOAuth,
-  isAnyRouterGrantExpired,
-} from './anyrouterOAuth'
+import { isAnyRouterGrantExpired } from './anyrouterOAuth'
+import { useAnyRouterConnect } from './useAnyRouterConnect'
 import Avatar from './components/Avatar'
 import { initials } from './components/PersonAvatar'
 
@@ -34,7 +31,6 @@ const CUSTOM_VALUE = 'custom'
 type ConnectionUi =
   | { phase: 'loading' }
   | { phase: 'status'; connection: AnyRouterConnectionStatus }
-  | { phase: 'waiting' }
   | { phase: 'error'; message: string }
 
 export default function AddModelModal({ visible, onCancel, onSuccess, authenticatedApi }: AddModelModalProps) {
@@ -64,7 +60,6 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
     })),
   )
   const [connectionUi, setConnectionUi] = useState<ConnectionUi>({ phase: 'loading' })
-  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const isCustom = selectValue === CUSTOM_VALUE
   const selectedModel = !isCustom && selectValue
@@ -79,13 +74,6 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
   // grant made before that reconnect, or a failed /me call, leaves this null).
   const connectedProfile = connectionUi.phase === 'status' ? connectionUi.connection.profile : null
   const connectedProfileLabel = connectedProfile?.name || connectedProfile?.username || null
-
-  const clearPollTimer = useCallback(() => {
-    if (pollTimerRef.current != null) {
-      clearInterval(pollTimerRef.current)
-      pollTimerRef.current = null
-    }
-  }, [])
 
   const refreshConnection = useCallback(async (): Promise<AnyRouterConnectionStatus | null> => {
     try {
@@ -114,6 +102,20 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
     return () => { cancelled = true }
   }, [visible, authenticatedApi, refreshConnection])
 
+  const connect = useAnyRouterConnect({
+    clientId: serverConfig?.anyrouterOauthClientId,
+    read: () => authenticatedApi.getAnyRouterConnection(),
+    onConnected: (connection) => {
+      setConnectionUi({ phase: 'status', connection })
+      setErrors((prev) => ({ ...prev, apiToken: '' }))
+    },
+    onError: (message) => {
+      setConnectionUi({ phase: 'error', message })
+      // Pasting a key is the way out of every connect failure, so surface that field with it.
+      setKeyOptionsOpen(true)
+    },
+  })
+
   // Reset all state when dialog closes
   useEffect(() => {
     if (!visible) {
@@ -125,56 +127,9 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
       setErrors({})
       setKeyOptionsOpen(false)
       setConnectionUi({ phase: 'loading' })
-      clearPollTimer()
+      connect.cancel()
     }
-  }, [visible, clearPollTimer])
-
-  useEffect(() => () => clearPollTimer(), [clearPollTimer])
-
-  const startConnect = async () => {
-    const clientId = serverConfig?.anyrouterOauthClientId
-    if (!clientId) {
-      setConnectionUi({
-        phase: 'error',
-        message: 'AnyRouter sign-in is not configured on this deployment '
-          + '(ANYROUTER_OAUTH_CLIENT_ID is missing). Paste an API key instead.',
-      })
-      setKeyOptionsOpen(true)
-      return
-    }
-    const popup = await beginAnyRouterOAuth(clientId)
-    if (!popup) {
-      setConnectionUi({
-        phase: 'error',
-        message: 'The browser blocked the AnyRouter window. Allow pop-ups and try again.',
-      })
-      return
-    }
-    setConnectionUi({ phase: 'waiting' })
-    // Learn about the completed grant via the callback route's broadcast, with polling as the
-    // fallback.
-    const check = async () => {
-      const connection = await refreshConnection()
-      if (connection?.connected && !isAnyRouterGrantExpired(connection.expiresAt)) {
-        clearPollTimer()
-        setErrors((prev) => ({ ...prev, apiToken: '' }))
-      } else if (connection) {
-        // Still pending — keep the waiting UI (refreshConnection set 'status').
-        setConnectionUi({ phase: 'waiting' })
-      }
-    }
-    clearPollTimer()
-    pollTimerRef.current = setInterval(check, 2500)
-    try {
-      const channel = new BroadcastChannel(ANYROUTER_OAUTH_CHANNEL)
-      channel.addEventListener('message', () => {
-        channel.close()
-        check()
-      }, { once: true })
-    } catch {
-      // Polling covers it.
-    }
-  }
+  }, [visible, connect.cancel])
 
   const handleModelSelect = (value: string) => {
     setSelectValue(value)
@@ -244,8 +199,8 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
   }
 
   const connectionSummary =
-    connectionUi.phase === 'loading' ? 'checking connection…'
-    : connectionUi.phase === 'waiting' ? 'waiting for approval…'
+    connect.state === 'waiting' ? 'waiting for approval…'
+    : connectionUi.phase === 'loading' ? 'checking connection…'
     : connectionUi.phase === 'error' ? 'connection unavailable'
     : grantUsable ? 'using your AnyRouter account'
     : connectionUi.connection.connected ? 'connection expired — reconnect'
@@ -322,13 +277,13 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
                   to use a specific one instead.
                 </p>
 
-                {connectionUi.phase === 'waiting' ? (
+                {connect.state === 'waiting' ? (
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-kumo-brand border-t-transparent rounded-full animate-spin" />
                     <span className="text-[12px] text-kumo-subtle">
                       Approve access in the AnyRouter tab…
                     </span>
-                    <Button variant="secondary" onClick={startConnect}>
+                    <Button variant="secondary" onClick={() => connect.start()}>
                       Reopen
                     </Button>
                   </div>
@@ -371,7 +326,7 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
                     {connectionUi.phase === 'error' && (
                       <p className="text-[12px] text-red-600">{connectionUi.message}</p>
                     )}
-                    <Button variant="primary" onClick={startConnect}>
+                    <Button variant="primary" onClick={() => connect.start()}>
                       {connectionUi.phase === 'status' && connectionUi.connection.connected
                         ? 'Reconnect AnyRouter'
                         : 'Connect with AnyRouter'}
