@@ -1,7 +1,7 @@
 import { RpcStub, RpcTarget, newHttpBatchRpcResponse, newWebSocketRpcSession, RpcSessionOptions } from "capnweb";
 import { validateRpc } from "capnweb-validate";
 import type { JWTPayload } from "jose";
-import { PublicApi, AuthenticatedApi, Overseer, GadgetMetadataWithTimestamps, AiChatAuthorInfo, AiModelConfig, AnyRouterConnectionStatus, AnyRouterProfile, ConnectedAccountsSubscriber, ConnectedAccountsFilter, GatekeeperVendorFilter, ObserverConfigCallback, BlueprintLibrarySummary, BlueprintPublicInfo, BlueprintUserSummary, BlueprintBindingAssignment, AgentSpawnerConfig, WorkpieceId, BLUEPRINT_SCREENSHOT_PATH_PREFIX, BLUEPRINT_SCREENSHOT_R2_PREFIX, blueprintScreenshotUrl, ServerConfig, LoginAttempt, GatekeeperAppInfo, AdminApi, GatekeeperVendorInfo, OutputFormatOffer, ListOutputsResult, createOpenGadgetError, getOpenGadgetErrorCode, OPEN_GADGET_ERROR_CODES, AUTH_ERROR_CODES, createAuthError } from '@gadgets/workshop-shared/api';
+import { PublicApi, AuthenticatedApi, Overseer, GadgetMetadataWithTimestamps, AiChatAuthorInfo, AiModelConfig, AnyRouterConnectionStatus, ConnectedAccountsSubscriber, ConnectedAccountsFilter, GatekeeperVendorFilter, ObserverConfigCallback, BlueprintLibrarySummary, BlueprintPublicInfo, BlueprintUserSummary, BlueprintBindingAssignment, AgentSpawnerConfig, WorkpieceId, BLUEPRINT_SCREENSHOT_PATH_PREFIX, BLUEPRINT_SCREENSHOT_R2_PREFIX, blueprintScreenshotUrl, ServerConfig, LoginAttempt, GatekeeperAppInfo, AdminApi, GatekeeperVendorInfo, OutputFormatOffer, ListOutputsResult, createOpenGadgetError, getOpenGadgetErrorCode, OPEN_GADGET_ERROR_CODES, AUTH_ERROR_CODES, createAuthError } from '@gadgets/workshop-shared/api';
 import type { UiFeatureFlags } from "@gadgets/workshop-shared/feature-flags";
 import { getServerConfig } from "./deployment-config.js";
 import { isPasswordAuthEnabled, getAuthGatekeeperAllowlist } from "./auth/config.js";
@@ -86,6 +86,16 @@ class AuthenticatedApiImpl extends RpcTarget implements AuthenticatedApi {
     this.overseers = this.ctx.exports.OverseerDurableObject;
     this.adminSettings = this.ctx.exports.AdminSettings;
     this.users = this.ctx.exports.UserDurableObject;
+
+    // Mirror the AnyRouter account (display name, picture) into this one whenever it has
+    // changed since the last session, so the sidebar avatar tracks anyrouter.dev without the
+    // user having to visit the profile page and sync by hand. Off the critical path: the DO
+    // short-circuits when nothing changed, and a failure just leaves the old identity.
+    this.ctx.waitUntil(this.#adoptAnyRouterIdentity(false).catch(err => {
+      logger.warn("failed to adopt AnyRouter identity", {
+        event: "anyrouter.identity.adopt.failed", error: err,
+      });
+    }));
   }
 
   private overseers: DurableObjectNamespace<OverseerDurableObject>;
@@ -203,7 +213,7 @@ class AuthenticatedApiImpl extends RpcTarget implements AuthenticatedApi {
       return null;
     });
     await this.#user.setAnyRouterGrant(grant.apiToken, grant.expiresAt, profile);
-    await this.#adoptAnyRouterIdentity(profile);
+    await this.#adoptAnyRouterIdentity(true);
     return { expiresAt: grant.expiresAt };
   }
 
@@ -213,16 +223,18 @@ class AuthenticatedApiImpl extends RpcTarget implements AuthenticatedApi {
 
   async refreshAnyRouterProfile(): Promise<AnyRouterConnectionStatus> {
     const status = await this.#user.refreshAnyRouterProfile();
-    await this.#adoptAnyRouterIdentity(status.profile);
+    await this.#adoptAnyRouterIdentity(true);
     return status;
   }
 
   /**
    * Take the account's name and picture from AnyRouter. Identity lives there — this app is a
    * client of that account, so it mirrors rather than owns those fields, and the profile page
-   * points the user at anyrouter.dev to change them.
+   * points the user at anyrouter.dev to change them. The DO decides whether there is anything
+   * new to copy, so this is cheap to call on every session; `force` is the explicit sync.
    */
-  async #adoptAnyRouterIdentity(profile: AnyRouterProfile | null): Promise<void> {
+  async #adoptAnyRouterIdentity(force: boolean): Promise<void> {
+    const profile = await this.#user.takeAnyRouterIdentityToAdopt(force);
     if (!profile) return;
     const name = profile.name || profile.username;
     if (name) await this.#user.setOwnDisplayName(name);

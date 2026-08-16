@@ -198,6 +198,11 @@ function makeUserStorage(storage: DurableObjectStorage) {
       // anyrouter.dev and keeps status checks free of network failures.
       anyrouterGrant: <{ apiToken: string; expiresAt: string | null; profile: AnyRouterProfile | null } | null>null,
 
+      // Fingerprint of the AnyRouter identity (name/username/picture) already copied into this
+      // account. Sessions start by adopting anything newer, so this is what keeps that check
+      // from re-fetching an unchanged picture — or endlessly retrying one that won't load.
+      anyrouterIdentityAdopted: <string | null>null,
+
       // `passwordHash` value as passed to `login()`, but with an extra round of SHA-256 applied.
       //
       // null = password disabled (e.g. because some other auth mechanism is used)
@@ -584,6 +589,21 @@ export class UserDurableObject extends DurableObject<Cloudflare.Env> {
     let profile = await fetchAnyRouterProfile(grant.apiToken);
     this.storage.anyrouterGrant.put({ ...grant, profile });
     return { connected: true, expiresAt: grant.expiresAt, profile };
+  }
+
+  /**
+   * The AnyRouter identity this account hasn't copied yet, or null when already in sync. The
+   * returned identity is recorded as adopted, so a session that starts with nothing new does no
+   * work and a picture that fails to load isn't refetched on every page load. `force` ignores
+   * the record — that is the explicit "Sync account data" click, which must retry.
+   */
+  async takeAnyRouterIdentityToAdopt(force: boolean): Promise<AnyRouterProfile | null> {
+    let profile = this.storage.anyrouterGrant.get()?.profile ?? null;
+    if (!profile) return null;
+    let fingerprint = [profile.name, profile.username, profile.avatarUrl].join(" ");
+    if (!force && fingerprint === this.storage.anyrouterIdentityAdopted.get()) return null;
+    this.storage.anyrouterIdentityAdopted.put(fingerprint);
+    return profile;
   }
 
   async clearAnyRouterGrant(): Promise<void> {
