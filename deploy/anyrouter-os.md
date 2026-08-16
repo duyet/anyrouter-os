@@ -61,17 +61,19 @@ AnyRouter dashboard under Connected apps). Sign-in keys expire (default 30 days;
 
 ### First-party OAuth client (no registration needed)
 
-AnyRouter OS is a **git-versioned first-party client** of AnyRouter: the anyrouter repo's
-migration `db/migrations/0183_first_party_oauth_clients.sql` seeds `mcp_oauth_clients` with the
-stable slug id `anyrouter-os` (app_type signin, pre-approved, 90-day key TTL, redirect URI
-`https://os.anyrouter.dev/anyrouter/oauth/callback`, `is_first_party = 1`). No DCR curl, no
-admin approval step — deploying anyrouter with that migration is the whole setup, and
-`ANYROUTER_OAUTH_CLIENT_ID` is committed as `anyrouter-os` in `wrangler.anyrouter-os.jsonc`.
+AnyRouter OS is a **git-versioned first-party client** of AnyRouter: it is an entry in the
+anyrouter repo's first-party app registry (`packages/lib/src/oauth/first-party-apps.ts`) with
+the stable slug id `anyrouter-os`, app_type signin, 90-day key TTL, and redirect URI
+`https://os.anyrouter.dev/anyrouter/oauth/callback`. There is no DCR curl, no admin approval,
+no database row, and nothing to seed — deploying anyrouter with that registry entry is the
+whole setup, and `ANYROUTER_OAUTH_CLIENT_ID` is committed as `anyrouter-os` in
+`wrangler.anyrouter-os.jsonc`. Future first-party apps (AnyWorker, chmonitor, …) are one
+registry line each.
 
-First-party status also means: exempt from the stale-DCR-client cron sweep, its name/slug can't
-be squatted via open registration, and — when the browser already has a Clerk session — the
-authorize endpoint auto-approves and redirects straight back with a code, so connecting AnyRouter
-in the OS is fully invisible (no consent click).
+Registry membership also means: immune to the stale-DCR-client sweep by construction, its
+name/slug can't be squatted via open registration, and — when the browser already has a Clerk
+session — the authorize endpoint auto-approves and redirects straight back with a code, so
+connecting AnyRouter in the OS is fully invisible (no consent click).
 
 ## Workers
 

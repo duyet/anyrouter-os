@@ -45,8 +45,8 @@
     // Clerk sign-in (same instance as anyrouter.dev) is the only way in. The publishable key is
     // public; CLERK_SECRET_KEY (email lookup) is a wrangler secret.
     "CLERK_PUBLISHABLE_KEY": "pk_live_Y2xlcmsuYW55cm91dGVyLmRldiQ",
-    // "Sign in with AnyRouter" first-party OAuth client, defined in AnyRouter's own schema
-    // (anyrouter repo, db/migrations/0183) — not a runtime DCR registration.
+    // "Sign in with AnyRouter" first-party OAuth client, defined in AnyRouter's git-versioned
+    // registry (anyrouter repo, packages/lib/src/oauth/first-party-apps.ts) — not a DCR row.
     "ANYROUTER_OAUTH_CLIENT_ID": "anyrouter-os",
     "DEPLOY_URL": "https://os.cloudflare.app/deploy/?instance=d638574e-856d-47b8-a671-65cd9c463840",
     "PUBLIC_BASE_URL": "https://os.anyrouter.dev"
