@@ -17,6 +17,27 @@ import {
   isAnyRouterGrantExpired,
 } from './anyrouterOAuth'
 
+// Shown on the connect step, where there is nothing to configure yet and the user may never have
+// seen the product before.
+const WHAT_IT_DOES: { title: string; body: string }[] = [
+  {
+    title: 'Build by describing',
+    body: 'Chat what you want and it writes, runs and iterates on the app or agent for you.',
+  },
+  {
+    title: 'Sandboxed by default',
+    body: 'Everything you build runs in its own isolate on Cloudflare, not on your machine.',
+  },
+  {
+    title: 'Wire in your tools',
+    body: 'Connect GitHub and MCP servers, and your agents can use them as granted resources.',
+  },
+  {
+    title: 'Your models, your bill',
+    body: 'Inference runs on your own AnyRouter key — pick any model in its catalog.',
+  },
+]
+
 // ─── component ──────────────────────────────────────────────────────────────────
 //
 // Onboarding is deliberately minimal: sign-in already happened (Clerk), and connecting AnyRouter
@@ -214,6 +235,12 @@ export default function OnboardingWizard({
     ? existingModels.map((m) => ({ id: m.id, name: m.name, subtitle: m.id }))
     : suggestedModels.map((m) => ({ id: m.id, name: m.name, subtitle: m.id }))
 
+  // Before the AnyRouter grant exists there is nothing to pick yet, so the step introduces the
+  // product instead: what it is on the left, the one-click connect on the right.
+  const connectStep = keyState.phase === 'disconnected'
+    || keyState.phase === 'waiting'
+    || keyState.phase === 'error'
+
   return (
     <div className="fixed inset-0 bg-kumo-base dotted-bg flex items-center justify-center overflow-y-auto py-8">
       {/* Soft radial glow at the top for depth */}
@@ -226,9 +253,9 @@ export default function OnboardingWizard({
       />
 
       <div
-        className={`relative w-full max-w-lg mx-4 transition-all duration-500 ease-out ${
-          mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-        }`}
+        className={`relative w-full mx-4 transition-all duration-500 ease-out ${
+          connectStep ? 'max-w-4xl' : 'max-w-lg'
+        } ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
       >
         {/* Brand */}
         <div
@@ -251,16 +278,20 @@ export default function OnboardingWizard({
               mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
             }`}
           >
-            Pick your models
+            {connectStep ? `Welcome to ${siteName}` : 'Pick your models'}
           </h1>
           <p
             className={`mt-2 text-sm text-kumo-subtle transition-all duration-500 delay-200 ${
-              mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
-            }`}
+              connectStep ? 'max-w-xl mx-auto' : ''
+            } ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
           >
-            {existingMode
-              ? 'Choose your default model and start building'
-              : 'Choose the AnyRouter models you want, and start building'}
+            {connectStep
+              ? 'Describe the app or agent you want, and it gets built and run for you — '
+                + 'each one sandboxed on Cloudflare, powered by models from your own AnyRouter '
+                + 'account.'
+              : existingMode
+                ? 'Choose your default model and start building'
+                : 'Choose the AnyRouter models you want, and start building'}
           </p>
         </div>
 
@@ -274,41 +305,78 @@ export default function OnboardingWizard({
             ) : keyState.phase === 'disconnected'
               || keyState.phase === 'waiting'
               || keyState.phase === 'error' ? (
-              <div className="flex flex-col items-center text-center py-8 gap-4">
-                <h2 className="text-lg font-medium text-kumo-default">
-                  Connect your AnyRouter account
-                </h2>
-                <p className="text-sm text-kumo-subtle max-w-sm">
-                  One click grants {siteName} a key on your own AnyRouter account — usage is
-                  billed to you, and you can revoke it any time from the AnyRouter dashboard.
-                </p>
-                {keyState.phase === 'waiting' ? (
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="w-6 h-6 border-2 border-kumo-brand border-t-transparent rounded-full animate-spin" />
-                    <p className="text-xs text-kumo-subtle">
-                      Approve access in the AnyRouter tab…
-                    </p>
-                    <button
-                      onClick={startConnect}
-                      className="text-sm text-kumo-brand hover:underline"
+              <div className="grid md:grid-cols-2 gap-8 md:gap-10">
+                {/* What this is */}
+                <div>
+                  <h2 className="text-lg font-medium text-kumo-default mb-4">
+                    What {siteName} does
+                  </h2>
+                  <ul className="space-y-3.5">
+                    {WHAT_IT_DOES.map(({ title, body }) => (
+                      <li key={title} className="flex gap-3">
+                        <Check
+                          size={16}
+                          weight="bold"
+                          className="text-kumo-brand flex-shrink-0 mt-0.5"
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-kumo-default">{title}</p>
+                          <p className="text-sm text-kumo-subtle">{body}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Connect */}
+                <div className="flex flex-col justify-center rounded-xl border border-kumo-line bg-kumo-tint p-6 text-center">
+                  <h2 className="text-lg font-medium text-kumo-default">
+                    Connect your AnyRouter account to get started
+                  </h2>
+                  <p className="mt-2 text-sm text-kumo-subtle">
+                    One click grants {siteName} a key on your own AnyRouter account — usage is
+                    billed to you, and you can revoke it any time from the AnyRouter dashboard.
+                  </p>
+                  {keyState.phase === 'waiting' ? (
+                    <div className="mt-5 flex flex-col items-center gap-3">
+                      <div className="w-6 h-6 border-2 border-kumo-brand border-t-transparent rounded-full animate-spin" />
+                      <p className="text-xs text-kumo-subtle">
+                        Approve access in the AnyRouter tab…
+                      </p>
+                      <button
+                        onClick={startConnect}
+                        className="text-sm text-kumo-brand hover:underline"
+                      >
+                        Reopen the AnyRouter tab
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {keyState.phase === 'error' && (
+                        <p className="mt-3 text-sm text-kumo-danger">{keyState.message}</p>
+                      )}
+                      <button
+                        onClick={startConnect}
+                        className="mt-5 self-center flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg text-kumo-inverse bg-kumo-brand hover:bg-kumo-brand-hover transition-all duration-150"
+                      >
+                        Connect with AnyRouter
+                        <ArrowRight size={14} weight="bold" />
+                      </button>
+                    </>
+                  )}
+                  <p className="mt-5 text-xs text-kumo-subtle">
+                    Needs an{' '}
+                    <a
+                      href="https://anyrouter.dev/pricing"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-kumo-brand hover:underline"
                     >
-                      Reopen the AnyRouter tab
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    {keyState.phase === 'error' && (
-                      <p className="text-sm text-kumo-danger max-w-sm">{keyState.message}</p>
-                    )}
-                    <button
-                      onClick={startConnect}
-                      className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg text-kumo-inverse bg-kumo-brand hover:bg-kumo-brand-hover transition-all duration-150"
-                    >
-                      Connect with AnyRouter
-                      <ArrowRight size={14} weight="bold" />
-                    </button>
-                  </>
-                )}
+                      AnyRouter Go plan
+                    </a>{' '}
+                    or your own provider keys (BYOK).
+                  </p>
+                </div>
               </div>
             ) : (
               <>
