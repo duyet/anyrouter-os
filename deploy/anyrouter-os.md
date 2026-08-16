@@ -59,25 +59,19 @@ AnyRouter dashboard under Connected apps). Sign-in keys expire (default 30 days;
 `apiToken` that resolves to the stored grant, so one reconnect refreshes everything. The
 `CF_AI_GATEWAY*` vars were removed along with the Workers AI built-in models.
 
-### One-time OAuth client registration
+### First-party OAuth client (no registration needed)
 
-Register the app against AnyRouter's open dynamic client registration, then put the returned
-`client_id` into `wrangler.anyrouter-os.jsonc` as `ANYROUTER_OAUTH_CLIENT_ID` (public, not a
-secret):
+AnyRouter OS is a **git-versioned first-party client** of AnyRouter: the anyrouter repo's
+migration `db/migrations/0183_first_party_oauth_clients.sql` seeds `mcp_oauth_clients` with the
+stable slug id `anyrouter-os` (app_type signin, pre-approved, 90-day key TTL, redirect URI
+`https://os.anyrouter.dev/anyrouter/oauth/callback`, `is_first_party = 1`). No DCR curl, no
+admin approval step — deploying anyrouter with that migration is the whole setup, and
+`ANYROUTER_OAUTH_CLIENT_ID` is committed as `anyrouter-os` in `wrangler.anyrouter-os.jsonc`.
 
-```bash
-curl -s https://anyrouter.dev/api/v1/mcp/oauth/register \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "client_name": "AnyRouter OS",
-    "app_type": "signin",
-    "origin_url": "https://os.anyrouter.dev",
-    "redirect_uris": ["https://os.anyrouter.dev/anyrouter/oauth/callback"]
-  }'
-```
-
-Signin registrations land with `review_status='pending'` — approve it on the AnyRouter admin
-"OAuth apps" page (and optionally raise `key_ttl_seconds` / `rate_limit_override` there).
+First-party status also means: exempt from the stale-DCR-client cron sweep, its name/slug can't
+be squatted via open registration, and — when the browser already has a Clerk session — the
+authorize endpoint auto-approves and redirects straight back with a code, so connecting AnyRouter
+in the OS is fully invisible (no consent click).
 
 ## Workers
 
