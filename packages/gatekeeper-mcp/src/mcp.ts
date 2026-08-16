@@ -111,7 +111,7 @@ export default {
           if (!(await account.isAwaitingSelection(initiationNonce))) {
             return htmlResponse(INVALID_LINK_HTML, 400);
           }
-          return htmlResponse(connectFormHtml(path));
+          return htmlResponse(connectFormHtml(path, undefined, defaultEndpoint(env)));
         }
         const form = await request.formData();
         return continueConnect(
@@ -120,6 +120,18 @@ export default {
     });
   },
 };
+
+/**
+ * The deployment's own MCP server, prefilled into the connect form so connecting it takes no pasted
+ * URL. Validated here so a misconfigured var hides the suggestion instead of offering a URL the
+ * connect POST would then refuse. Unset on deployments that have no server of their own.
+ */
+function defaultEndpoint(env: Env): string | undefined {
+  const configured = env.MCP_DEFAULT_ENDPOINT?.trim();
+  if (!configured) return undefined;
+  const validated = validateCustomEndpoint(env, configured);
+  return validated.ok ? validated.url : undefined;
+}
 
 // Validates the endpoint the user typed, then hands off to the account DO, which owns every
 // credential. `endpointUrl` is null on a reconnect.

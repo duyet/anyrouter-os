@@ -22,8 +22,14 @@ const FORM_STYLE = `
   button:hover { opacity: .9; }
 `;
 
-/** Renders the endpoint prompt shown when the user starts connecting. */
-export function connectFormHtml(path: string, error?: string): string {
+/**
+ * Renders the endpoint prompt shown when the user starts connecting.
+ *
+ * `suggested` is the deployment's own MCP server (MCP_DEFAULT_ENDPOINT), prefilled so the common
+ * case is one click rather than a pasted URL. It is a default, not a restriction: the field stays
+ * editable, so any other server is still one edit away.
+ */
+export function connectFormHtml(path: string, error?: string, suggested?: string): string {
   return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -35,7 +41,8 @@ export function connectFormHtml(path: string, error?: string): string {
   ${error ? `<p class="err">${escapeHtml(error)}</p>` : ""}
   <form method="POST" action="${escapeHtml(path)}">
     <label for="url">Server URL</label>
-    <input id="url" type="url" name="url" placeholder="https://example.com/mcp" required autofocus>
+    <input id="url" type="url" name="url" placeholder="https://example.com/mcp" required autofocus
+           ${suggested ? `value="${escapeHtml(suggested)}"` : ""}>
     <p class="hint">Only connect a server you trust. Its own annotations decide which of its tools
     run without asking you and which wait for your approval, and an annotation is only as
     trustworthy as the server that sent it.</p>

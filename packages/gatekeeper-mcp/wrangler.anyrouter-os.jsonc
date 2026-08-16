@@ -23,7 +23,11 @@
   "vars": {
     "BASE_URL": "https://os.anyrouter.dev/gatekeeper/mcp",
     "MCP_CLIENT_NAME": "AnyRouter OS",
-    "MCP_ALLOW_INSECURE": "false"
+    "MCP_ALLOW_INSECURE": "false",
+    // This deployment's own MCP server, prefilled into the connect form so connecting AnyRouter
+    // takes no pasted URL. The field stays editable, so any other server is still one edit away.
+    // Each user authorizes as themselves — no deployment-wide credential is involved.
+    "MCP_DEFAULT_ENDPOINT": "https://anyrouter.dev/api/v1/mcp"
   },
   "observability": {
     "enabled": true,
