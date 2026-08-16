@@ -23,14 +23,14 @@ cd packages/workshop-frontend && pnpm build && cd ../..
 
 # GitHub gatekeeper (OAuth secrets live here, not on the backend)
 cd packages/gatekeeper-github
-pnpm run build:configurator
+pnpm run build   # builds the configurator UI, then tsc
 pnpm exec wrangler deploy --config wrangler.anyrouter-os.jsonc
 # printf '%s' "$GITHUB_CLIENT_ID" | pnpm exec wrangler secret put CLIENT_ID --config wrangler.anyrouter-os.jsonc
 # printf '%s' "$GITHUB_CLIENT_SECRET" | pnpm exec wrangler secret put CLIENT_SECRET --config wrangler.anyrouter-os.jsonc
 
 # MCP gatekeeper (AnyRouter prefilled via MCP_DEFAULT_ENDPOINT; any other URL still accepted)
 cd ../gatekeeper-mcp
-pnpm run build:configurator
+pnpm run build   # builds the configurator UI, then tsc
 pnpm exec wrangler deploy --config wrangler.anyrouter-os.jsonc
 
 # Backend
