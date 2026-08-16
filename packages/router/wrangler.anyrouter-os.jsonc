@@ -1,6 +1,6 @@
 {
   "name": "anyrouter-os",
-  "account_id": "23050adb6c92e313643a29e1ba64c88a",
+  "account_id": "7df185a18b98382c3240fa7ac4a37075",
   "main": "src/index.ts",
   "compatibility_date": "2026-02-02",
   "workers_dev": true,

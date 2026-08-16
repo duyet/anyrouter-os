@@ -1,6 +1,6 @@
 {
   "name": "anyrouter-os-backend",
-  "account_id": "23050adb6c92e313643a29e1ba64c88a",
+  "account_id": "7df185a18b98382c3240fa7ac4a37075",
   "main": ".wrangler/validate/src/server.ts",
   "build": {
     "command": "pnpm run build:format-blueprints && pnpm run build:worker",
@@ -20,8 +20,8 @@
     { "tag": "v2", "new_sqlite_classes": ["PendingLogin"] }
   ],
   "kv_namespaces": [
-    { "binding": "BLUEPRINTS", "id": "8cf665d809904fb0943ba11dab6bae91" },
-    { "binding": "AVATARS", "id": "2627a086155246e0b92507ed111eb930" }
+    { "binding": "BLUEPRINTS", "id": "e0198c767f464f9d924aed0990b004a0" },
+    { "binding": "AVATARS", "id": "f47b716d46ec433db94dbc9c0db2321f" }
   ],
   "r2_buckets": [
     { "binding": "BLUEPRINT_CONTENT", "bucket_name": "cowork-blueprint-content" }
@@ -42,10 +42,10 @@
   ],
   "vars": {
     "ADMINS": ["duyet.cs@gmail.com"],
-    "CF_ACCESS_AUD": "d107359d5ba7650db93916e7325f624451be010baedd266111f9a980b2a27102",
-    "CF_ACCESS_ISS": "https://duyet.cloudflareaccess.com",
-    "CF_AI_GATEWAY": "cowork-ai",
-    "CF_AI_GATEWAY_ACCOUNT_ID": "23050adb6c92e313643a29e1ba64c88a",
+    "CF_ACCESS_AUD": "1a17701011c030fe75fc07e509495cce76a0f80066c506e667958e52e1c563e6",
+    "CF_ACCESS_ISS": "https://anyr.cloudflareaccess.com",
+    "CF_AI_GATEWAY": "anyrouter",
+    "CF_AI_GATEWAY_ACCOUNT_ID": "7df185a18b98382c3240fa7ac4a37075",
     "CF_AI_GATEWAY_PROVIDERS": "cloudflare",
     "DEPLOY_URL": "https://os.cloudflare.app/deploy/?instance=d638574e-856d-47b8-a671-65cd9c463840",
     "PUBLIC_BASE_URL": "https://os.anyrouter.dev"

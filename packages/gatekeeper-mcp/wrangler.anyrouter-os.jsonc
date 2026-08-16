@@ -1,6 +1,6 @@
 {
   "name": "anyrouter-os-gatekeeper-mcp",
-  "account_id": "23050adb6c92e313643a29e1ba64c88a",
+  "account_id": "7df185a18b98382c3240fa7ac4a37075",
   "main": ".wrangler/validate/src/mcp.ts",
   "build": {
     "command": "pnpm exec capnweb-validate build --out .wrangler/validate",

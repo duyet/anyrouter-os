@@ -5,13 +5,13 @@
 | Router Worker | `anyrouter-os` |
 | Backend Worker | `anyrouter-os-backend` |
 | Hostname | `https://os.anyrouter.dev` |
-| Account | `23050adb6c92e313643a29e1ba64c88a` |
+| Account | `7df185a18b98382c3240fa7ac4a37075` |
 
 ## Redeploy
 
 ```bash
 export CLOUDFLARE_API_TOKEN=…   # Workers edit
-export CLOUDFLARE_ACCOUNT_ID=23050adb6c92e313643a29e1ba64c88a
+export CLOUDFLARE_ACCOUNT_ID=7df185a18b98382c3240fa7ac4a37075
 
 # Frontend (Access-mode SPA)
 cd packages/workshop-frontend && VITE_CF_ACCESS_MODE=true pnpm build && cd ../..
@@ -65,7 +65,23 @@ account, paste that URL, complete AnyRouter OAuth once. Tools from the gateway (
 you connected in the AnyRouter dashboard) become grantable resources.
 
 
-## Preserved storage
+## Account move (2026-08-16)
+
+Moved from `23050adb6c92e313643a29e1ba64c88a` to `7df185a18b98382c3240fa7ac4a37075`.
+KV ids, R2 buckets, AI Gateway, Access app and DO state are all account-scoped, so before the
+first deploy on the new account:
+
+```bash
+pnpm exec wrangler kv namespace create BLUEPRINTS   # paste id into workshop-backend config
+pnpm exec wrangler kv namespace create AVATARS
+pnpm exec wrangler r2 bucket create cowork-blueprint-content
+```
+
+Then create AI Gateway `cowork-ai` in the new account, re-put `CF_AI_GATEWAY_API_TOKEN`, create a
+Zero Trust Access app for `os.anyrouter.dev` and update `CF_ACCESS_AUD` / `CF_ACCESS_ISS`, and make
+sure the `anyrouter.dev` zone lives in the new account (custom-domain route fails otherwise).
+
+## Storage (old account — ids below are NOT valid on the new account)
 
 - KV blueprints `8cf665d809904fb0943ba11dab6bae91`
 - KV avatars `2627a086155246e0b92507ed111eb930`
