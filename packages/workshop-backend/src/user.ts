@@ -1,5 +1,5 @@
 import { RpcStub } from "capnweb";
-import { GadgetMetadataWithTimestamps, AiChatAuthorInfo, AiModelConfig, AnyRouterConnectionStatus, CollaboratorRole, ConnectedAccountsSubscriber, ConnectedAccountsFilter, GatekeeperVendorFilter, GadgetMetadata, BlueprintMetadata, BlueprintLibrarySummary, BlueprintSource, BlueprintUserSummary, BLUEPRINT_SCREENSHOT_R2_PREFIX, GatekeeperVendorInfo, BlueprintOutput, OutputSummary, WorkpieceId, ListOutputsResult, AUTH_ERROR_CODES, createAuthError } from '@gadgets/workshop-shared/api';
+import { GadgetMetadataWithTimestamps, AiChatAuthorInfo, AiModelConfig, AnyRouterConnectionStatus, AnyRouterProfile, CollaboratorRole, ConnectedAccountsSubscriber, ConnectedAccountsFilter, GatekeeperVendorFilter, GadgetMetadata, BlueprintMetadata, BlueprintLibrarySummary, BlueprintSource, BlueprintUserSummary, BLUEPRINT_SCREENSHOT_R2_PREFIX, GatekeeperVendorInfo, BlueprintOutput, OutputSummary, WorkpieceId, ListOutputsResult, AUTH_ERROR_CODES, createAuthError } from '@gadgets/workshop-shared/api';
 import { Gatekeeper, GatekeeperUser, GatekeeperUserVerifier, GatekeeperVendor, AccountDescription, VendorDescription, GatekeeperConnectCallback, SupportedResource, ResourceConfiguratorFrame, AppUiContext, GatekeeperUiFrame } from "@gadgets/workshop-shared/gatekeeper";
 import { shouldAutoProvisionAccount, ambientGatekeeperMode } from "./provisioning-policy.js";
 import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
@@ -190,7 +190,12 @@ function makeUserStorage(storage: DurableObjectStorage) {
       // The user's AnyRouter grant: their own sk-ar key obtained via "Sign in with AnyRouter".
       // Model configs with an empty apiToken resolve to this at inference time, so re-connecting
       // refreshes every model at once. Sign-in keys expire; expiresAt drives the reconnect UI.
-      anyrouterGrant: <{ apiToken: string; expiresAt: string | null } | null>null,
+      //
+      // `profile` is fetched once alongside the key (see completeAnyRouterOAuth) rather than live
+      // on every getAnyRouterConnection() call: that method is polled every ~2.5s while the OAuth
+      // popup is open, and the profile rarely changes, so caching it here avoids hammering
+      // anyrouter.dev and keeps status checks free of network failures.
+      anyrouterGrant: <{ apiToken: string; expiresAt: string | null; profile: AnyRouterProfile | null } | null>null,
 
       // `passwordHash` value as passed to `login()`, but with an extra round of SHA-256 applied.
       //
@@ -550,14 +555,19 @@ export class UserDurableObject extends DurableObject<Cloudflare.Env> {
   }
 
   /** Store the AnyRouter grant obtained via the OAuth flow (see completeAnyRouterOAuth). */
-  async setAnyRouterGrant(apiToken: string, expiresAt: string | null): Promise<void> {
-    this.storage.anyrouterGrant.put({ apiToken, expiresAt });
+  async setAnyRouterGrant(
+      apiToken: string, expiresAt: string | null, profile: AnyRouterProfile | null): Promise<void> {
+    this.storage.anyrouterGrant.put({ apiToken, expiresAt, profile });
   }
 
   /** The stored grant's status, never the secret. */
   async getAnyRouterConnection(): Promise<AnyRouterConnectionStatus> {
     let grant = this.storage.anyrouterGrant.get();
-    return { connected: grant !== null, expiresAt: grant?.expiresAt ?? null };
+    return {
+      connected: grant !== null,
+      expiresAt: grant?.expiresAt ?? null,
+      profile: grant?.profile ?? null,
+    };
   }
 
   async clearAnyRouterGrant(): Promise<void> {

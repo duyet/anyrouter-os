@@ -15,6 +15,7 @@ import { GatekeeperUiFrame } from "@gadgets/workshop-shared/gatekeeper";
 import { LanguageModelGatekeeper } from "./ai-models";
 import {
   exchangeAnyRouterOAuthCode,
+  fetchAnyRouterProfile,
   fetchAnyRouterSuggestedModels,
 } from "./anyrouter-oauth.js";
 import { verifyClerkLogin } from "./auth/clerk.js";
@@ -193,7 +194,15 @@ class AuthenticatedApiImpl extends RpcTarget implements AuthenticatedApi {
   async completeAnyRouterOAuth(code: string, codeVerifier: string, redirectUri: string)
       : Promise<{ expiresAt: string | null }> {
     const grant = await exchangeAnyRouterOAuthCode(this.env, { code, codeVerifier, redirectUri });
-    await this.#user.setAnyRouterGrant(grant.apiToken, grant.expiresAt);
+    // Non-fatal: the key is what makes inference work, so a flaky /me call shouldn't block
+    // connecting. On failure the account just shows no profile until the next reconnect.
+    const profile = await fetchAnyRouterProfile(grant.apiToken).catch(err => {
+      logger.warn("failed to fetch AnyRouter profile", {
+        event: "anyrouter.profile.fetch.failed", error: err,
+      });
+      return null;
+    });
+    await this.#user.setAnyRouterGrant(grant.apiToken, grant.expiresAt, profile);
     return { expiresAt: grant.expiresAt };
   }
 

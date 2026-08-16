@@ -93,6 +93,45 @@ export async function exchangeAnyRouterOAuthCode(
   };
 }
 
+/** The signed-in user's AnyRouter account, as reported by `/me`. Any field may be absent. */
+export type AnyRouterProfile = {
+  id: string | null;
+  username: string | null;
+  name: string | null;
+  email: string | null;
+  avatarUrl: string | null;
+};
+
+type MeResponse = {
+  id?: string | null;
+  username?: string | null;
+  name?: string | null;
+  email?: string | null;
+  image_url?: string | null;
+};
+
+/**
+ * Fetch the signed-in user's AnyRouter account profile with their own `sk-ar-…` key. The
+ * `read:profile` scope granted by "Sign in with AnyRouter" already covers this endpoint, so no
+ * extra consent is needed.
+ */
+export async function fetchAnyRouterProfile(apiToken: string): Promise<AnyRouterProfile> {
+  const res = await fetch(`${ANYROUTER_API_BASE}/me`, {
+    headers: { Authorization: `Bearer ${apiToken}`, Accept: "application/json" },
+  });
+  if (!res.ok) {
+    throw new Error(`AnyRouter profile request failed (${res.status}).`);
+  }
+  const data = await res.json() as MeResponse;
+  return {
+    id: data.id ?? null,
+    username: data.username ?? null,
+    name: data.name ?? null,
+    email: data.email ?? null,
+    avatarUrl: data.image_url ?? null,
+  };
+}
+
 /** A suggested AnyRouter model for the Add Model picker. */
 export type AnyRouterSuggestedModel = {
   id: string;

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   clearAnyRouterSuggestedModelsCache,
   exchangeAnyRouterOAuthCode,
+  fetchAnyRouterProfile,
   fetchAnyRouterSuggestedModels,
 } from "../src/anyrouter-oauth.js";
 
@@ -66,6 +67,48 @@ describe("exchangeAnyRouterOAuthCode", () => {
   it("fails clearly when the client id is not configured", async () => {
     await expect(exchangeAnyRouterOAuthCode(env(undefined), PARAMS))
       .rejects.toThrow("ANYROUTER_OAUTH_CLIENT_ID");
+  });
+});
+
+describe("fetchAnyRouterProfile", () => {
+  it("fetches the account profile with the user's key", async () => {
+    const fetchMock = vi.fn(async () =>
+      Response.json({
+        id: "user-1",
+        username: "duyet",
+        name: "Duyet Le",
+        email: "duyet@example.com",
+        image_url: "https://anyrouter.dev/avatar/duyet.png",
+      }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const profile = await fetchAnyRouterProfile("sk-ar-v1-secret");
+    expect(profile).toEqual({
+      id: "user-1",
+      username: "duyet",
+      name: "Duyet Le",
+      email: "duyet@example.com",
+      avatarUrl: "https://anyrouter.dev/avatar/duyet.png",
+    });
+
+    const call = fetchMock.mock.calls[0];
+    expect(call[0]).toBe("https://anyrouter.dev/api/v1/me");
+    expect(call[1].headers.Authorization).toBe("Bearer sk-ar-v1-secret");
+  });
+
+  it("maps a null-heavy response to all-null fields", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () =>
+      Response.json({ id: null, username: null, name: null, email: null, image_url: null })));
+
+    const profile = await fetchAnyRouterProfile("sk-ar-v1-secret");
+    expect(profile).toEqual({
+      id: null, username: null, name: null, email: null, avatarUrl: null,
+    });
+  });
+
+  it("throws with the status when the request fails", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("unauthorized", { status: 401 })));
+    await expect(fetchAnyRouterProfile("sk-ar-v1-bad")).rejects.toThrow("401");
   });
 });
 

@@ -1145,6 +1145,15 @@ export type AnyRouterSuggestedModel = {
   rank?: number;
 };
 
+/** The signed-in user's AnyRouter account, fetched with their own key when the grant is made. */
+export type AnyRouterProfile = {
+  id: string | null;
+  username: string | null;
+  name: string | null;
+  email: string | null;
+  avatarUrl: string | null;
+};
+
 /**
  * Status of the user's stored AnyRouter grant (their own `sk-ar-…` key, obtained via the
  * "Sign in with AnyRouter" OAuth flow). Contains no secret. Sign-in keys expire (default 30
@@ -1154,6 +1163,11 @@ export type AnyRouterConnectionStatus = {
   connected: boolean;
   /** ISO timestamp when the grant's key expires, or null when unknown/not connected. */
   expiresAt: string | null;
+  /**
+   * The account's AnyRouter profile, fetched once when the grant was made (or refreshed on
+   * reconnect). Null when not connected, or when the profile fetch failed at connect time.
+   */
+  profile: AnyRouterProfile | null;
 };
 
 /** Configuration specifying how to connect to an AI model provider. */

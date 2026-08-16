@@ -16,6 +16,8 @@ import {
   beginAnyRouterOAuth,
   isAnyRouterGrantExpired,
 } from './anyrouterOAuth'
+import Avatar from './components/Avatar'
+import { initials } from './components/PersonAvatar'
 
 interface AddModelModalProps {
   visible: boolean
@@ -72,6 +74,11 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
   const grantUsable = connectionUi.phase === 'status'
     && connectionUi.connection.connected
     && !isAnyRouterGrantExpired(connectionUi.connection.expiresAt)
+
+  // The connected account's AnyRouter profile, when known (fetched once at connect time; a
+  // grant made before that reconnect, or a failed /me call, leaves this null).
+  const connectedProfile = connectionUi.phase === 'status' ? connectionUi.connection.profile : null
+  const connectedProfileLabel = connectedProfile?.name || connectedProfile?.username || null
 
   const clearPollTimer = useCallback(() => {
     if (pollTimerRef.current != null) {
@@ -330,9 +337,22 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
                     <span className="rounded-full bg-[rgba(16,185,129,0.12)] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.4px] text-emerald-700">
                       Connected
                     </span>
-                    <span className="text-[12px] text-kumo-subtle">
-                      AnyRouter account linked
-                    </span>
+                    {connectedProfileLabel ? (
+                      <span className="flex items-center gap-1.5">
+                        <Avatar
+                          src={connectedProfile?.avatarUrl ?? undefined}
+                          size={20}
+                          fallback={initials(connectedProfileLabel)}
+                        />
+                        <span className="text-[12px] text-kumo-subtle">
+                          {connectedProfileLabel}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-[12px] text-kumo-subtle">
+                        AnyRouter account linked
+                      </span>
+                    )}
                     <Button
                       variant="secondary"
                       onClick={async () => {
