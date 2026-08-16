@@ -28,7 +28,7 @@ pnpm exec wrangler deploy --config wrangler.anyrouter-os.jsonc
 # printf '%s' "$GITHUB_CLIENT_ID" | pnpm exec wrangler secret put CLIENT_ID --config wrangler.anyrouter-os.jsonc
 # printf '%s' "$GITHUB_CLIENT_SECRET" | pnpm exec wrangler secret put CLIENT_SECRET --config wrangler.anyrouter-os.jsonc
 
-# MCP gatekeeper (BYO endpoints — users paste a URL; no static OAuth app secrets)
+# MCP gatekeeper (AnyRouter prefilled via MCP_DEFAULT_ENDPOINT; any other URL still accepted)
 cd ../gatekeeper-mcp
 pnpm run build:configurator
 pnpm exec wrangler deploy --config wrangler.anyrouter-os.jsonc
@@ -102,8 +102,18 @@ https://anyrouter.dev/api/v1/mcp
 (`https://anyrouter.dev/mcp` is the product page, not the MCP protocol URL.)
 
 In the Workshop: **Connections → + New Connection → MCP** (or open Connectors), connect an
-account, paste that URL, complete AnyRouter OAuth once. Tools from the gateway (native + servers
-you connected in the AnyRouter dashboard) become grantable resources.
+account, complete AnyRouter OAuth once. Tools from the gateway (native + servers you connected in
+the AnyRouter dashboard) become grantable resources.
+
+That URL is prefilled: `MCP_DEFAULT_ENDPOINT` in `packages/gatekeeper-mcp/wrangler.anyrouter-os.jsonc`
+puts it in the connect form's field, so connecting AnyRouter is a click rather than a paste. It is a
+default, not a restriction — the field stays editable for any other MCP server, and each user still
+authorizes as themselves, so no deployment-wide credential exists.
+
+What that connection reaches follows the user's own AnyRouter key scopes. A "Sign in with AnyRouter"
+key carries `["inference", "read:profile"]`, so through MCP it sees the curated always-ready
+connection tools (currently the `firecrawl` namespace) rather than management tools — an intentional
+boundary on AnyRouter's side (`SIGNIN_BUNDLE` in its `packages/lib/src/auth/management-scopes.ts`).
 
 
 ## Account move (2026-08-16) — done
