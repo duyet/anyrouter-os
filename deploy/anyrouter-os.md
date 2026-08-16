@@ -111,9 +111,10 @@ Workers redeployed. Everything below is account-scoped, so it was re-provisioned
 - R2 `cowork-blueprint-content` — already existed in the new account
 - AI Gateway `anyrouter` (was `cowork-ai`); authentication is on, so `CF_AI_GATEWAY_API_TOKEN`
   still needs a `wrangler secret put` on the backend
-- Zero Trust: new Access app "AnyRouter OS" for `os.anyrouter.dev`, aud
-  `1a17701011c030fe75fc07e509495cce76a0f80066c506e667958e52e1c563e6`, team
-  `https://anyr.cloudflareaccess.com`, one allow policy for `duyet.cs@gmail.com`
+- Zero Trust: an Access app "AnyRouter OS" was created for `os.anyrouter.dev` (aud
+  `1a177010…`, team `https://anyr.cloudflareaccess.com`). **Deleted again on 2026-08-16** — it
+  302'd every request to the Access login before Clerk was ever reached, which contradicts
+  Clerk-only sign-in. Do not recreate it.
 - GitHub gatekeeper `CLIENT_ID` / `CLIENT_SECRET` re-put from `.env.local`
 - Zone `anyrouter.dev` was already in the new account, so the custom domain bound cleanly
 
@@ -142,5 +143,5 @@ contents were not copied; the old namespaces still hold them under `23050adb…`
 
 ## Access
 
-Zero Trust → Access → application for this host: include `os.anyrouter.dev`.
-Keep the same Application Audience as `CF_ACCESS_AUD` unless you create a new app.
+Zero Trust Access is intentionally NOT in front of `os.anyrouter.dev` — Clerk is the only gate.
+`CF_ACCESS_AUD` / `CF_ACCESS_ISS` are not set on this deployment.
