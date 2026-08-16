@@ -73,7 +73,10 @@ function AnyRouterOAuthCallback() {
         // Tell whoever opened the popup that the grant landed (they also poll as a fallback).
         try {
           const channel = new BroadcastChannel(ANYROUTER_OAUTH_CHANNEL)
+          // BroadcastChannel.postMessage takes no targetOrigin (that is window.postMessage).
+          // oxlint-disable-next-line unicorn/require-post-message-target-origin
           channel.postMessage({ type: 'connected' })
+          channel.close()
         } catch {
           // BroadcastChannel unavailable — the opener's polling covers it.
         }

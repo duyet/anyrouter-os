@@ -42,8 +42,9 @@ function RootComponent() {
   // The workspace editor renders fullscreen (no app chrome). /gadget/ is the legacy URL, kept
   // here so the chrome doesn't flash in during the redirect to /workspace/.
   const isWorkspaceEditor = pathname.startsWith('/workspace/') || pathname.startsWith('/gadget/')
-  // AnyRouter's consent redirect lands here in a popup. It is a machine step, not a destination,
-  // so it must render even while onboarding is incomplete — that is exactly when it runs.
+  // AnyRouter's consent redirect lands here in a popup. It completes the grant that onboarding is
+  // waiting on, so it renders instead of the onboarding shell — gating it behind the wizard would
+  // leave the code unexchanged and the user stuck in a connect loop.
   const isAnyRouterCallback = pathname === ANYROUTER_OAUTH_CALLBACK_PATH
 
   const handleLoginSuccess = () => {
@@ -115,11 +116,14 @@ function RootComponent() {
       <FeatureFlagsProvider>
         <TooltipProvider>
           <Toasty>
-            <AuthenticatedShell
-              authenticatedApi={authenticatedApi}
-              isWorkspaceEditor={isWorkspaceEditor}
-              isAnyRouterCallback={isAnyRouterCallback}
-            />
+            {isAnyRouterCallback ? (
+              <Outlet />
+            ) : (
+              <AuthenticatedShell
+                authenticatedApi={authenticatedApi}
+                isWorkspaceEditor={isWorkspaceEditor}
+              />
+            )}
           </Toasty>
         </TooltipProvider>
       </FeatureFlagsProvider>
@@ -135,11 +139,9 @@ function RootComponent() {
 function AuthenticatedShell({
   authenticatedApi,
   isWorkspaceEditor,
-  isAnyRouterCallback,
 }: {
   authenticatedApi: RpcStub<AuthenticatedApi>
   isWorkspaceEditor: boolean
-  isAnyRouterCallback: boolean
 }) {
   // null = still checking, true = needs onboarding, false = onboarding done
   const [onboardingNeeded, setOnboardingNeeded] = useState<boolean | null>(null)
@@ -155,13 +157,6 @@ function AuthenticatedShell({
     })
     return () => { cancelled = true }
   }, [authenticatedApi])
-
-  // The OAuth callback popup completes the grant that onboarding is *waiting on*, so it renders
-  // ahead of both the onboarding check and the wizard — gating it behind either one would leave
-  // the code unexchanged and the user stuck in a connect loop.
-  if (isAnyRouterCallback) {
-    return <Outlet />
-  }
 
   // Still checking onboarding status
   if (onboardingNeeded === null) {
