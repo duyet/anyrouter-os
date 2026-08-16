@@ -41,6 +41,11 @@ export function useAnyRouterConnect(options: {
   // Long-lived route: never leave a poll running past the page.
   useEffect(() => stop, [stop])
 
+  const cancel = useCallback(() => {
+    stop()
+    setState('idle')
+  }, [stop])
+
   const start = useCallback(async () => {
     if (!clientId) {
       onError(
@@ -49,7 +54,15 @@ export function useAnyRouterConnect(options: {
       )
       return
     }
-    const before = await read().catch(() => null)
+    // Without a "before" snapshot the poll can't tell an existing grant from a fresh one, so a
+    // failed read has to stop the flow rather than risk reporting success the user never gave.
+    let before: AnyRouterConnectionStatus
+    try {
+      before = await read()
+    } catch {
+      onError('Could not read your AnyRouter connection. Try again.')
+      return
+    }
     const popup = await beginAnyRouterOAuth(clientId)
     if (!popup) {
       onError('The browser blocked the AnyRouter window. Allow pop-ups and try again.')
@@ -58,21 +71,25 @@ export function useAnyRouterConnect(options: {
     setState('waiting')
 
     const deadline = Date.now() + POLL_TIMEOUT_MS
-    const check = async () => {
+    const succeed = (status: AnyRouterConnectionStatus) => {
+      stop()
+      setState('done')
+      onConnected(status)
+    }
+    // `authoritative` marks the broadcast from the callback route, which only fires after the
+    // server stored the new grant. Polling has no such proof, so it waits for the expiry to move
+    // — the one field a fresh key reliably changes.
+    const check = async (authoritative = false) => {
       const status = await read().catch(() => null)
-      const landed =
-        status?.connected
-        && (!before?.connected || status.expiresAt !== before.expiresAt)
-      if (landed) {
-        stop()
-        setState('done')
-        onConnected(status)
+      if (!status?.connected) {
+        if (Date.now() > deadline) cancel()
         return
       }
-      if (Date.now() > deadline) {
-        stop()
-        setState('idle')
+      if (authoritative || !before.connected || status.expiresAt !== before.expiresAt) {
+        succeed(status)
+        return
       }
+      if (Date.now() > deadline) cancel()
     }
 
     stop()
@@ -81,12 +98,12 @@ export function useAnyRouterConnect(options: {
       const channel = new BroadcastChannel(ANYROUTER_OAUTH_CHANNEL)
       channel.addEventListener('message', () => {
         channel.close()
-        check()
+        check(true)
       }, { once: true })
     } catch {
       // Polling covers it.
     }
-  }, [clientId, read, onConnected, onError, stop])
+  }, [clientId, read, onConnected, onError, stop, cancel])
 
-  return { state, start, stop }
+  return { state, start, cancel }
 }

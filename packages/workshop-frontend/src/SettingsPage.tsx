@@ -212,7 +212,7 @@ function AnyRouterSection() {
             </button>
           )}
           {connect.state === 'waiting' && (
-            <button type="button" onClick={connect.stop} className={SECONDARY_BTN}>
+            <button type="button" onClick={connect.cancel} className={SECONDARY_BTN}>
               Cancel
             </button>
           )}
