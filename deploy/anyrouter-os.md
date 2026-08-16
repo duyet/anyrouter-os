@@ -81,6 +81,21 @@ Workers redeployed. Everything below is account-scoped, so it was re-provisioned
 - GitHub gatekeeper `CLIENT_ID` / `CLIENT_SECRET` re-put from `.env.local`
 - Zone `anyrouter.dev` was already in the new account, so the custom domain bound cleanly
 
+### Routing gotcha — the host needs an explicit route
+
+Two zone records are named `anyrouter.dev`: the live one is `f13a6aa2…` (account `7df185a1…`,
+"AnyRouter Inc."); `2a9a797b…` under the old account is status `moved` and serves nothing — don't
+edit routes there. On the live zone, `*.anyrouter.dev/*` -> `anyrouter` (the marketing Worker)
+beats the Workers Custom Domain, so `os.anyrouter.dev` served the marketing site until an explicit
+route was added:
+
+```
+os.anyrouter.dev/*  ->  anyrouter-os
+```
+
+`admin`, `docs` and `blog` each carry the same explicit route for this reason. Note this leaves
+both a Custom Domain and a route bound to the hostname; the route is what actually serves.
+
 **Durable Object state did not migrate** — user/workspace DOs start empty. KV blueprint/avatar
 contents were not copied; the old namespaces still hold them under `23050adb…`.
 
