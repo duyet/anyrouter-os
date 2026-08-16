@@ -18,15 +18,12 @@
 // permit fetching from any address (so localhost services stay reachable), so the flag
 // only takes effect in production -- an acceptable tradeoff for dev.
 
-import type { AiGatewayConfig } from "./ai-gateway";
-
 /**
- * The bits of the Workers AI binding and gateway config that `webFetch` needs. Kept narrow
- * so the caller can pass a stub in tests without constructing a full Cloudflare.Env.
+ * The bits of the Workers AI binding that `webFetch` needs. Kept narrow so the caller can pass
+ * a stub in tests without constructing a full Cloudflare.Env.
  */
 export type WebFetchEnv = {
   ai: Ai;
-  gateway: AiGatewayConfig | null;
 };
 
 export type WebFetchInput = {
@@ -177,16 +174,6 @@ const TO_MARKDOWN_MIME_TYPES = new Set([
   "application/vnd.apple.numbers",                                           // .numbers
 ]);
 
-// `toMarkdown()` uses the Workers AI binding, so only apply the same-account Workers AI gateway
-// resolved by AiGatewayConfig. A cross-account platform gateway cannot be used by this binding.
-function buildGatewayOptions(
-  gateway: AiGatewayConfig | null,
-): GatewayOptions | undefined {
-  if (!gateway) return undefined;
-  if (!gateway.workersAiGateway) return undefined;
-  return { id: gateway.workersAiGateway, metadata: { tool: "webFetch", automated: true } };
-}
-
 // Attempt to convert a document to Markdown using the Workers AI binding. Returns the
 // Markdown body on success, or null if the document's MIME type isn't in the supported
 // allow-list. Throws (with a contextual error) if the conversion itself fails.
@@ -210,7 +197,6 @@ async function convertToMarkdown(
       blob: new Blob([bytes], { type: mime }),
     },
     {
-      gateway: buildGatewayOptions(env.gateway),
       conversionOptions: {
         // Resolve relative links against the page's own origin.
         html: {

@@ -7,7 +7,6 @@ import { CF_ACCESS_MODE } from './useAuth'
 import { User, Pencil, Check, X, Lock, Camera, Copy, Eye, EyeSlash } from '@phosphor-icons/react'
 import { useAvatar, invalidateAvatarCache } from './useAvatar'
 import { compressAvatar, avatarBlobUrl } from './avatarUtils'
-import UsageSettings from './components/billing/UsageSettings'
 import { useDocumentTitle } from './useDocumentTitle'
 
 // Shared, on-language control classes (match the rest of the app: Workspaces/Blueprints headers,
@@ -376,9 +375,6 @@ export default function SettingsPage() {
             </div>
           </div>
         </section>
-
-        {/* Usage & billing — only when the Cloudflare limits flow is enabled server-side */}
-        <UsageSettings />
 
         {/* Security — only for password accounts (hidden under CF Access or gatekeeper sign-in) */}
         {!CF_ACCESS_MODE && hasPassword === true && (

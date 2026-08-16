@@ -13,7 +13,6 @@ import Header from '../components/Header'
 import AppShell from '../components/AppShell/AppShell'
 import LoginPage from '../LoginPage'
 import OnboardingWizard from '../OnboardingWizard'
-import AccountSelectionModal from '../components/billing/AccountSelectionModal'
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -170,7 +169,6 @@ function AuthenticatedShell({
   const fullscreen = isWorkspaceEditor
   return (
     <>
-      <AccountSelectionModal />
       {fullscreen ? (
         <main>
           <Outlet />

@@ -410,36 +410,26 @@ export interface AuthenticatedApi extends RpcTarget {
   getQuickModel(): Promise<null | string>;
 
   /**
-   * Get AI configuration info, including whether AI Gateway mode is active and which providers
-   * are available. The frontend uses this to adjust the model management UI.
-   */
-  getAiConfig(): Promise<AiGatewayInfo>;
-
-  /**
    * Live top AnyRouter models by network-wide usage (public catalog), for the Add Model picker.
    * Falls back to a short static list when AnyRouter is unreachable.
    */
   listAnyRouterSuggestedModels(): Promise<AnyRouterSuggestedModel[]>;
 
   /**
-   * Mint a fresh AnyRouter API key for this user, using the deployment's management key. Returns
-   * the one-time `sk-ar-…` secret to store on model configs via `addModel()`, or null when the
-   * deployment has no management key configured (the client falls back to the device login flow).
-   * This is what makes onboarding seamless: sign in, pick a model, go — no key handling.
+   * Complete an AnyRouter sign-in: exchange the authorization code (+ PKCE verifier) the browser
+   * obtained from AnyRouter's consent flow for the user's own `sk-ar-…` key, and store it as this
+   * account's AnyRouter grant. Model configs with an empty `apiToken` resolve to the stored grant
+   * at inference time, so re-connecting refreshes every model at once. `redirectUri` must be the
+   * one the authorize request used. Returns the key's expiry (sign-in keys always expire).
    */
-  provisionAnyRouterKey(): Promise<{ apiToken: string } | null>;
+  completeAnyRouterOAuth(code: string, codeVerifier: string, redirectUri: string)
+      : Promise<{ expiresAt: string | null }>;
 
-  /**
-   * Start AnyRouter device-code login (RFC 8628). The user opens the verification URL and either
-   * picks an existing API key or creates a new one; poll with `pollAnyRouterDeviceLogin`.
-   */
-  startAnyRouterDeviceLogin(): Promise<AnyRouterDeviceLoginStart>;
+  /** The stored AnyRouter grant's status (never the secret). */
+  getAnyRouterConnection(): Promise<AnyRouterConnectionStatus>;
 
-  /**
-   * Poll an in-flight AnyRouter device login. When `status` is `"ready"`, `accessToken` is the
-   * `sk-ar-…` secret to store on the model config (shown only once by AnyRouter).
-   */
-  pollAnyRouterDeviceLogin(deviceCode: string): Promise<AnyRouterDeviceLoginPoll>;
+  /** Forget the stored AnyRouter grant. Models using it stop working until re-connected. */
+  disconnectAnyRouter(): Promise<void>;
 
   /** Resolve UI feature flags for the authenticated user. */
   getUiFeatureFlags(): Promise<UiFeatureFlags>;
@@ -458,24 +448,6 @@ export interface AuthenticatedApi extends RpcTarget {
 
   /** Mark the onboarding wizard as completed. */
   completeOnboarding(): Promise<void>;
-
-  // --- Optional Cloudflare limits / top-up flow (only meaningful when enabled server-side) ---
-
-  /** Get the user's current free-tier usage and connected-account balance. */
-  getCloudflareUsage(): Promise<CloudflareUsageInfo>;
-
-  /**
-   * List the Cloudflare accounts the connected grant can access. Used to prompt account selection
-   * when the user has more than one. Returns an empty array if not connected. Connecting Cloudflare
-   * is done via the Cloudflare gatekeeper (connectAccount("cloudflare")) or by signing in with it.
-   */
-  listCloudflareAccounts(): Promise<CloudflareAccountOption[]>;
-
-  /**
-   * Select which Cloudflare account to bill. Persists the choice. Throws if the account isn't
-   * accessible.
-   */
-  selectCloudflareAccount(accountId: string): Promise<void>;
 
   /**
    * Upload a user avatar image. The data should be a compressed image (JPEG/PNG), ideally under
@@ -1095,12 +1067,6 @@ export type ServerConfig = {
   passwordAuthEnabled: boolean;
 
   /**
-   * Whether the optional Cloudflare free-tier limits + top-up flow is enabled. When false (the
-   * default, e.g. self-hosted), usage is unlimited and the credits UI is hidden.
-   */
-  cloudflareLimitsEnabled: boolean;
-
-  /**
    * Whether new account signups are allowed (admin-configurable, default true). The signup page
    * hides the create-account form when false.
    */
@@ -1134,79 +1100,24 @@ export type ServerConfig = {
    * login via `PublicApi.loginWithClerk()`.
    */
   clerkPublishableKey?: string;
-};
 
-/**
- * Usage + Cloudflare-connection status for the optional limits flow. Returned by
- * `AuthenticatedApi.getCloudflareUsage()`.
- */
-export type CloudflareUsageInfo = {
-  /** Whether the limits flow is enabled at all. When false, the rest is informational only. */
-  cloudflareLimitsEnabled: boolean;
-  /** When true, the user has unlimited access (limits disabled) and counters are not tracked. */
-  unlimited: boolean;
-
-  /** Free-tier daily usage. */
-  dailyUsed: number;
-  dailyLimit: number;
-  remaining: number;
-  /** ISO timestamp when the daily window resets. */
-  resetAt?: string;
-
-  /** Whether the user has connected a Cloudflare account. */
-  connected: boolean;
-  /** The connected account's AI Gateway credit balance (USD), or null if unknown/not connected. */
-  balance: number | null;
-  accountId?: string;
-  accountName?: string;
   /**
-   * True when connected but the user has multiple Cloudflare accounts and must pick which one to
-   * bill before usage can proceed. The client should prompt with selectCloudflareAccount().
+   * The deployment's registered "Sign in with AnyRouter" OAuth client id (public). When set, the
+   * client can run the AnyRouter authorize/consent flow to obtain the user's own inference key;
+   * when unset, users paste a key manually.
    */
-  needsAccountSelection?: boolean;
+  anyrouterOauthClientId?: string;
 };
 
-/** A Cloudflare account available to a connected user. Returned by `listCloudflareAccounts()`. */
-export type CloudflareAccountOption = {
-  accountId: string;
-  accountName: string;
-};
-
-/** Supported AI providers. */
-export type AiModelProvider =
-  | "openai"
-  | "anthropic"
-  | "google"
-  | "cloudflare"
-  | "ollama"
-  | "anyrouter";
-
 /**
- * Providers that never route through Cloudflare AI Gateway. They always use the
- * credentials and optional `apiUrl` on `AiModelConfig` (user-local servers, third-party
- * multi-provider gateways, etc.). Single source of truth for backend + frontend.
+ * Supported AI providers. AnyRouter (a multi-provider OpenAI-compatible gateway) is the only
+ * provider: model ids use the `provider/model` form and requests always carry the config's own
+ * `apiToken` and optional `apiUrl`.
  */
-export const DIRECT_MODEL_PROVIDERS = ["ollama", "anyrouter"] as const;
+export type AiModelProvider = "anyrouter";
 
-/** Subset of {@link AiModelProvider} that is direct-only. */
-export type DirectModelProvider = (typeof DIRECT_MODEL_PROVIDERS)[number];
-
-/** True when the provider must not be routed via AI Gateway / unified billing. */
-export function isDirectModelProvider(provider: AiModelProvider): boolean {
-  return (DIRECT_MODEL_PROVIDERS as readonly AiModelProvider[]).includes(provider);
-}
-
-/**
- * Default API base URL for a direct provider when the user leaves `apiUrl` empty.
- * Gateway-served providers return undefined (they ignore config.apiUrl in gateway mode).
- */
-export function defaultDirectModelApiUrl(provider: AiModelProvider): string | undefined {
-  switch (provider) {
-    case "ollama": return "http://localhost:11434";
-    case "anyrouter": return "https://anyrouter.dev/api/v1";
-    default: return undefined;
-  }
-}
+/** Default API base URL when the model config leaves `apiUrl` empty. */
+export const ANYROUTER_DEFAULT_API_URL = "https://anyrouter.dev/api/v1";
 
 /** A suggested model row for the AnyRouter provider picker (live or fallback). */
 export type AnyRouterSuggestedModel = {
@@ -1220,34 +1131,15 @@ export type AnyRouterSuggestedModel = {
   rank?: number;
 };
 
-/** Device-code login start payload from AnyRouter (proxied by the Workshop backend). */
-export type AnyRouterDeviceLoginStart = {
-  deviceCode: string;
-  userCode: string;
-  verificationUri: string;
-  verificationUriComplete: string;
-  expiresIn: number;
-  interval: number;
-};
-
 /**
- * One poll result for an AnyRouter device login. `"ready"` carries the one-time
- * `sk-ar-…` secret chosen or minted on the consent screen.
+ * Status of the user's stored AnyRouter grant (their own `sk-ar-…` key, obtained via the
+ * "Sign in with AnyRouter" OAuth flow). Contains no secret. Sign-in keys expire (default 30
+ * days); the client offers a re-connect when `expiresAt` has passed.
  */
-export type AnyRouterDeviceLoginPoll =
-  | { status: "pending"; interval: number }
-  | { status: "slow_down"; interval: number }
-  | { status: "denied"; message: string }
-  | { status: "expired"; message: string }
-  | { status: "ready"; accessToken: string; scope?: string; userId?: string }
-  | { status: "error"; message: string };
-
-/** Information about the AI gateway configuration. Returned by `AuthenticatedApi.getAiConfig()`. */
-export type AiGatewayInfo = {
-  enabled: true;
-  enabledProviders: AiModelProvider[];
-} | {
-  enabled: false;
+export type AnyRouterConnectionStatus = {
+  connected: boolean;
+  /** ISO timestamp when the grant's key expires, or null when unknown/not connected. */
+  expiresAt: string | null;
 };
 
 /** Configuration specifying how to connect to an AI model provider. */
@@ -1262,24 +1154,12 @@ export type AiModelConfig = {
   apiToken: string;
 
   /**
-   * Cloudflare account ID owning the Workers AI deployment the token authorizes. Required for
-   * provider "cloudflare" (whose REST endpoint is account-scoped); unused for other providers.
-   */
-  accountId?: string;
-
-  /**
    * URL of the API. If not specified, use the default for the provider. Overriding the URL is
    * useful in order to use AI proxy products like Cloudflare's AI gateway, or even to use an
    * alternative provider that provides a compatible API.
    */
   apiUrl?: string;
 };
-
-/**
- * Workers AI adds the response cap to the prompt and rejects a request whose total exceeds the
- * model's window, so every Cloudflare model reserves this much of it for the response.
- */
-export const WORKERS_AI_OUTPUT_LIMIT = 32768;
 
 /**
  * Models offered in the picker. `contextWindow` is the maximum tokens one request may total.
@@ -1290,35 +1170,8 @@ export const SUGGESTED_MODELS: Record<
   AiModelProvider,
   Record<string, {name: string, contextWindow: number, outputLimit?: number}>
 > = {
-  "cloudflare": {
-    "@cf/moonshotai/kimi-k2.7-code": {
-      name: "Kimi K2.7 Code (Workers AI)", contextWindow: 262144,
-      outputLimit: WORKERS_AI_OUTPUT_LIMIT,
-    },
-    "@cf/zai-org/glm-5.2": {
-      name: "GLM 5.2 (Workers AI)", contextWindow: 262144, outputLimit: WORKERS_AI_OUTPUT_LIMIT,
-    },
-  },
-  "anthropic": {
-    // TODO: Include Fable -- but we need an admin option to disable it, since many orgs don't
-    //   allow it for ZDR reasons. It's sort of overkill for building gadgets anyway.
-    "claude-opus-5": {name: "Claude Opus 5", contextWindow: 1000000},
-    "claude-sonnet-5": {name: "Claude Sonnet 5", contextWindow: 1000000},
-    "claude-haiku-4-5": {name: "Claude Haiku 4.5", contextWindow: 200000},
-  },
-  "openai": {
-    "gpt-5.6-sol": {name: "GPT 5.6 Sol", contextWindow: 1050000, outputLimit: 128000},
-    "gpt-5.6-luna": {name: "GPT 5.6 Luna", contextWindow: 1050000, outputLimit: 128000},
-    "gpt-5.6-terra": {name: "GPT 5.6 Terra", contextWindow: 1050000, outputLimit: 128000},
-  },
-  "google": {
-    "gemini-3.6-flash": {name: "Gemini 3.6 Flash", contextWindow: 1048576},
-  },
-  "ollama": {
-  },
-  // AnyRouter is a multi-provider OpenAI-compatible gateway. Model ids use the
-  // `provider/model` form (e.g. z-ai/glm-5.2). Static list is the offline fallback;
-  // the Add Model dialog prefers live top-usage models when available.
+  // AnyRouter model ids use the `provider/model` form (e.g. z-ai/glm-5.2). Static list is the
+  // offline fallback; the Add Model dialog prefers live top-usage models when available.
   "anyrouter": {
     "z-ai/glm-5.2": {
       name: "GLM-5.2 (AnyRouter)", contextWindow: 1000000,

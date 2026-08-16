@@ -95,26 +95,15 @@ describe("compaction trigger", () => {
     expect(shouldCompactChat(85_000, 100_000)).toBe(true);
   });
 
-  it("reserves output capacity only where the model counts it against its own window", () => {
-    // Workers AI charges the response to the window, so it has to be withheld.
+  it("takes the input budget from the suggested-model registry", () => {
+    // A listed model uses its declared window; nothing is withheld unless it declares an
+    // output reservation.
     expect(getModelTokenLimits({
-      provider: "cloudflare", model: "@cf/moonshotai/kimi-k2.7-code", apiToken: "",
-    })).toEqual({inputBudget: 229_376, maxOutputTokens: 32_768});
-
-    // Anthropic publishes an input-only window, so withholding anything would waste it.
-    expect(getModelTokenLimits({
-      provider: "anthropic", model: "claude-opus-5", apiToken: "",
+      provider: "anyrouter", model: "z-ai/glm-5.2", apiToken: "",
     })).toEqual({inputBudget: 1_000_000, maxOutputTokens: undefined});
-  });
 
-  // Workers AI rejects a request whose prompt and response cap together exceed the window, so a
-  // Cloudflare model configured by hand needs the reservation the model table can't declare for it.
-  it("reserves Workers AI output capacity for a model the registry doesn't list", () => {
-    expect(getModelTokenLimits({provider: "cloudflare", model: "@cf/custom", apiToken: ""}))
-        .toEqual({inputBudget: 95_232, maxOutputTokens: 32_768});
-
-    // Other providers fall back to the assumed window with nothing withheld.
-    expect(getModelTokenLimits({provider: "ollama", model: "local", apiToken: ""}))
+    // An unlisted model falls back to the assumed window with nothing withheld.
+    expect(getModelTokenLimits({provider: "anyrouter", model: "someone/custom", apiToken: ""}))
         .toEqual({inputBudget: 128_000, maxOutputTokens: undefined});
   });
 

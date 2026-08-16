@@ -1,9 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   clearAnyRouterSuggestedModelsCache,
+  exchangeAnyRouterOAuthCode,
   fetchAnyRouterSuggestedModels,
-  pollAnyRouterDeviceLogin,
-  startAnyRouterDeviceLogin,
 } from "../src/anyrouter-oauth.js";
 
 afterEach(() => {
@@ -11,77 +10,62 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("startAnyRouterDeviceLogin", () => {
-  it("maps the device-code response", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () =>
-      Response.json({
-        device_code: "dc-1",
-        user_code: "ABCD-EFGH",
-        verification_uri: "https://anyrouter.dev/cli/device",
-        verification_uri_complete: "https://anyrouter.dev/cli/device?code=ABCD-EFGH",
-        expires_in: 600,
-        interval: 5,
-      })));
+function env(clientId?: string): Cloudflare.Env {
+  return { ANYROUTER_OAUTH_CLIENT_ID: clientId } as unknown as Cloudflare.Env;
+}
 
-    const start = await startAnyRouterDeviceLogin({ clientName: "Test" });
-    expect(start.deviceCode).toBe("dc-1");
-    expect(start.userCode).toBe("ABCD-EFGH");
-    expect(start.verificationUriComplete).toContain("ABCD-EFGH");
-    expect(start.interval).toBe(5);
+describe("exchangeAnyRouterOAuthCode", () => {
+  const PARAMS = {
+    code: "authcode-1",
+    codeVerifier: "v".repeat(43),
+    redirectUri: "https://os.anyrouter.dev/anyrouter/oauth/callback",
+  };
 
-    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
-    expect(call[0]).toBe("https://anyrouter.dev/api/v1/oauth/device/code");
-    const body = JSON.parse(call[1].body as string);
-    expect(body.client_name).toBe("Test");
-  });
-});
-
-describe("pollAnyRouterDeviceLogin", () => {
-  it("returns ready with the access token", async () => {
+  it("exchanges a code for the user's key and computes the expiry", async () => {
     vi.stubGlobal("fetch", vi.fn(async () =>
       Response.json({
         access_token: "sk-ar-v1-secret",
         token_type: "Bearer",
-        scope: "inference",
-        user_id: "user_1",
+        scope: "inference read:profile",
+        expires_in: 3600,
       })));
 
-    const poll = await pollAnyRouterDeviceLogin("dc-1");
-    expect(poll).toEqual({
-      status: "ready",
-      accessToken: "sk-ar-v1-secret",
-      scope: "inference",
-      userId: "user_1",
+    const before = Date.now();
+    const grant = await exchangeAnyRouterOAuthCode(env("client-1"), PARAMS);
+    expect(grant.apiToken).toBe("sk-ar-v1-secret");
+    expect(Date.parse(grant.expiresAt!)).toBeGreaterThanOrEqual(before + 3600 * 1000 - 5000);
+
+    const call = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(call[0]).toBe("https://anyrouter.dev/api/v1/mcp/oauth/token");
+    const body = JSON.parse(call[1].body as string);
+    expect(body).toMatchObject({
+      grant_type: "authorization_code",
+      code: "authcode-1",
+      code_verifier: PARAMS.codeVerifier,
+      redirect_uri: PARAMS.redirectUri,
+      client_id: "client-1",
     });
   });
 
-  it("maps authorization_pending and slow_down", async () => {
+  it("reports no expiry when the response omits expires_in", async () => {
     vi.stubGlobal("fetch", vi.fn(async () =>
-      Response.json({ error: "authorization_pending" }, { status: 400 })));
-    expect(await pollAnyRouterDeviceLogin("dc")).toEqual({
-      status: "pending",
-      interval: 5,
-    });
-
-    vi.stubGlobal("fetch", vi.fn(async () =>
-      Response.json({ error: "slow_down", interval: 10 }, { status: 400 })));
-    expect(await pollAnyRouterDeviceLogin("dc")).toEqual({
-      status: "slow_down",
-      interval: 10,
-    });
+      Response.json({ access_token: "sk-ar-v1-secret", token_type: "Bearer" })));
+    const grant = await exchangeAnyRouterOAuthCode(env("client-1"), PARAMS);
+    expect(grant.expiresAt).toBeNull();
   });
 
-  it("maps denied and expired", async () => {
+  it("surfaces OAuth errors with their description", async () => {
     vi.stubGlobal("fetch", vi.fn(async () =>
-      Response.json({ error: "access_denied", error_description: "nope" }, { status: 400 })));
-    expect(await pollAnyRouterDeviceLogin("dc")).toMatchObject({
-      status: "denied",
-      message: "nope",
-    });
+      Response.json(
+        { error: "invalid_grant", error_description: "Code expired or used" },
+        { status: 400 })));
+    await expect(exchangeAnyRouterOAuthCode(env("client-1"), PARAMS))
+      .rejects.toThrow("Code expired or used");
+  });
 
-    vi.stubGlobal("fetch", vi.fn(async () =>
-      Response.json({ error: "expired_token" }, { status: 400 })));
-    expect(await pollAnyRouterDeviceLogin("dc")).toMatchObject({ status: "expired" });
+  it("fails clearly when the client id is not configured", async () => {
+    await expect(exchangeAnyRouterOAuthCode(env(undefined), PARAMS))
+      .rejects.toThrow("ANYROUTER_OAUTH_CLIENT_ID");
   });
 });
 

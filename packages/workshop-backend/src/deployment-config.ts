@@ -1,13 +1,12 @@
-// Builds the public ServerConfig the client fetches at boot. Aggregates sign-in (auth/, env-driven),
-// AI Gateway billing (ai-gateway-billing/), and the admin-configured branding (admin-config.ts).
-// Contains no secrets.
+// Builds the public ServerConfig the client fetches at boot. Aggregates sign-in (auth/, env-driven)
+// and the admin-configured branding (admin-config.ts). Contains no secrets.
 
 import { AuthVendorInfo, ServerConfig } from "@gadgets/workshop-shared/api";
 import { createWorkshopLogger } from "./observability";
 import { getAuthGatekeeperAllowlist, isPasswordAuthEnabled } from "./auth/config.js";
-import { isCloudflareLimitsEnabled } from "./ai-gateway-billing/config.js";
 import { getAuthVendorBinding } from "./auth/auth-vendors.js";
 import { getClerkPublishableKey } from "./auth/clerk.js";
+import { getAnyRouterOauthClientId } from "./anyrouter-oauth.js";
 import { readAdminConfig } from "./admin-config.js";
 import { siteLogoImage } from "./site-logo.js";
 
@@ -51,7 +50,6 @@ export async function getServerConfig(env: Cloudflare.Env): Promise<ServerConfig
   return {
     authVendors,
     passwordAuthEnabled: isPasswordAuthEnabled(env),
-    cloudflareLimitsEnabled: isCloudflareLimitsEnabled(env),
     signupsEnabled: config.signupsEnabled,
     siteName: config.siteName,
     siteLogo: siteLogoImage(config.siteLogoConfigured),
@@ -60,5 +58,6 @@ export async function getServerConfig(env: Cloudflare.Env): Promise<ServerConfig
     bannerColor: config.banner.color,
     accentColor: config.accentColor,
     clerkPublishableKey: getClerkPublishableKey(env),
+    anyrouterOauthClientId: getAnyRouterOauthClientId(env),
   };
 }

@@ -22,7 +22,6 @@
 import { DurableObject, WorkerEntrypoint } from "cloudflare:workers";
 import { GatekeeperConnectCallback, GatekeeperUser } from "@gadgets/workshop-shared/gatekeeper";
 import { createWorkshopLogger } from "../observability";
-import { CLOUDFLARE_VENDOR_ID } from "../user.js";
 import { readAdminConfig } from "../admin-config.js";
 
 const logger = createWorkshopLogger("workshop.auth");
@@ -119,12 +118,6 @@ export class LoginConnectCallbackImpl
         });
         await pending.fail("New sign-ups are currently disabled on this deployment.");
         return;
-      }
-      // For Cloudflare, signing in also links the account for AI Gateway billing: startGatekeeperLogin
-      // requested full (non-transient) scopes, so persist the grant as a connected account before
-      // handing back the session. Other providers use minimal, transient sign-in grants (no persist).
-      if (this.ctx.props.vendorId === CLOUDFLARE_VENDOR_ID) {
-        await userStub.linkConnectedAccountFromLogin(account, this.ctx.props.vendorId, expiresAt);
       }
       // Session tokens are "<doName>:<secret>"; PublicApi.authenticate() routes via idFromName of
       // the first part. The user DO is keyed by email, so the prefix must be the email.

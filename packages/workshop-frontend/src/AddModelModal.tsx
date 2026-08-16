@@ -3,13 +3,19 @@ import { Dialog, Button, Input, Select, SensitiveInput, Collapsible, useKumoToas
 import {
   AiChatAuthorInfo,
   AiModelConfig,
-  AnyRouterDeviceLoginStart,
+  AnyRouterConnectionStatus,
   AnyRouterSuggestedModel,
   SUGGESTED_MODELS,
-  defaultDirectModelApiUrl,
+  ANYROUTER_DEFAULT_API_URL,
 } from '@gadgets/workshop-shared/api'
 import { RpcStub } from 'capnweb'
 import { AuthenticatedApi } from '@gadgets/workshop-shared/api'
+import { useServerConfig } from './ServerConfigContext'
+import {
+  ANYROUTER_OAUTH_CHANNEL,
+  beginAnyRouterOAuth,
+  isAnyRouterGrantExpired,
+} from './anyrouterOAuth'
 
 interface AddModelModalProps {
   visible: boolean
@@ -19,22 +25,19 @@ interface AddModelModalProps {
 }
 
 // AnyRouter is the only model provider. Models come from the live AnyRouter catalog
-// (listAnyRouterSuggestedModels), plus a "custom model id" escape hatch.
+// (listAnyRouterSuggestedModels), plus a "custom model id" escape hatch. The key comes from the
+// account's AnyRouter grant (connected via "Sign in with AnyRouter") unless the user pastes one.
 const CUSTOM_VALUE = 'custom'
 
-type AnyRouterLoginUi =
-  | { phase: 'idle' }
-  | { phase: 'starting' }
-  | {
-      phase: 'waiting'
-      start: AnyRouterDeviceLoginStart
-      statusText: string
-    }
-  | { phase: 'connected' }
+type ConnectionUi =
+  | { phase: 'loading' }
+  | { phase: 'status'; connection: AnyRouterConnectionStatus }
+  | { phase: 'waiting' }
   | { phase: 'error'; message: string }
 
 export default function AddModelModal({ visible, onCancel, onSuccess, authenticatedApi }: AddModelModalProps) {
   const toasts = useKumoToastManager()
+  const serverConfig = useServerConfig()
 
   const [loading, setLoading] = useState(false)
   const [selectValue, setSelectValue] = useState<string | undefined>(undefined)
@@ -43,14 +46,14 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
   const [modelId, setModelId] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [apiToken, setApiToken] = useState('')
-  const [apiUrl, setApiUrl] = useState(defaultDirectModelApiUrl('anyrouter') ?? '')
+  const [apiUrl, setApiUrl] = useState(ANYROUTER_DEFAULT_API_URL)
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const [keyOptionsOpen, setKeyOptionsOpen] = useState(false)
 
-  // Live AnyRouter suggestions + device login
+  // Live AnyRouter suggestions + account connection status
   const [anyRouterModels, setAnyRouterModels] = useState<AnyRouterSuggestedModel[]>(() =>
     Object.entries(SUGGESTED_MODELS.anyrouter).map(([id, m]) => ({
       id,
@@ -58,29 +61,38 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
       contextWindow: m.contextWindow,
     })),
   )
-  const [anyRouterLogin, setAnyRouterLogin] = useState<AnyRouterLoginUi>({ phase: 'idle' })
-  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const activeDeviceCodeRef = useRef<string | null>(null)
+  const [connectionUi, setConnectionUi] = useState<ConnectionUi>({ phase: 'loading' })
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const isCustom = selectValue === CUSTOM_VALUE
   const selectedModel = !isCustom && selectValue
     ? anyRouterModels.find((m) => m.id === selectValue) ?? null
     : null
 
+  const grantUsable = connectionUi.phase === 'status'
+    && connectionUi.connection.connected
+    && !isAnyRouterGrantExpired(connectionUi.connection.expiresAt)
+
   const clearPollTimer = useCallback(() => {
     if (pollTimerRef.current != null) {
-      clearTimeout(pollTimerRef.current)
+      clearInterval(pollTimerRef.current)
       pollTimerRef.current = null
     }
   }, [])
 
-  const stopAnyRouterLogin = useCallback(() => {
-    clearPollTimer()
-    activeDeviceCodeRef.current = null
-    setAnyRouterLogin({ phase: 'idle' })
-  }, [clearPollTimer])
+  const refreshConnection = useCallback(async (): Promise<AnyRouterConnectionStatus | null> => {
+    try {
+      const connection = await authenticatedApi.getAnyRouterConnection()
+      setConnectionUi({ phase: 'status', connection })
+      return connection
+    } catch (err) {
+      console.error('Failed to read AnyRouter connection:', err)
+      setConnectionUi({ phase: 'error', message: 'Could not check your AnyRouter connection.' })
+      return null
+    }
+  }, [authenticatedApi])
 
-  // Load live top-usage models when the dialog opens.
+  // Load live top-usage models + the connection status when the dialog opens.
   useEffect(() => {
     if (!visible) return
     let cancelled = false
@@ -91,8 +103,9 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
       .catch((err) => {
         console.warn('Failed to load AnyRouter top models:', err)
       })
+    refreshConnection()
     return () => { cancelled = true }
-  }, [visible, authenticatedApi])
+  }, [visible, authenticatedApi, refreshConnection])
 
   // Reset all state when dialog closes
   useEffect(() => {
@@ -101,90 +114,58 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
       setModelId('')
       setDisplayName('')
       setApiToken('')
-      setApiUrl(defaultDirectModelApiUrl('anyrouter') ?? '')
+      setApiUrl(ANYROUTER_DEFAULT_API_URL)
       setErrors({})
       setKeyOptionsOpen(false)
-      stopAnyRouterLogin()
+      setConnectionUi({ phase: 'loading' })
+      clearPollTimer()
     }
-  }, [visible, stopAnyRouterLogin])
+  }, [visible, clearPollTimer])
 
-  // Cleanup poll on unmount
   useEffect(() => () => clearPollTimer(), [clearPollTimer])
 
-  const schedulePoll = useCallback((deviceCode: string, intervalSec: number) => {
-    clearPollTimer()
-    pollTimerRef.current = setTimeout(async () => {
-      if (activeDeviceCodeRef.current !== deviceCode) return
-      try {
-        const result = await authenticatedApi.pollAnyRouterDeviceLogin(deviceCode)
-        if (activeDeviceCodeRef.current !== deviceCode) return
-
-        switch (result.status) {
-          case 'pending':
-            setAnyRouterLogin((prev) =>
-              prev.phase === 'waiting'
-                ? { ...prev, statusText: 'Waiting for approval in the AnyRouter tab…' }
-                : prev,
-            )
-            schedulePoll(deviceCode, result.interval)
-            break
-          case 'slow_down':
-            setAnyRouterLogin((prev) =>
-              prev.phase === 'waiting'
-                ? { ...prev, statusText: 'Slowing poll rate…' }
-                : prev,
-            )
-            schedulePoll(deviceCode, result.interval)
-            break
-          case 'ready':
-            clearPollTimer()
-            activeDeviceCodeRef.current = null
-            setApiToken(result.accessToken)
-            setErrors((prev) => ({ ...prev, apiToken: '' }))
-            setAnyRouterLogin({ phase: 'connected' })
-            toasts.add({
-              title: 'AnyRouter connected — pick a model and add it',
-              variant: 'success',
-            })
-            break
-          case 'denied':
-          case 'expired':
-          case 'error':
-            clearPollTimer()
-            activeDeviceCodeRef.current = null
-            setAnyRouterLogin({ phase: 'error', message: result.message })
-            break
-        }
-      } catch (err) {
-        console.error('AnyRouter poll failed:', err)
-        if (activeDeviceCodeRef.current === deviceCode) {
-          // Transient network blip — keep trying.
-          schedulePoll(deviceCode, Math.max(intervalSec, 5))
-        }
-      }
-    }, Math.max(intervalSec, 1) * 1000)
-  }, [authenticatedApi, clearPollTimer, toasts])
-
-  const startAnyRouterConnect = async () => {
-    setAnyRouterLogin({ phase: 'starting' })
-    setErrors((prev) => ({ ...prev, apiToken: '' }))
-    try {
-      const start = await authenticatedApi.startAnyRouterDeviceLogin()
-      activeDeviceCodeRef.current = start.deviceCode
-      setAnyRouterLogin({
-        phase: 'waiting',
-        start,
-        statusText: 'Complete sign-in in the AnyRouter tab. You can pick an existing key or create a new one.',
-      })
-      // Open consent page (user picks existing key or generates a new one).
-      window.open(start.verificationUriComplete, '_blank', 'noopener,noreferrer')
-      schedulePoll(start.deviceCode, start.interval)
-    } catch (err) {
-      console.error('AnyRouter device login failed:', err)
-      setAnyRouterLogin({
+  const startConnect = async () => {
+    const clientId = serverConfig?.anyrouterOauthClientId
+    if (!clientId) {
+      setConnectionUi({
         phase: 'error',
-        message: err instanceof Error ? err.message : 'Failed to start AnyRouter login',
+        message: 'AnyRouter sign-in is not configured on this deployment '
+          + '(ANYROUTER_OAUTH_CLIENT_ID is missing). Paste an API key instead.',
       })
+      setKeyOptionsOpen(true)
+      return
+    }
+    const popup = await beginAnyRouterOAuth(clientId)
+    if (!popup) {
+      setConnectionUi({
+        phase: 'error',
+        message: 'The browser blocked the AnyRouter window. Allow pop-ups and try again.',
+      })
+      return
+    }
+    setConnectionUi({ phase: 'waiting' })
+    // Learn about the completed grant via the callback route's broadcast, with polling as the
+    // fallback.
+    const check = async () => {
+      const connection = await refreshConnection()
+      if (connection?.connected && !isAnyRouterGrantExpired(connection.expiresAt)) {
+        clearPollTimer()
+        setErrors((prev) => ({ ...prev, apiToken: '' }))
+      } else if (connection) {
+        // Still pending — keep the waiting UI (refreshConnection set 'status').
+        setConnectionUi({ phase: 'waiting' })
+      }
+    }
+    clearPollTimer()
+    pollTimerRef.current = setInterval(check, 2500)
+    try {
+      const channel = new BroadcastChannel(ANYROUTER_OAUTH_CHANNEL)
+      channel.onmessage = () => {
+        channel.close()
+        check()
+      }
+    } catch {
+      // Polling covers it.
     }
   }
 
@@ -211,10 +192,13 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
       if (!modelId.trim()) newErrors.modelId = 'Please enter the model ID'
       if (!displayName.trim()) newErrors.displayName = 'Please enter a display name'
     }
-    // No key required up front: the deployment mints one automatically when it can
-    // (provisionAnyRouterKey); otherwise submit surfaces the connect/paste options.
+    // Key: either the account grant covers it, or the user pasted one.
+    if (!apiToken.trim() && !grantUsable) {
+      newErrors.apiToken = 'Connect your AnyRouter account or paste an API key'
+    }
 
     setErrors(newErrors)
+    if (newErrors.apiToken) setKeyOptionsOpen(true)
     return Object.keys(newErrors).length === 0
   }
 
@@ -223,25 +207,6 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
 
     setLoading(true)
     try {
-      // The user's key, or an automatically minted one when the deployment supports it.
-      let finalToken = apiToken.trim()
-      if (!finalToken) {
-        const provisioned = await authenticatedApi.provisionAnyRouterKey().catch((err) => {
-          console.error('AnyRouter key provisioning failed:', err)
-          return null
-        })
-        if (!provisioned) {
-          setErrors((prev) => ({
-            ...prev,
-            apiToken: 'Connect with AnyRouter or paste an API key',
-          }))
-          setKeyOptionsOpen(true)
-          return
-        }
-        finalToken = provisioned.apiToken
-        setApiToken(finalToken)
-      }
-
       const finalModelId = isCustom ? modelId.trim() : selectValue!
       const finalDisplayName = isCustom ? displayName.trim() : (selectedModel?.name ?? selectValue!)
 
@@ -254,7 +219,9 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
       const config: AiModelConfig = {
         provider: 'anyrouter',
         model: finalModelId,
-        apiToken: finalToken,
+        // Empty = use the account's AnyRouter grant (resolved server-side at inference time,
+        // so a later re-connect refreshes this model too).
+        apiToken: apiToken.trim(),
         ...(apiUrl.trim() && { apiUrl: apiUrl.trim() }),
       }
 
@@ -268,6 +235,14 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
       setLoading(false)
     }
   }
+
+  const connectionSummary =
+    connectionUi.phase === 'loading' ? 'checking connection…'
+    : connectionUi.phase === 'waiting' ? 'waiting for approval…'
+    : connectionUi.phase === 'error' ? 'connection unavailable'
+    : grantUsable ? 'using your AnyRouter account'
+    : connectionUi.connection.connected ? 'connection expired — reconnect'
+    : 'not connected'
 
   return (
     <Dialog.Root open={visible} onOpenChange={(open) => { if (!open) onCancel() }}>
@@ -327,79 +302,61 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
             </>
           )}
 
-          {/* API key: minted automatically on add when the deployment supports it; the options
-              below cover using your own key instead. */}
+          {/* API key: the account's AnyRouter grant by default; paste your own to override. */}
           <Collapsible.Root open={keyOptionsOpen} onOpenChange={setKeyOptionsOpen}>
             <Collapsible.DefaultTrigger>
-              {anyRouterLogin.phase === 'connected' || apiToken
-                ? 'API key: using your own key'
-                : 'API key: created automatically (or use your own)'}
+              {apiToken ? 'API key: using a pasted key' : `API key: ${connectionSummary}`}
             </Collapsible.DefaultTrigger>
             <Collapsible.DefaultPanel>
               <div className="space-y-3 rounded-lg border border-kumo-line bg-kumo-tint/40 p-3">
                 <p className="text-[12px] leading-[16px] tracking-[-0.2px] text-kumo-subtle">
-                  Leave empty to have a key minted for you automatically. To bill your own
-                  AnyRouter account instead, sign in with AnyRouter to pick or create a key, or
-                  paste one below.
+                  Models use the key granted by your AnyRouter account (billed to you, revocable
+                  from the AnyRouter dashboard). Reconnect when it expires, or paste a key below
+                  to use a specific one instead.
                 </p>
 
-                {anyRouterLogin.phase === 'connected' ? (
+                {connectionUi.phase === 'waiting' ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-kumo-brand border-t-transparent rounded-full animate-spin" />
+                    <span className="text-[12px] text-kumo-subtle">
+                      Approve access in the AnyRouter tab…
+                    </span>
+                    <Button variant="secondary" onClick={startConnect}>
+                      Reopen
+                    </Button>
+                  </div>
+                ) : grantUsable ? (
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-[rgba(16,185,129,0.12)] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.4px] text-emerald-700">
                       Connected
                     </span>
                     <span className="text-[12px] text-kumo-subtle">
-                      Key ready · {apiToken ? `${apiToken.slice(0, 10)}…` : 'stored'}
+                      AnyRouter account linked
                     </span>
                     <Button
                       variant="secondary"
-                      onClick={() => {
-                        setApiToken('')
-                        stopAnyRouterLogin()
+                      onClick={async () => {
+                        try {
+                          await authenticatedApi.disconnectAnyRouter()
+                        } finally {
+                          refreshConnection()
+                        }
                       }}
                     >
                       Disconnect
                     </Button>
                   </div>
-                ) : anyRouterLogin.phase === 'waiting' ? (
+                ) : (
                   <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <div className="rounded-md border border-kumo-line bg-kumo-base px-3 py-2 font-mono text-lg font-semibold tracking-[0.15em] text-kumo-default">
-                        {anyRouterLogin.start.userCode}
-                      </div>
-                      <Button
-                        variant="secondary"
-                        onClick={() =>
-                          window.open(
-                            anyRouterLogin.start.verificationUriComplete,
-                            '_blank',
-                            'noopener,noreferrer',
-                          )
-                        }
-                      >
-                        Open AnyRouter
-                      </Button>
-                      <Button variant="secondary" onClick={stopAnyRouterLogin}>
-                        Cancel
-                      </Button>
-                    </div>
-                    <p className="text-[12px] text-kumo-subtle">{anyRouterLogin.statusText}</p>
-                  </div>
-                ) : anyRouterLogin.phase === 'error' ? (
-                  <div className="space-y-2">
-                    <p className="text-[12px] text-red-600">{anyRouterLogin.message}</p>
-                    <Button variant="primary" onClick={startAnyRouterConnect}>
-                      Try again
+                    {connectionUi.phase === 'error' && (
+                      <p className="text-[12px] text-red-600">{connectionUi.message}</p>
+                    )}
+                    <Button variant="primary" onClick={startConnect}>
+                      {connectionUi.phase === 'status' && connectionUi.connection.connected
+                        ? 'Reconnect AnyRouter'
+                        : 'Connect with AnyRouter'}
                     </Button>
                   </div>
-                ) : (
-                  <Button
-                    variant="secondary"
-                    onClick={startAnyRouterConnect}
-                    loading={anyRouterLogin.phase === 'starting'}
-                  >
-                    Connect with AnyRouter
-                  </Button>
                 )}
 
                 <SensitiveInput

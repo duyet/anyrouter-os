@@ -43,9 +43,11 @@
   "vars": {
     "ADMINS": ["duyet.cs@gmail.com"],
     // Clerk sign-in (same instance as anyrouter.dev) is the only way in. The publishable key is
-    // public; the optional CLERK_SECRET_KEY (email lookup) and ANYROUTER_MANAGEMENT_KEY
-    // (automatic per-user sk-ar key minting) are wrangler secrets.
+    // public; CLERK_SECRET_KEY (email lookup) is a wrangler secret.
     "CLERK_PUBLISHABLE_KEY": "pk_live_Y2xlcmsuYW55cm91dGVyLmRldiQ",
+    // "Sign in with AnyRouter" OAuth client id (public). Register the app once (see
+    // deploy/anyrouter-os.md) and put the returned client_id here:
+    // "ANYROUTER_OAUTH_CLIENT_ID": "<client_id from registration>",
     "DEPLOY_URL": "https://os.cloudflare.app/deploy/?instance=d638574e-856d-47b8-a671-65cd9c463840",
     "PUBLIC_BASE_URL": "https://os.anyrouter.dev"
   },

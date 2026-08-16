@@ -3,32 +3,37 @@ import { useKumoToastManager } from '@cloudflare/kumo'
 import { useAuthenticatedApi } from './AuthContext'
 import {
   AiChatAuthorInfo,
-  AnyRouterDeviceLoginStart,
   AnyRouterSuggestedModel,
   SUGGESTED_MODELS,
 } from '@gadgets/workshop-shared/api'
 import { ArrowRight, Check, Hexagon } from '@phosphor-icons/react'
 import { persistSelectedModel } from './modelSelection'
-import { useSiteName } from './ServerConfigContext'
+import { useServerConfig, useSiteName } from './ServerConfigContext'
 import SiteLogo from './components/SiteLogo'
 import { useDocumentTitle } from './useDocumentTitle'
+import {
+  ANYROUTER_OAUTH_CHANNEL,
+  beginAnyRouterOAuth,
+  isAnyRouterGrantExpired,
+} from './anyrouterOAuth'
 
 // ─── component ──────────────────────────────────────────────────────────────────
 //
-// Onboarding is deliberately minimal: sign-in already happened (Clerk), and the deployment
-// provisions the user's AnyRouter key automatically when it can — so all that's left is picking
-// which AnyRouter model(s) to use. The device-login flow is the fallback when the deployment
-// can't mint keys server-side.
+// Onboarding is deliberately minimal: sign-in already happened (Clerk), and connecting AnyRouter
+// is one Approve click on its consent page (same Clerk session), which grants this account the
+// user's own inference key. All that's left is picking which AnyRouter model(s) to use.
 
 type KeyState =
   | { phase: 'checking' }
-  | { phase: 'ready'; apiToken: string }
-  // The user already has configured models; no key or model-adding needed, just pick a default.
+  // The account grant is in place; picked models are stored with an empty apiToken and resolve
+  // to it at inference time.
+  | { phase: 'connected' }
+  // The user already has configured models; no connecting or model-adding needed, just pick a
+  // default.
   | { phase: 'existing-models' }
-  // Server-side minting unavailable: fall back to the AnyRouter device login.
-  | { phase: 'device-idle' }
-  | { phase: 'device-waiting'; start: AnyRouterDeviceLoginStart; statusText: string }
-  | { phase: 'device-error'; message: string }
+  | { phase: 'disconnected' }
+  | { phase: 'waiting' }
+  | { phase: 'error'; message: string }
 
 export default function OnboardingWizard({
   onComplete,
@@ -38,6 +43,7 @@ export default function OnboardingWizard({
   const { authenticatedApi } = useAuthenticatedApi()
   const toasts = useKumoToastManager()
   const siteName = useSiteName()
+  const serverConfig = useServerConfig()
   useDocumentTitle('Setup')
 
   const [mounted, setMounted] = useState(false)
@@ -58,8 +64,7 @@ export default function OnboardingWizard({
   )
   const [selectedIds, setSelectedIds] = useState<string[]>([])
 
-  const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const activeDeviceCodeRef = useRef<string | null>(null)
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   // Entrance animation
   useEffect(() => {
@@ -68,15 +73,15 @@ export default function OnboardingWizard({
 
   const clearPollTimer = useCallback(() => {
     if (pollTimerRef.current != null) {
-      clearTimeout(pollTimerRef.current)
+      clearInterval(pollTimerRef.current)
       pollTimerRef.current = null
     }
   }, [])
 
   useEffect(() => () => clearPollTimer(), [clearPollTimer])
 
-  // Bootstrap: load live suggestions, and either reuse existing models, take an automatically
-  // minted key, or fall back to the device login.
+  // Bootstrap: load live suggestions, and either reuse existing models or check the AnyRouter
+  // connection.
   useEffect(() => {
     let cancelled = false
 
@@ -96,79 +101,76 @@ export default function OnboardingWizard({
           setKeyState({ phase: 'existing-models' })
           return
         }
-        const provisioned = await authenticatedApi.provisionAnyRouterKey().catch((err) => {
-          console.error('AnyRouter key provisioning failed:', err)
-          return null
-        })
+        const connection = await authenticatedApi.getAnyRouterConnection()
         if (cancelled) return
-        setKeyState(provisioned ? { phase: 'ready', apiToken: provisioned.apiToken }
-                                : { phase: 'device-idle' })
+        setKeyState(
+          connection.connected && !isAnyRouterGrantExpired(connection.expiresAt)
+            ? { phase: 'connected' }
+            : { phase: 'disconnected' })
       } catch (err) {
         console.error('Failed to bootstrap onboarding:', err)
-        if (!cancelled) setKeyState({ phase: 'device-idle' })
+        if (!cancelled) setKeyState({ phase: 'disconnected' })
       }
     })()
 
     return () => { cancelled = true }
   }, [authenticatedApi])
 
-  // ── device-login fallback ─────────────────────────────────────────────────────
+  // ── connect flow ──────────────────────────────────────────────────────────────
 
-  const schedulePoll = useCallback((deviceCode: string, intervalSec: number) => {
-    clearPollTimer()
-    pollTimerRef.current = setTimeout(async () => {
-      if (activeDeviceCodeRef.current !== deviceCode) return
+  // While the consent popup is open, learn about the completed grant via the callback route's
+  // broadcast, with polling as the fallback (BroadcastChannel can be unavailable).
+  const watchForConnection = useCallback(() => {
+    const check = async () => {
       try {
-        const result = await authenticatedApi.pollAnyRouterDeviceLogin(deviceCode)
-        if (activeDeviceCodeRef.current !== deviceCode) return
-        switch (result.status) {
-          case 'pending':
-          case 'slow_down':
-            schedulePoll(deviceCode, result.interval)
-            break
-          case 'ready':
-            clearPollTimer()
-            activeDeviceCodeRef.current = null
-            setKeyState({ phase: 'ready', apiToken: result.accessToken })
-            break
-          default:
-            clearPollTimer()
-            activeDeviceCodeRef.current = null
-            setKeyState({ phase: 'device-error', message: result.message })
+        const connection = await authenticatedApi.getAnyRouterConnection()
+        if (connection.connected && !isAnyRouterGrantExpired(connection.expiresAt)) {
+          clearPollTimer()
+          setKeyState({ phase: 'connected' })
         }
-      } catch (err) {
-        console.error('AnyRouter poll failed:', err)
-        if (activeDeviceCodeRef.current === deviceCode) {
-          schedulePoll(deviceCode, Math.max(intervalSec, 5))
-        }
+      } catch {
+        // Transient — keep polling.
       }
-    }, Math.max(intervalSec, 1) * 1000)
+    }
+    clearPollTimer()
+    pollTimerRef.current = setInterval(check, 2500)
+    try {
+      const channel = new BroadcastChannel(ANYROUTER_OAUTH_CHANNEL)
+      channel.onmessage = () => {
+        channel.close()
+        check()
+      }
+    } catch {
+      // Polling covers it.
+    }
   }, [authenticatedApi, clearPollTimer])
 
-  const startDeviceLogin = async () => {
-    try {
-      const start = await authenticatedApi.startAnyRouterDeviceLogin()
-      activeDeviceCodeRef.current = start.deviceCode
+  const startConnect = async () => {
+    const clientId = serverConfig?.anyrouterOauthClientId
+    if (!clientId) {
       setKeyState({
-        phase: 'device-waiting',
-        start,
-        statusText: 'Approve access in the AnyRouter tab — you can pick an existing key or create a new one.',
+        phase: 'error',
+        message: 'AnyRouter sign-in is not configured on this deployment '
+          + '(ANYROUTER_OAUTH_CLIENT_ID is missing).',
       })
-      window.open(start.verificationUriComplete, '_blank', 'noopener,noreferrer')
-      schedulePoll(start.deviceCode, start.interval)
-    } catch (err) {
-      console.error('AnyRouter device login failed:', err)
-      setKeyState({
-        phase: 'device-error',
-        message: err instanceof Error ? err.message : 'Failed to start AnyRouter login',
-      })
+      return
     }
+    const popup = await beginAnyRouterOAuth(clientId)
+    if (!popup) {
+      setKeyState({
+        phase: 'error',
+        message: 'The browser blocked the AnyRouter window. Allow pop-ups and try again.',
+      })
+      return
+    }
+    setKeyState({ phase: 'waiting' })
+    watchForConnection()
   }
 
   // ── model selection ───────────────────────────────────────────────────────────
 
   const existingMode = keyState.phase === 'existing-models'
-  const pickReady = existingMode || keyState.phase === 'ready'
+  const pickReady = existingMode || keyState.phase === 'connected'
 
   const toggleModel = (id: string) => {
     if (existingMode) {
@@ -185,12 +187,12 @@ export default function OnboardingWizard({
     setFinishing(true)
     try {
       if (!existingMode) {
-        const apiToken = (keyState as Extract<KeyState, { phase: 'ready' }>).apiToken
         for (const id of selectedIds) {
           const model = suggestedModels.find((m) => m.id === id)
           await authenticatedApi.addModel(
             { type: 'agent', id, name: model?.name ?? id },
-            { provider: 'anyrouter', model: id, apiToken },
+            // Empty apiToken = use the account's AnyRouter grant (resolved server-side).
+            { provider: 'anyrouter', model: id, apiToken: '' },
           )
         }
       }
@@ -269,26 +271,25 @@ export default function OnboardingWizard({
               <div className="flex items-center justify-center py-20">
                 <div className="w-6 h-6 border-2 border-kumo-brand border-t-transparent rounded-full animate-spin" />
               </div>
-            ) : keyState.phase === 'device-idle'
-              || keyState.phase === 'device-waiting'
-              || keyState.phase === 'device-error' ? (
+            ) : keyState.phase === 'disconnected'
+              || keyState.phase === 'waiting'
+              || keyState.phase === 'error' ? (
               <div className="flex flex-col items-center text-center py-8 gap-4">
                 <h2 className="text-lg font-medium text-kumo-default">
                   Connect your AnyRouter account
                 </h2>
                 <p className="text-sm text-kumo-subtle max-w-sm">
-                  One click grants {siteName} access to your AnyRouter models. You&apos;re
-                  already signed in at anyrouter.dev, so this takes seconds.
+                  One click grants {siteName} a key on your own AnyRouter account — usage is
+                  billed to you, and you can revoke it any time from the AnyRouter dashboard.
                 </p>
-                {keyState.phase === 'device-waiting' ? (
-                  <div className="space-y-3">
-                    <div className="mx-auto w-fit rounded-md border border-kumo-line bg-kumo-base px-3 py-2 font-mono text-lg font-semibold tracking-[0.15em] text-kumo-default">
-                      {keyState.start.userCode}
-                    </div>
-                    <p className="text-xs text-kumo-subtle">{keyState.statusText}</p>
+                {keyState.phase === 'waiting' ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-6 h-6 border-2 border-kumo-brand border-t-transparent rounded-full animate-spin" />
+                    <p className="text-xs text-kumo-subtle">
+                      Approve access in the AnyRouter tab…
+                    </p>
                     <button
-                      onClick={() =>
-                        window.open(keyState.start.verificationUriComplete, '_blank', 'noopener,noreferrer')}
+                      onClick={startConnect}
                       className="text-sm text-kumo-brand hover:underline"
                     >
                       Reopen the AnyRouter tab
@@ -296,11 +297,11 @@ export default function OnboardingWizard({
                   </div>
                 ) : (
                   <>
-                    {keyState.phase === 'device-error' && (
+                    {keyState.phase === 'error' && (
                       <p className="text-sm text-kumo-danger max-w-sm">{keyState.message}</p>
                     )}
                     <button
-                      onClick={startDeviceLogin}
+                      onClick={startConnect}
                       className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg text-kumo-inverse bg-kumo-brand hover:bg-kumo-brand-hover transition-all duration-150"
                     >
                       Connect with AnyRouter

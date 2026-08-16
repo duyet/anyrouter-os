@@ -11,15 +11,8 @@ import * as Y from "yjs";
 import {
   LanguageModelGatekeeperProps,
   getModel,
-  UserGatewayRouting,
 } from "./ai-models";
 import { AgentTurnError, completeText } from "./ai-invoke";
-import {
-  AiGatewayLogRetryableError,
-  getAiGatewayConfig,
-  getAiGatewayLogCost,
-  type AiGatewayLogRoute,
-} from "./ai-gateway";
 import { AgentGadgetInfo, AgentHooks, AiChatAgentContext, ChatBindingEntry, SeedBindingInfo, runAgent, makeStorableArgs, summarizeArgs, type AiChatMessageBodyWithModelData, type CompactionCheckpoint, type StoredAssistantMessage } from "./agent";
 import { deploymentOutputForBlueprint, FormatOffer, listFormatOffers, readAdminConfig } from "./admin-config";
 import { foldProposedChanges, isCompactionTurn, type ChangeBatch } from "./agent-compaction";
@@ -31,9 +24,7 @@ import { AgentSpawnerBinding } from "./agent-spawner-binding";
 import { recordAnalytics } from "./analytics";
 import { reportIssue } from "@gadgets/backend-utils/error-reporting";
 import type { ProductAnalyticsConnectionType, ProductAnalyticsGadgetInput } from "./analytics";
-import { checkUsageAndBalance } from "./ai-gateway-billing/limits/usage-checker";
 import { completeAgentCatalogSnapshot, normalizeAgentCatalog } from "./agent-catalog";
-import { refreshCachedBalance } from "./ai-gateway-billing/cloudflare/connection-service";
 import { SharingManager, SharingCaller, CollaboratorRecord, ShareKeyRecord } from "./sharing";
 import { AutoApprovalDrainer } from "./auto-approval";
 import { collectSlashCommands, invokeSlashCommand } from "./slash-commands";
@@ -2905,8 +2896,8 @@ class OverseerImpl implements AgentHooks {
     }
   }
 
-  // Provides web-fetch with the Workers AI binding and AI Gateway config it needs to call
-  // `env.WORKERS_AI.toMarkdown()`. The initiator is needed for AI Gateway metadata.
+  // Provides web-fetch with the Workers AI binding it needs to call
+  // `env.WORKERS_AI.toMarkdown()`.
   getWebFetchEnv(): WebFetchEnv {
     if (this.storage.prohibitAllSharing.get()) {
       // TODO: Disallwing fetches is a bit draconian. Ideally, we would have some way to detect
@@ -2920,7 +2911,6 @@ class OverseerImpl implements AgentHooks {
 
     return {
       ai: this.env.WORKERS_AI,
-      gateway: getAiGatewayConfig(this.env),
     };
   }
 
@@ -3973,10 +3963,6 @@ class OverseerImpl implements AgentHooks {
                                  initiator: AiChatAuthorInfo,
                                  callbackInitiated: boolean,
                                  liveChat: LiveChatContext): Promise<void> {
-    // When this turn is billed to the user's own Cloudflare account, we refresh their cached credit
-    // balance once the turn completes (see the `finally` below) so the next billing decision
-    // reflects the spend this turn just incurred, rather than waiting for the cache TTL to lapse.
-    let byokOwnerStub: DurableObjectStub<UserDurableObject> | undefined;
     let startedAt = Date.now();
     const turnLogger = this.logger.with({
       operation: "agent.run",
@@ -3995,40 +3981,8 @@ class OverseerImpl implements AgentHooks {
       // wants it.
       await this.reconcilePendingGadgets(chatId);
 
-      // Enforce the optional free-tier usage limit before starting a user-initiated turn. Callback-
-      // initiated continuations are exempt so outstanding callbacks are never stranded mid-flow.
-      // When the Cloudflare limits flow is disabled, checkUsageAndBalance() always allows.
-      // (This runs inside the try so the `finally` below still clears the active-agent state and
-      // emits a stream "clear" — otherwise the UI would spin forever on a block.)
-      let byokRouting: UserGatewayRouting | undefined;
-      if (!callbackInitiated && this.ownerId) {
-        let ownerStub = this.users.get(this.users.idFromString(this.ownerId));
-        let usage = await checkUsageAndBalance(this.env, ownerStub);
-        if (!usage.allowed) {
-          this.postAgentErrorMessage(chatId, aiModel.profile,
-              usage.reason ?? "Usage limit reached.", "usage_limit");
-          turnLogger.debug("agent run finished", {
-            event: "agent.run.finished", outcome: "usage_limit",
-            durationMs: Date.now() - startedAt,
-          });
-          return;
-        }
-        // Free tier exhausted but the user can continue via their own Cloudflare gateway: route
-        // inference through it so the usage bills their account. checkUsageAndBalance already
-        // resolved the routing (reusing its connection lookup), so we don't decrypt the token again.
-        if (usage.shouldUseByok) {
-          byokRouting = usage.byokRouting;
-          if (byokRouting) byokOwnerStub = ownerStub;
-        }
-      }
-
       let sessionAffinity = await computeSessionAffinity(this.ctx.id.toString(), chatId);
-      let chosenModel = getModel(
-          this.env, aiModel.config, initiator, {
-            sessionAffinity,
-            userGateway: byokRouting,
-            metadata: { source: "chat", gadgetId: this.ctx.id.toString(), chatId },
-          });
+      let chosenModel = getModel(this.env, aiModel.config, initiator, { sessionAffinity });
 
       let controller = liveChat.cancelController;
       controller.signal.throwIfAborted();
@@ -4148,14 +4102,6 @@ class OverseerImpl implements AgentHooks {
       }
       liveChat.activeAgentCallbacks.clear();
     } finally {
-      // If this turn billed the user's own Cloudflare account, refresh their cached balance now (in
-      // the background) so the next turn's billing decision reflects the spend just incurred. Runs
-      // on both the success and error paths — an "insufficient funds" failure is exactly when an
-      // up-to-date balance matters most.
-      if (byokOwnerStub) {
-        this.ctx.waitUntil(refreshCachedBalance(this.env, byokOwnerStub));
-      }
-
       // Belt-and-suspenders: reap any provisional gadget this turn created whose creation ended
       // up backed by nothing in the log. (Normally the turn's final flush -- which runs even on
       // error, in runAgent's own finally -- records every buffered creation, so this only
@@ -5252,9 +5198,7 @@ class OverseerImpl implements AgentHooks {
                             modelConfig: AiModelConfig,
                             initiator: AiChatAuthorInfo): Promise<void> {
     try {
-      let model = getModel(this.env, modelConfig, initiator, {
-        metadata: { source: "thread-title", gadgetId: this.ctx.id.toString(), chatId },
-      });
+      let model = getModel(this.env, modelConfig, initiator);
 
       let result = await completeText(model, {
         // TODO: Is there a better way to convince the LLM just to summarize and not to follow
@@ -5309,9 +5253,7 @@ class OverseerImpl implements AgentHooks {
         }
       }
 
-      let model = getModel(this.env, modelConfig, initiator, {
-        metadata: { source: "gadget-title", gadgetId: this.ctx.id.toString(), chatId },
-      });
+      let model = getModel(this.env, modelConfig, initiator);
 
       let gadgetTitle = await completeText(model, {
         prompt: "Below is the log of a chat session that led to a coding agent writing " +
@@ -5339,8 +5281,7 @@ class OverseerImpl implements AgentHooks {
 
   addChatMessages(chatId: number, author: AiChatAuthorInfo,
         msgs: AiChatMessageBodyWithModelData[],
-        totalTokens?: number, aiGatewayLogId?: string,
-        aiGatewayLogRoute?: AiGatewayLogRoute, estimatedCost?: number): void {
+        totalTokens?: number, estimatedCost?: number): void {
     let meta = this.storage.chatMeta.get(chatId);
     if (!meta) {
       // Chat thread deleted?
@@ -5402,13 +5343,8 @@ class OverseerImpl implements AgentHooks {
     meta.lastActive = this.getChatTimestamp();
     this.storage.chatMeta.put(meta);
 
-    if (aiGatewayLogId && aiGatewayLogRoute) {
-      // Best-effort UI accounting only. The log ID is not persisted, so a DO restart can lose
-      // this update. Do not use this total as a billing source of truth.
-      void this.#getCostFromAiGateway(chatId, aiGatewayLogRoute, aiGatewayLogId, estimatedCost);
-    } else if (estimatedCost) {
-      // No AI Gateway log to consult (direct provider access, or a gateway response that didn't
-      // surface a log id): fall back to the caller's catalog-priced estimate.
+    if (estimatedCost) {
+      // Best-effort UI accounting only: the caller's catalog-priced estimate.
       this.#addChatCost(chatId, estimatedCost);
     }
   }
@@ -5434,42 +5370,6 @@ class OverseerImpl implements AgentHooks {
 
     this.storage.chatMeta.put(meta);
     this.storage.totalCost.put(this.storage.totalCost.get() + cost);
-  }
-
-  // Fetches an AI Gateway log entry and adds the cost to the given chat ID's cost indicator.
-  // If the gateway can't produce a (positive) cost -- fetch failure, or the gateway doesn't
-  // price this model -- falls back to `estimatedCost` (the caller's catalog-priced estimate)
-  // so the indicator degrades to an estimate rather than silently omitting the turn.
-  //
-  // TODO: Get AI gateway to add cost data to response headers -- it's dumb that we need a
-  //   separate request!
-  async #getCostFromAiGateway(chatId: number, route: AiGatewayLogRoute, aiGatewayLogId: string,
-                              estimatedCost?: number) {
-    let cost: number | undefined;
-    try {
-      for (let attempt = 0; attempt < 4; ++attempt) {
-        try {
-          cost = await getAiGatewayLogCost(this.env, route, aiGatewayLogId);
-          break;
-        } catch (err) {
-          if (!(err instanceof AiGatewayLogRetryableError) || attempt === 3) throw err;
-          await scheduler.wait(1000 * 2 ** attempt);
-        }
-      }
-    } catch (err) {
-      // This is an async operation without any caller waiting so there's not much we can do with
-      // this error beyond falling back to the estimate below.
-      // TODO: If we ever use this for billing we'll want to make it more reliable, perhaps by
-      //   storing unfetched log IDs in storage and retrying fetches.
-      this.logger.warn("failed to fetch AI Gateway cost log", {
-        event: "ai.gateway.cost.log.fetch.failed", error: err,
-      });
-    }
-
-    cost ||= estimatedCost;
-    if (cost) {
-      this.#addChatCost(chatId, cost);
-    }
   }
 
   #codeModeResolvers = new Map<string, (trace: TraceItem) => void>();
@@ -7661,7 +7561,6 @@ class OverseerClientInterface extends RpcTarget implements Overseer {
         id: chatMeta.profile.id,
         name: this.impl.storage.title.get(),
       },
-      metadata: { source: "model-binding", gadgetId: this.impl.ctx.id.toString() },
     }
 
     let creationSpec: GatekeeperCreationSpec = {

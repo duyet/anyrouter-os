@@ -1,13 +1,11 @@
 import { RpcStub, RpcTarget, newHttpBatchRpcResponse, newWebSocketRpcSession, RpcSessionOptions } from "capnweb";
 import { validateRpc } from "capnweb-validate";
 import type { JWTPayload } from "jose";
-import { PublicApi, AuthenticatedApi, Overseer, GadgetMetadataWithTimestamps, AiChatAuthorInfo, AiModelConfig, AiGatewayInfo, AiModelProvider, ConnectedAccountsSubscriber, ConnectedAccountsFilter, GatekeeperVendorFilter, ObserverConfigCallback, BlueprintLibrarySummary, BlueprintPublicInfo, BlueprintUserSummary, BlueprintBindingAssignment, AgentSpawnerConfig, WorkpieceId, BLUEPRINT_SCREENSHOT_PATH_PREFIX, BLUEPRINT_SCREENSHOT_R2_PREFIX, blueprintScreenshotUrl, ServerConfig, CloudflareUsageInfo, CloudflareAccountOption, LoginAttempt, GatekeeperAppInfo, AdminApi, GatekeeperVendorInfo, OutputFormatOffer, ListOutputsResult, createOpenGadgetError, getOpenGadgetErrorCode, OPEN_GADGET_ERROR_CODES, AUTH_ERROR_CODES, createAuthError, DEFAULT_SITE_NAME } from '@gadgets/workshop-shared/api';
+import { PublicApi, AuthenticatedApi, Overseer, GadgetMetadataWithTimestamps, AiChatAuthorInfo, AiModelConfig, ConnectedAccountsSubscriber, ConnectedAccountsFilter, GatekeeperVendorFilter, ObserverConfigCallback, BlueprintLibrarySummary, BlueprintPublicInfo, BlueprintUserSummary, BlueprintBindingAssignment, AgentSpawnerConfig, WorkpieceId, BLUEPRINT_SCREENSHOT_PATH_PREFIX, BLUEPRINT_SCREENSHOT_R2_PREFIX, blueprintScreenshotUrl, ServerConfig, LoginAttempt, GatekeeperAppInfo, AdminApi, GatekeeperVendorInfo, OutputFormatOffer, ListOutputsResult, createOpenGadgetError, getOpenGadgetErrorCode, OPEN_GADGET_ERROR_CODES, AUTH_ERROR_CODES, createAuthError, DEFAULT_SITE_NAME } from '@gadgets/workshop-shared/api';
 import type { UiFeatureFlags } from "@gadgets/workshop-shared/feature-flags";
 import { getServerConfig } from "./deployment-config.js";
 import { isPasswordAuthEnabled, getAuthGatekeeperAllowlist } from "./auth/config.js";
 import { getAuthVendorBinding } from "./auth/auth-vendors.js";
-import { getUsageInfo } from "./ai-gateway-billing/limits/usage-checker.js";
-import { listConnectedAccounts, selectAccount } from "./ai-gateway-billing/cloudflare/connection-service.js";
 import { PendingLogin, LoginConnectCallbackImpl } from "./auth/login-flow.js";
 import { deploymentOutputForBlueprint, listFormatOffers, readAdminConfig } from "./admin-config.js";
 
@@ -15,18 +13,15 @@ import { deploymentOutputForBlueprint, listFormatOffers, readAdminConfig } from 
 export { PendingLogin, LoginConnectCallbackImpl };
 import { GatekeeperUiFrame } from "@gadgets/workshop-shared/gatekeeper";
 import { LanguageModelGatekeeper } from "./ai-models";
-import { getAiGatewayConfig } from "./ai-gateway.js";
 import {
-  canProvisionAnyRouterKeys,
+  exchangeAnyRouterOAuthCode,
   fetchAnyRouterSuggestedModels,
-  pollAnyRouterDeviceLogin,
-  provisionAnyRouterKey,
-  startAnyRouterDeviceLogin,
+  getAnyRouterOauthClientId,
 } from "./anyrouter-oauth.js";
 import { verifyClerkLogin } from "./auth/clerk.js";
 import { AdminSettings, AdminApiImpl } from "./admin-settings.js";
 import { BlueprintKvRecord, buildBlueprintArchiveStream, sanitizeBlueprintOutput, listFeaturedBlueprintsFromKv, parseBlueprintArchive, randomBlueprintId, readBlueprintContent, readBlueprintKvRecord } from "./blueprint-archive.js";
-import { GatekeeperConnectCallbackImpl, normalizeUsername, UserDurableObject, CLOUDFLARE_VENDOR_ID } from "./user";
+import { GatekeeperConnectCallbackImpl, normalizeUsername, UserDurableObject } from "./user";
 import { OverseerDurableObject, GatekeeperLoopback, CodeModeTailLoopback, AgentSpawnerGatekeeper, GatekeeperHookLoopback, GadgetTailLoopback, AgentSelfLoopback, TransientStubLoopback } from "./overseer";
 import { ExternalMessageGateway } from "./external-message-gateway";
 import { RpcStub as NativeRpcStub } from "cloudflare:workers";
@@ -165,18 +160,6 @@ class AuthenticatedApiImpl extends RpcTarget implements AuthenticatedApi {
     return this.#user.completeOnboarding();
   }
 
-  getCloudflareUsage(): Promise<CloudflareUsageInfo> {
-    return getUsageInfo(this.env, this.#user);
-  }
-
-  listCloudflareAccounts(): Promise<CloudflareAccountOption[]> {
-    return listConnectedAccounts(this.env, this.#user);
-  }
-
-  selectCloudflareAccount(accountId: string): Promise<void> {
-    return selectAccount(this.env, this.#user, accountId);
-  }
-
   async setAvatar(data: Uint8Array | null): Promise<void> {
     if (data) {
       if (data.byteLength > 100 * 1024) {
@@ -204,40 +187,23 @@ class AuthenticatedApiImpl extends RpcTarget implements AuthenticatedApi {
     return new Uint8Array(result);
   }
 
-  getAiConfig(): Promise<AiGatewayInfo> {
-    let gwConfig = getAiGatewayConfig(this.env);
-    if (gwConfig) {
-      return Promise.resolve({
-        enabled: true,
-        enabledProviders: [...gwConfig.providers] as AiModelProvider[],
-      });
-    } else {
-      return Promise.resolve({ enabled: false });
-    }
-  }
-
   listAnyRouterSuggestedModels() {
     return fetchAnyRouterSuggestedModels();
   }
 
-  startAnyRouterDeviceLogin() {
-    return startAnyRouterDeviceLogin({
-      clientName: DEFAULT_SITE_NAME,
-      keyLabel: DEFAULT_SITE_NAME,
-    });
+  async completeAnyRouterOAuth(code: string, codeVerifier: string, redirectUri: string)
+      : Promise<{ expiresAt: string | null }> {
+    const grant = await exchangeAnyRouterOAuthCode(this.env, { code, codeVerifier, redirectUri });
+    await this.#user.setAnyRouterGrant(grant.apiToken, grant.expiresAt);
+    return { expiresAt: grant.expiresAt };
   }
 
-  async provisionAnyRouterKey(): Promise<{ apiToken: string } | null> {
-    if (!canProvisionAnyRouterKeys(this.env)) return null;
-    // Label the key with the deployment name and the user it was minted for, so the operator's
-    // AnyRouter dashboard stays legible.
-    const apiToken = await provisionAnyRouterKey(
-        this.env, `${DEFAULT_SITE_NAME} – ${this.#userId.name!}`);
-    return { apiToken };
+  getAnyRouterConnection() {
+    return this.#user.getAnyRouterConnection();
   }
 
-  pollAnyRouterDeviceLogin(deviceCode: string) {
-    return pollAnyRouterDeviceLogin(deviceCode);
+  disconnectAnyRouter(): Promise<void> {
+    return this.#user.clearAnyRouterGrant();
   }
 
   getUiFeatureFlags(): Promise<UiFeatureFlags> {
@@ -693,12 +659,9 @@ class PublicApiImpl extends RpcTarget implements PublicApi {
     const pending = this.ctx.exports.PendingLogin.get(pendingId);
     const callback = this.ctx.exports.LoginConnectCallbackImpl(
         { props: { pendingId: pendingId.toString(), vendorId } });
-    // For most providers, sign-in needs only minimal scopes to verify the user's email (the grant is
-    // transient); capability scopes are requested later via an explicit connectAccount. Cloudflare is
-    // the exception: signing in with Cloudflare also links AI Gateway billing, so it requests the
-    // full (persistent) scope set up front and LoginConnectCallbackImpl persists the connection.
-    const scopes = vendorId === CLOUDFLARE_VENDOR_ID ? "full" : "auth";
-    const { url } = await vendor.connectAccount(callback, { scopes });
+    // Sign-in needs only minimal scopes to verify the user's email (the grant is transient);
+    // capability scopes are requested later via an explicit connectAccount.
+    const { url } = await vendor.connectAccount(callback, { scopes: "auth" });
     // @ts-expect-error Cap'n Web RPC stubs and native RPC targets are compatible but the type
     //     system doesn't know this.
     return { url, attempt: new LoginAttemptImpl(pending) };

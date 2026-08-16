@@ -12,20 +12,6 @@ declare global {
       // Workers AI binding (injected by generate-wrangler-prod / run-dev-server; not in base wrangler.jsonc).
       WORKERS_AI: Ai;
 
-      // AI Gateway mode: when CF_AI_GATEWAY is set, supported providers are routed through
-      // Cloudflare AI Gateway with server-managed keys. Users don't need their own keys.
-      // Inference goes over HTTPS with tokens (there is no Workers-binding transport), so the
-      // ACCOUNT_ID/API_TOKEN pair is REQUIRED whenever CF_AI_GATEWAY is set.
-      CF_AI_GATEWAY?: string;            // Gateway name (enables gateway mode)
-      CF_AI_GATEWAY_PROVIDERS?: string;   // Comma-separated list: "anthropic,openai,google,cloudflare"
-      CF_AI_GATEWAY_ACCOUNT_ID?: string;  // Gateway owner account ID (required with CF_AI_GATEWAY)
-      CF_AI_GATEWAY_API_TOKEN?: string;   // Run + Read token for inference and cost-log reads
-      CF_AI_GATEWAY_WAI?: string;         // Optional Workers AI gateway override
-      CF_AI_GATEWAY_WAI_DIRECT?: string;  // "true" to route Workers AI to its plain REST endpoint
-                                          // (no gateway, no cost logs) instead of a named Gateway
-      // Note: outside gateway mode, Workers AI (provider "cloudflare") is BYOK like every other
-      // provider -- the account ID and API token live in the user's model config, not in env.
-
       // Blueprint storage bindings.
       BLUEPRINTS: KVNamespace;             // Workers KV for blueprint metadata lookup
       BLUEPRINT_CONTENT: R2Bucket;         // R2 bucket for blueprint code snapshots
@@ -53,9 +39,9 @@ declare global {
       // binding, so use sites read it as `BrowserRun | undefined` and null-check.
 
       // ---------------------------------------------------------------------------------------------
-      // Optional features: sign-in via authentication gatekeepers + AI Gateway billing (free-tier
-      // limits / top-up). All OFF by default; existing password / Cloudflare Access deployments are
-      // unaffected. OAuth app credentials live on the gatekeeper Workers, not here.
+      // Optional features: sign-in via authentication gatekeepers. All OFF by default; existing
+      // password / Cloudflare Access deployments are unaffected. OAuth app credentials live on the
+      // gatekeeper Workers, not here.
       // ---------------------------------------------------------------------------------------------
 
       // Cloudflare Access configuration. When CF_ACCESS_AUD is set, the deployment authenticates via
@@ -73,18 +59,13 @@ declare global {
       // on to avoid locking everyone out).
       DISABLE_PASSWORD_AUTH?: string;
 
-      // Enables the Cloudflare free-tier limits + top-up flow when set to "true".
-      ENABLE_CLOUDFLARE_LIMITS?: string;
-
       // Public base URL of the deployment.
       PUBLIC_BASE_URL?: string;
 
-      // Daily free-tier LLM-call limit (per user). Defaults to DEFAULT_DAILY_LLM_CALL_LIMIT.
-      DAILY_LLM_CALL_LIMIT?: string;
-
-      // Minimum connected-account balance (USD) to proceed via BYOK. Defaults to
-      // MINIMUM_CLOUDFLARE_BALANCE.
-      MINIMUM_CLOUDFLARE_BALANCE?: string;
+      // The deployment's registered "Sign in with AnyRouter" OAuth client id (public; obtained
+      // via AnyRouter dynamic client registration — see deploy/anyrouter-os.md). Enables the
+      // authorize/consent flow that grants each user's own inference key.
+      ANYROUTER_OAUTH_CLIENT_ID?: string;
     }
   }
 }

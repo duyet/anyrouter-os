@@ -34,8 +34,7 @@ pnpm exec wrangler deploy --config wrangler.anyrouter-os.jsonc
 # First time / rotated secrets:
 # Clerk Backend API key (sk_…) — resolves the signed-in user's email from the session token:
 # printf '%s' "$CLERK_SECRET_KEY" | pnpm exec wrangler secret put CLERK_SECRET_KEY --config wrangler.anyrouter-os.jsonc
-# AnyRouter Management key (ak_…, write:llm-keys) — mints per-user sk-ar keys during onboarding:
-# printf '%s' "$ANYROUTER_MANAGEMENT_KEY" | pnpm exec wrangler secret put ANYROUTER_MANAGEMENT_KEY --config wrangler.anyrouter-os.jsonc
+# (Model access needs no secret: ANYROUTER_OAUTH_CLIENT_ID is a public var — see below.)
 
 # Router + custom domain
 cd ../router
@@ -51,10 +50,34 @@ looks up the email via the Clerk Backend API (`CLERK_SECRET_KEY` secret). The ol
 Access app for `os.anyrouter.dev` must be removed (or set to bypass) — `CF_ACCESS_AUD`/`ISS` are
 gone from the backend vars and the frontend is no longer built in Access mode.
 
-Model access is AnyRouter-only. Onboarding mints each user an `sk-ar-…` key automatically via the
-`ANYROUTER_MANAGEMENT_KEY` secret (billed to the operator's AnyRouter account); without that
-secret it falls back to the one-click AnyRouter device login. The `CF_AI_GATEWAY*` vars were
-removed along with the Workers AI built-in models.
+Model access is AnyRouter-only, via **"Sign in with AnyRouter"**: AnyRouter OS is a registered
+OAuth client of anyrouter.dev. On onboarding (and in the Add Model dialog) the user approves a
+one-click consent (same Clerk session, so no re-login) and the backend exchanges the code for a
+key on the USER's own AnyRouter account (inference-only, billed to them, revocable from their
+AnyRouter dashboard under Connected apps). Sign-in keys expire (default 30 days; per-app
+`key_ttl_seconds` override up to 90 days) — the UI offers a Reconnect, and models store an empty
+`apiToken` that resolves to the stored grant, so one reconnect refreshes everything. The
+`CF_AI_GATEWAY*` vars were removed along with the Workers AI built-in models.
+
+### One-time OAuth client registration
+
+Register the app against AnyRouter's open dynamic client registration, then put the returned
+`client_id` into `wrangler.anyrouter-os.jsonc` as `ANYROUTER_OAUTH_CLIENT_ID` (public, not a
+secret):
+
+```bash
+curl -s https://anyrouter.dev/api/v1/mcp/oauth/register \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "client_name": "AnyRouter OS",
+    "app_type": "signin",
+    "origin_url": "https://os.anyrouter.dev",
+    "redirect_uris": ["https://os.anyrouter.dev/anyrouter/oauth/callback"]
+  }'
+```
+
+Signin registrations land with `review_status='pending'` — approve it on the AnyRouter admin
+"OAuth apps" page (and optionally raise `key_ttl_seconds` / `rate_limit_override` there).
 
 ## Workers
 

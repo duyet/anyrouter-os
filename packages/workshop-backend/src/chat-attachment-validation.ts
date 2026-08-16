@@ -25,20 +25,9 @@ const CONTENT_SIGNATURES = new Map<string, readonly (number | null)[]>([
 const isTextOrImageMime = (mimeType: string) =>
   isTextLikeAttachmentMimeType(mimeType) || IMAGE_SIGNATURES.has(mimeType);
 
-const isTextImageOrPdfMime = (mimeType: string) =>
-  isTextOrImageMime(mimeType) || mimeType === PDF_MIME_TYPE;
-
-// pi-ai encodes only text and image content parts, so text + images are universal. PDFs ride an
-// image part and are bridged to a provider's native document input where one exists: Gemini takes
-// application/pdf inline data as-is, and Anthropic/OpenAI payloads are rewritten in flight (see
-// chat-attachment-pdf.ts). Workers AI and Ollama chat endpoints have no document input at all.
+// pi-ai encodes only text and image content parts, so text + images are universal.
+// AnyRouter chat-completions accepts vision models' image inputs; no document bridge.
 const ATTACHMENT_SUPPORT_BY_PROVIDER = {
-  anthropic: isTextImageOrPdfMime,
-  openai: isTextImageOrPdfMime,
-  google: isTextImageOrPdfMime,
-  cloudflare: isTextOrImageMime,
-  ollama: isTextOrImageMime,
-  // AnyRouter chat-completions accepts vision models' image inputs; no document bridge.
   anyrouter: isTextOrImageMime,
 } satisfies Record<AiModelProvider, (mimeType: string) => boolean>;
 

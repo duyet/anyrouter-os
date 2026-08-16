@@ -4,9 +4,6 @@ import { DropdownMenu, useKumoToastManager } from '@cloudflare/kumo'
 import { useAuthenticatedApi } from '../AuthContext'
 import {
   AiChatAuthorInfo,
-  AiGatewayInfo,
-  AiModelProvider,
-  SUGGESTED_MODELS,
 } from '@gadgets/workshop-shared/api'
 import {
   Plus,
@@ -23,8 +20,6 @@ export const Route = createFileRoute('/providers')({ component: ProvidersPage })
 
 // ─── constants ────────────────────────────────────────────────────────────────
 
-const PROVIDER_ORDER = Object.keys(SUGGESTED_MODELS) as AiModelProvider[]
-
 const PRIMARY_BTN =
   'press inline-flex h-9 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-kumo-brand px-3.5 text-[13px] font-medium tracking-[-0.25px] text-white transition-colors hover:bg-kumo-brand-hover'
 
@@ -35,13 +30,11 @@ const PRIMARY_BTN =
 function ModelRow({
   model,
   isQuick,
-  isBuiltIn,
   onDelete,
   onSetQuick,
 }: {
   model: AiChatAuthorInfo
   isQuick: boolean
-  isBuiltIn: boolean
   onDelete: () => void
   onSetQuick: () => void
 }) {
@@ -70,11 +63,6 @@ function ModelRow({
           <span className="truncate text-sm font-medium tracking-[-0.25px] text-kumo-default">
             {model.name}
           </span>
-          {isBuiltIn && (
-            <span className="shrink-0 rounded-full bg-kumo-tint px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.4px] text-kumo-subtle">
-              built-in
-            </span>
-          )}
           {isQuick && (
             <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[rgba(255,72,1,0.10)] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.4px] text-kumo-brand">
               <Lightning size={9} weight="fill" />
@@ -105,12 +93,10 @@ function ModelRow({
               <Lightning size={13} className="mr-2" weight={isQuick ? 'fill' : 'regular'} />
               {isQuick ? 'Clear quick model' : 'Set as quick model'}
             </DropdownMenu.Item>
-            {!isBuiltIn && (
-              <DropdownMenu.Item variant="danger" onClick={onDelete} className={MENU_ITEM_DANGER}>
-                <Trash size={13} className="mr-2" />
-                Delete provider
-              </DropdownMenu.Item>
-            )}
+            <DropdownMenu.Item variant="danger" onClick={onDelete} className={MENU_ITEM_DANGER}>
+              <Trash size={13} className="mr-2" />
+              Delete provider
+            </DropdownMenu.Item>
           </DropdownMenu.Content>
         </DropdownMenu>
       </div>
@@ -137,7 +123,6 @@ function ProvidersPage() {
   const toasts = useKumoToastManager()
   const [models, setModels] = useState<AiChatAuthorInfo[]>([])
   const [quickModel, setQuickModel] = useState<string | null>(null)
-  const [aiConfig, setAiConfig] = useState<AiGatewayInfo | null>(null)
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(false)
@@ -147,14 +132,12 @@ function ProvidersPage() {
   const fetchAll = async () => {
     setLoadError(false)
     try {
-      const [modelList, qm, cfg] = await Promise.all([
+      const [modelList, qm] = await Promise.all([
         authenticatedApi.listModels(),
         authenticatedApi.getQuickModel(),
-        authenticatedApi.getAiConfig(),
       ])
       setModels(modelList)
       setQuickModel(qm)
-      setAiConfig(cfg)
     } catch (err) {
       console.error('Failed to load providers:', err)
       setLoadError(true)
@@ -164,14 +147,6 @@ function ProvidersPage() {
   }
 
   useEffect(() => { fetchAll() }, [authenticatedApi])
-
-  const gatewayMode = aiConfig?.enabled === true
-
-  const isBuiltIn = (modelId: string): boolean => {
-    if (!aiConfig?.enabled) return false
-    const enabled = new Set((aiConfig as Extract<AiGatewayInfo, { enabled: true }>).enabledProviders)
-    return PROVIDER_ORDER.some((p) => enabled.has(p) && modelId in SUGGESTED_MODELS[p])
-  }
 
   const handleDelete = async (model: AiChatAuthorInfo) => {
     if (!confirm(`Delete "${model.name}"? This cannot be undone.`)) return
@@ -245,31 +220,18 @@ function ProvidersPage() {
 
       <div className="chat-panel flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto pt-1 pb-16">
         {/* Notices */}
-        {(gatewayMode || (!gatewayMode && models.length > 0)) && !loading && !loadError && (
+        {models.length > 0 && !loading && !loadError && (
           <div className="flex flex-col gap-2.5 px-3 pb-2">
-            {gatewayMode && (
-              <Notice>
-                <Lightning size={15} className="mt-px shrink-0 text-kumo-brand" />
-                <span>
-                  <strong className="font-medium text-kumo-default">AI Gateway mode:</strong> built-in
-                  models are managed by your deployment. You can still add custom models with your own
-                  API tokens.
-                </span>
-              </Notice>
-            )}
-
-            {!gatewayMode && models.length > 0 && (
-              <Notice>
-                <Lightning size={15} className="mt-px shrink-0 text-kumo-brand" />
-                <span>
-                  <strong className="font-medium text-kumo-default">Quick model:</strong>{' '}
-                  {quickModel
-                    ? `${models.find((m) => m.id === quickModel)?.name ?? quickModel}.`
-                    : 'none set.'}{' '}
-                  Used for fast tasks like generating chat titles. Click a model to set it.
-                </span>
-              </Notice>
-            )}
+            <Notice>
+              <Lightning size={15} className="mt-px shrink-0 text-kumo-brand" />
+              <span>
+                <strong className="font-medium text-kumo-default">Quick model:</strong>{' '}
+                {quickModel
+                  ? `${models.find((m) => m.id === quickModel)?.name ?? quickModel}.`
+                  : 'none set.'}{' '}
+                Used for fast tasks like generating chat titles. Click a model to set it.
+              </span>
+            </Notice>
           </div>
         )}
 
@@ -314,7 +276,6 @@ function ProvidersPage() {
               <ModelRow
                 model={model}
                 isQuick={quickModel === model.id}
-                isBuiltIn={isBuiltIn(model.id)}
                 onDelete={() => handleDelete(model)}
                 onSetQuick={() => handleSetQuick(model.id)}
               />

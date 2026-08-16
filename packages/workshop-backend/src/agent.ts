@@ -15,7 +15,6 @@ import { createTwoFilesPatch, FILE_HEADERS_ONLY } from "diff";
 import { webFetch as webFetchImpl, WebFetchEnv, formatWebFetchResult } from "./web-fetch";
 import { AgentCatalogSnapshot, formatAlwaysAvailableResourcesPrompt } from "./agent-catalog";
 import { formatInstanceInstructions } from "./admin-config";
-import type { AiGatewayLogRoute } from "./ai-gateway";
 import { AgentTurnError, completeText, httpStatusFromError, zeroUsage } from "./ai-invoke";
 import type { ModelHandle } from "./ai-models";
 import {
@@ -331,17 +330,12 @@ export interface AgentHooks {
   consumeCapturedActions(chatId: number)
       : {actions: number[], accessedGadget: boolean, awaitDecision: boolean} | undefined;
   /**
-   * Appends messages to the chat log and updates cost/token accounting. When both
-   * `aiGatewayLogId` and `aiGatewayLogRoute` are present, the authoritative cost is fetched
-   * asynchronously from the AI Gateway log, with `estimatedCost` (pi's catalog-priced estimate
-   * from the turn's token usage, in dollars) as the fallback if the gateway can't produce a
-   * cost; otherwise the estimate is applied directly, so direct-provider routes still get cost
-   * accounting.
+   * Appends messages to the chat log and updates cost/token accounting. `estimatedCost` is pi's
+   * catalog-priced estimate from the turn's token usage, in dollars.
    */
   addChatMessages(chatId: number, author: AiChatAuthorInfo,
       msgs: AiChatMessageBodyWithModelData[],
-      totalTokens?: number, aiGatewayLogId?: string, aiGatewayLogRoute?: AiGatewayLogRoute,
-      estimatedCost?: number): void;
+      totalTokens?: number, estimatedCost?: number): void;
   emitChatStreamEvent(chatId: number, event: AiChatStreamEvent): void;
 
   /**
@@ -3092,7 +3086,6 @@ export async function runAgent(
         }
 
         hooks.addChatMessages(chatId, author, msgs, message.usage.totalTokens,
-            handle.lastResponse?.aiGatewayLogId, handle.aiGatewayLogRoute,
             message.usage.cost.total);
 
         // Reset per-step streaming state.
