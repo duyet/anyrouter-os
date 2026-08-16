@@ -1,15 +1,14 @@
 import { useKumoToastManager } from '@cloudflare/kumo'
 import { useAuthenticatedApi } from './AuthContext'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { AiChatAuthorInfo, AnyRouterConnectionStatus } from '@gadgets/workshop-shared/api'
 import { hashPassword } from './passwordHash'
 import { CF_ACCESS_MODE } from './useAuth'
-import { User, Pencil, Check, X, Lock, Camera, Copy, Eye, EyeSlash, ArrowsClockwise, ShieldCheck } from '@phosphor-icons/react'
+import { User, Lock, Eye, EyeSlash, ArrowsClockwise, ShieldCheck } from '@phosphor-icons/react'
 import { useServerConfig } from './ServerConfigContext'
-import { isAnyRouterGrantExpired } from './anyrouterOAuth'
+import { ANYROUTER_ACCOUNT_URL, isAnyRouterGrantExpired } from './anyrouterOAuth'
 import { useAnyRouterConnect } from './useAnyRouterConnect'
-import { useAvatar, invalidateAvatarCache } from './useAvatar'
-import { compressAvatar, avatarBlobUrl } from './avatarUtils'
+import { invalidateAvatarCache } from './useAvatar'
 import { useDocumentTitle } from './useDocumentTitle'
 
 // Shared, on-language control classes (match the rest of the app: Workspaces/Blueprints headers,
@@ -17,8 +16,6 @@ import { useDocumentTitle } from './useDocumentTitle'
 // system rather than a stack of default Kumo cards.
 const PRIMARY_BTN =
   'press inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-kumo-brand px-3.5 text-[13px] font-medium tracking-[-0.25px] text-white transition-colors hover:bg-kumo-brand-hover disabled:cursor-not-allowed disabled:opacity-60'
-const ICON_BTN =
-  'press grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-lg text-kumo-inactive transition-colors hover:bg-kumo-tint hover:text-kumo-default'
 const INPUT =
   'h-9 w-full rounded-lg border border-kumo-line bg-kumo-base px-3 text-[14px] tracking-[-0.25px] text-kumo-default placeholder:text-kumo-inactive transition-[border-color,box-shadow] focus:border-kumo-ring focus:outline-none focus:ring-[3px] focus:ring-kumo-ring/15'
 
@@ -97,12 +94,13 @@ function formatExpiry(expiresAt: string | null): string | null {
 }
 
 /**
- * The user's AnyRouter connection: who it is signed in as, when the key expires, and the two
- * things they can do about it — Sync (re-read the account from AnyRouter with the stored key)
- * and Approve again (re-run the consent flow, which is also how newly added permissions get
- * granted and how a revoked key is replaced).
+ * The user's AnyRouter account — the identity this app runs on. Name, username, email and
+ * picture all come from anyrouter.dev and are read-only here (the AnyRouter dashboard is where
+ * they change), so the page's actions are Sync (re-read the account with the stored key) and
+ * Approve again (re-run the consent flow, which is also how newly added permissions get granted
+ * and how a revoked key is replaced).
  */
-function AnyRouterSection() {
+function AnyRouterSection({ onIdentityChanged }: { onIdentityChanged: () => void }) {
   const { authenticatedApi } = useAuthenticatedApi()
   const serverConfig = useServerConfig()
   const toasts = useKumoToastManager()
@@ -132,6 +130,7 @@ function AnyRouterSection() {
     onConnected: (status) => {
       setConnection(status)
       setError(null)
+      onIdentityChanged()
       toasts.add({ title: 'AnyRouter access approved', variant: 'success' })
     },
     onError: setError,
@@ -143,6 +142,7 @@ function AnyRouterSection() {
     try {
       const status = await authenticatedApi.refreshAnyRouterProfile()
       setConnection(status)
+      onIdentityChanged()
       toasts.add({ title: 'Synced with AnyRouter', variant: 'success' })
     } catch (err) {
       // The grant is deliberately left in place: the fix is to approve again, not to lose the key.
@@ -160,18 +160,23 @@ function AnyRouterSection() {
 
   return (
     <section className="flex flex-col gap-3">
-      <SectionLabel>AnyRouter</SectionLabel>
+      <SectionLabel>
+        <span className="inline-flex items-center gap-1.5">
+          <img src="/anyrouter-logo.svg" alt="" className="h-3.5 w-3.5" />
+          AnyRouter account
+        </span>
+      </SectionLabel>
       <div className="divide-y divide-kumo-line overflow-hidden rounded-xl border border-kumo-line bg-kumo-base">
         <div className="flex items-center gap-4 px-5 py-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-kumo-fill">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-kumo-fill">
             {profile?.avatarUrl ? (
               <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" />
             ) : (
-              <ShieldCheck size={20} className="text-kumo-subtle" />
+              <User size={28} className="text-kumo-subtle" />
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[14px] font-medium tracking-[-0.25px] text-kumo-default">
+            <p className="truncate text-[15px] font-medium tracking-[-0.25px] text-kumo-default">
               {connection?.connected
                 ? profile?.name || profile?.username || profile?.email || 'AnyRouter account'
                 : 'Not connected'}
@@ -181,12 +186,40 @@ function AnyRouterSection() {
                 ? 'Approve access to run inference on your own AnyRouter key'
                 : expired
                   ? 'Your sign-in key has expired — approve again to keep models working'
-                  : profile?.email
-                    ? `${profile.email}${expiry ? ` · key expires ${expiry}` : ''}`
-                    : expiry ? `Key expires ${expiry}` : 'Connected'}
+                  : expiry ? `Sign-in key expires ${expiry}` : 'Connected'}
             </p>
           </div>
         </div>
+
+        {connection?.connected && (
+          <div className="px-5 py-4">
+            <FieldLabel>Username</FieldLabel>
+            <p className="mt-1 truncate text-[14px] tracking-[-0.25px] text-kumo-default">
+              {profile?.username ?? '—'}
+            </p>
+            <p className="mt-1 text-[12px] tracking-[-0.1px] text-kumo-subtle">
+              Your username, display name and picture come from AnyRouter.{' '}
+              <a
+                href={ANYROUTER_ACCOUNT_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="underline underline-offset-2 hover:text-kumo-default"
+              >
+                Change them on AnyRouter
+              </a>
+              , then sync.
+            </p>
+          </div>
+        )}
+
+        {connection?.connected && profile?.email && (
+          <div className="px-5 py-4">
+            <FieldLabel>Email</FieldLabel>
+            <p className="mt-1 truncate text-[14px] tracking-[-0.25px] text-kumo-default">
+              {profile.email}
+            </p>
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center gap-2 px-5 py-4">
           <button
@@ -233,20 +266,6 @@ export default function SettingsPage() {
   const toasts = useKumoToastManager()
   const [userInfo, setUserInfo] = useState<AiChatAuthorInfo | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isEditingName, setIsEditingName] = useState(false)
-  const [nameInput, setNameInput] = useState('')
-
-  // Avatar state
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [avatarUploading, setAvatarUploading] = useState(false)
-  const [localAvatarPreview, setLocalAvatarPreview] = useState<string | null>(null)
-
-  // Revoke preview blob URL on unmount to prevent memory leak
-  useEffect(() => {
-    return () => {
-      if (localAvatarPreview) URL.revokeObjectURL(localAvatarPreview)
-    }
-  }, [localAvatarPreview])
 
   // Password change state
   const [currentPassword, setCurrentPassword] = useState('')
@@ -257,8 +276,6 @@ export default function SettingsPage() {
   // Whether this account has a password (false for OAuth-created accounts). Null while loading.
   const [hasPassword, setHasPassword] = useState<boolean | null>(null)
 
-  const avatarUrl = useAvatar(authenticatedApi, userInfo?.id)
-
   // Determine whether to show the change-password section.
   useEffect(() => {
     let cancelled = false
@@ -268,83 +285,30 @@ export default function SettingsPage() {
     return () => { cancelled = true }
   }, [authenticatedApi])
 
-  // Fetch user info
-  useEffect(() => {
-    let cancelled = false
-    const fetchUserInfo = async () => {
-      try {
-        const info = await authenticatedApi.whoami()
-        if (cancelled) return
-        setUserInfo(info)
-        setNameInput(info.name)
-      } catch (error) {
-        console.error('Failed to fetch user info:', error)
-        if (!cancelled) toasts.add({ title: 'Failed to load user information', variant: 'error' })
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
+  const loadUserInfo = useCallback(async () => {
+    try {
+      return await authenticatedApi.whoami()
+    } catch (error) {
+      console.error('Failed to fetch user info:', error)
+      toasts.add({ title: 'Failed to load user information', variant: 'error' })
+      return null
     }
-
-    fetchUserInfo()
-    return () => { cancelled = true }
   }, [authenticatedApi])
 
-  const handleSaveName = async () => {
-    if (!nameInput.trim()) {
-      toasts.add({ title: 'Display name cannot be empty', variant: 'error' })
-      return
-    }
+  useEffect(() => {
+    let cancelled = false
+    loadUserInfo()
+      .then((info) => { if (!cancelled && info) setUserInfo(info) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [loadUserInfo])
 
-    try {
-      await authenticatedApi.setOwnDisplayName(nameInput.trim())
-      setUserInfo(prev => prev ? { ...prev, name: nameInput.trim() } : null)
-      setIsEditingName(false)
-      toasts.add({ title: 'Display name updated', variant: 'success' })
-    } catch (err) {
-      console.error('Failed to update display name:', err)
-      toasts.add({ title: 'Failed to update display name', variant: 'error' })
-    }
-  }
-
-  const handleCancelEdit = () => {
-    setNameInput(userInfo?.name || '')
-    setIsEditingName(false)
-  }
-
-  const handleCopyId = async () => {
-    if (!userInfo?.id) return
-    try {
-      await navigator.clipboard.writeText(userInfo.id)
-      toasts.add({ title: 'User ID copied', variant: 'success' })
-    } catch {
-      toasts.add({ title: 'Failed to copy', variant: 'error' })
-    }
-  }
-
-  const handleAvatarUpload = async (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      toasts.add({ title: 'Please select an image file', variant: 'error' })
-      return
-    }
-    setAvatarUploading(true)
-    try {
-      const compressed = await compressAvatar(file)
-      // Show preview immediately
-      if (localAvatarPreview) URL.revokeObjectURL(localAvatarPreview)
-      setLocalAvatarPreview(avatarBlobUrl(compressed))
-      // Upload
-      await authenticatedApi.setAvatar(compressed)
-      // Invalidate cache so the hook refetches
-      if (userInfo?.id) invalidateAvatarCache(userInfo.id)
-      toasts.add({ title: 'Avatar updated', variant: 'success' })
-    } catch (err) {
-      console.error('Failed to upload avatar:', err)
-      setLocalAvatarPreview(null)
-      toasts.add({ title: 'Failed to upload avatar', variant: 'error' })
-    } finally {
-      setAvatarUploading(false)
-    }
-  }
+  // A sync pulls the name and picture from AnyRouter, so the rest of the app (header avatar,
+  // author names) has to be told the cached copies are stale.
+  const handleIdentityChanged = useCallback(() => {
+    if (userInfo?.id) invalidateAvatarCache(userInfo.id)
+    loadUserInfo().then((info) => { if (info) setUserInfo(info) })
+  }, [userInfo?.id, loadUserInfo])
 
   const handleChangePassword = async () => {
     if (!userInfo) return
@@ -377,8 +341,6 @@ export default function SettingsPage() {
     }
   }
 
-  const displayAvatarUrl = localAvatarPreview || avatarUrl
-
   if (loading) {
     return (
       <div className="flex min-h-[60vh] flex-1 items-center justify-center">
@@ -392,134 +354,12 @@ export default function SettingsPage() {
       <header className="px-1 pb-2 pt-10">
         <h1 className="text-2xl font-semibold tracking-tight text-kumo-default">Profile</h1>
         <p className="mt-1 text-[13px] leading-[18px] tracking-[-0.25px] text-kumo-subtle">
-          Manage your account details, avatar, and security.
+          Your AnyRouter account powers this workspace — keep it in sync here.
         </p>
       </header>
 
       <div className="mt-6 flex flex-col gap-9">
-        {/* Account */}
-        <section className="flex flex-col gap-3">
-          <SectionLabel>Account</SectionLabel>
-          <div className="divide-y divide-kumo-line overflow-hidden rounded-xl border border-kumo-line bg-kumo-base">
-            {/* Avatar */}
-            <div className="flex items-center gap-4 px-5 py-4">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={avatarUploading}
-                className="press group relative flex h-16 w-16 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-kumo-fill disabled:cursor-wait"
-              >
-                {displayAvatarUrl ? (
-                  <img src={displayAvatarUrl} alt="Avatar" className="h-full w-full object-cover" />
-                ) : (
-                  <User size={28} className="text-kumo-subtle" />
-                )}
-                <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-                  <Camera size={18} className="text-white" />
-                </div>
-                {avatarUploading && (
-                  <div className="absolute inset-0 flex items-center justify-center bg-kumo-base/80">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-kumo-brand border-t-transparent" />
-                  </div>
-                )}
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) handleAvatarUpload(file)
-                  e.target.value = ''
-                }}
-              />
-              <div className="min-w-0">
-                <p className="truncate text-[15px] font-medium tracking-[-0.25px] text-kumo-default">
-                  {userInfo?.name}
-                </p>
-                <p className="mt-0.5 text-[12px] leading-4 tracking-[-0.2px] text-kumo-subtle">
-                  Click the avatar to upload a new photo
-                </p>
-              </div>
-            </div>
-
-            {/* Display name */}
-            <div className="flex items-end gap-2 px-5 py-4">
-              <div className="min-w-0 flex-1">
-                <FieldLabel>Display name</FieldLabel>
-                {isEditingName ? (
-                  <input
-                    value={nameInput}
-                    onChange={(e) => setNameInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleSaveName()
-                      if (e.key === 'Escape') handleCancelEdit()
-                    }}
-                    placeholder="Enter display name"
-                    autoFocus
-                    className={`mt-1.5 ${INPUT}`}
-                  />
-                ) : (
-                  <p className="mt-1 text-[14px] tracking-[-0.25px] text-kumo-default">
-                    {userInfo?.name}
-                  </p>
-                )}
-              </div>
-              {isEditingName ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={handleSaveName}
-                    disabled={!nameInput.trim()}
-                    aria-label="Save display name"
-                    className={PRIMARY_BTN}
-                  >
-                    <Check size={15} weight="bold" />
-                    Save
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCancelEdit}
-                    aria-label="Cancel"
-                    className={ICON_BTN}
-                  >
-                    <X size={15} />
-                  </button>
-                </>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setIsEditingName(true)}
-                  aria-label="Edit display name"
-                  className={ICON_BTN}
-                >
-                  <Pencil size={14} />
-                </button>
-              )}
-            </div>
-
-            {/* User ID */}
-            <div className="flex items-center gap-2 px-5 py-4">
-              <div className="min-w-0 flex-1">
-                <FieldLabel>User ID</FieldLabel>
-                <p className="mt-1 truncate font-mono text-[12px] tracking-[-0.1px] text-kumo-subtle">
-                  {userInfo?.id}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={handleCopyId}
-                aria-label="Copy user ID"
-                className={ICON_BTN}
-              >
-                <Copy size={14} />
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <AnyRouterSection />
+        <AnyRouterSection onIdentityChanged={handleIdentityChanged} />
 
         {/* Security — only for password accounts (hidden under CF Access or gatekeeper sign-in) */}
         {!CF_ACCESS_MODE && hasPassword === true && (

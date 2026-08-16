@@ -14,6 +14,9 @@ const AUTHORIZE_URL = 'https://anyrouter.dev/api/v1/mcp/oauth/authorize'
 /** Where AnyRouter explains the plans a sign-in key requires. */
 export const ANYROUTER_PRICING_URL = 'https://anyrouter.dev/pricing'
 
+/** Where the user edits the account fields this app mirrors (name, username, picture). */
+export const ANYROUTER_ACCOUNT_URL = 'https://dash.anyrouter.dev/account'
+
 /**
  * Path AnyRouter redirects back to. The router matches it, the root shell exempts it from the
  * onboarding gate, and the redirect_uri is built from it — one definition keeps those in step.

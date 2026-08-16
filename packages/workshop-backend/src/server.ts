@@ -1,7 +1,7 @@
 import { RpcStub, RpcTarget, newHttpBatchRpcResponse, newWebSocketRpcSession, RpcSessionOptions } from "capnweb";
 import { validateRpc } from "capnweb-validate";
 import type { JWTPayload } from "jose";
-import { PublicApi, AuthenticatedApi, Overseer, GadgetMetadataWithTimestamps, AiChatAuthorInfo, AiModelConfig, AnyRouterConnectionStatus, ConnectedAccountsSubscriber, ConnectedAccountsFilter, GatekeeperVendorFilter, ObserverConfigCallback, BlueprintLibrarySummary, BlueprintPublicInfo, BlueprintUserSummary, BlueprintBindingAssignment, AgentSpawnerConfig, WorkpieceId, BLUEPRINT_SCREENSHOT_PATH_PREFIX, BLUEPRINT_SCREENSHOT_R2_PREFIX, blueprintScreenshotUrl, ServerConfig, LoginAttempt, GatekeeperAppInfo, AdminApi, GatekeeperVendorInfo, OutputFormatOffer, ListOutputsResult, createOpenGadgetError, getOpenGadgetErrorCode, OPEN_GADGET_ERROR_CODES, AUTH_ERROR_CODES, createAuthError } from '@gadgets/workshop-shared/api';
+import { PublicApi, AuthenticatedApi, Overseer, GadgetMetadataWithTimestamps, AiChatAuthorInfo, AiModelConfig, AnyRouterConnectionStatus, AnyRouterProfile, ConnectedAccountsSubscriber, ConnectedAccountsFilter, GatekeeperVendorFilter, ObserverConfigCallback, BlueprintLibrarySummary, BlueprintPublicInfo, BlueprintUserSummary, BlueprintBindingAssignment, AgentSpawnerConfig, WorkpieceId, BLUEPRINT_SCREENSHOT_PATH_PREFIX, BLUEPRINT_SCREENSHOT_R2_PREFIX, blueprintScreenshotUrl, ServerConfig, LoginAttempt, GatekeeperAppInfo, AdminApi, GatekeeperVendorInfo, OutputFormatOffer, ListOutputsResult, createOpenGadgetError, getOpenGadgetErrorCode, OPEN_GADGET_ERROR_CODES, AUTH_ERROR_CODES, createAuthError } from '@gadgets/workshop-shared/api';
 import type { UiFeatureFlags } from "@gadgets/workshop-shared/feature-flags";
 import { getServerConfig } from "./deployment-config.js";
 import { isPasswordAuthEnabled, getAuthGatekeeperAllowlist } from "./auth/config.js";
@@ -203,6 +203,7 @@ class AuthenticatedApiImpl extends RpcTarget implements AuthenticatedApi {
       return null;
     });
     await this.#user.setAnyRouterGrant(grant.apiToken, grant.expiresAt, profile);
+    await this.#adoptAnyRouterIdentity(profile);
     return { expiresAt: grant.expiresAt };
   }
 
@@ -210,8 +211,44 @@ class AuthenticatedApiImpl extends RpcTarget implements AuthenticatedApi {
     return this.#user.getAnyRouterConnection();
   }
 
-  refreshAnyRouterProfile(): Promise<AnyRouterConnectionStatus> {
-    return this.#user.refreshAnyRouterProfile();
+  async refreshAnyRouterProfile(): Promise<AnyRouterConnectionStatus> {
+    const status = await this.#user.refreshAnyRouterProfile();
+    await this.#adoptAnyRouterIdentity(status.profile);
+    return status;
+  }
+
+  /**
+   * Take the account's name and picture from AnyRouter. Identity lives there — this app is a
+   * client of that account, so it mirrors rather than owns those fields, and the profile page
+   * points the user at anyrouter.dev to change them.
+   */
+  async #adoptAnyRouterIdentity(profile: AnyRouterProfile | null): Promise<void> {
+    if (!profile) return;
+    const name = profile.name || profile.username;
+    if (name) await this.#user.setOwnDisplayName(name);
+    await this.#syncAvatarFromAnyRouter(profile.avatarUrl);
+  }
+
+  /**
+   * Copy the AnyRouter account's picture into this account's avatar. Best-effort: the profile
+   * itself is what the user asked to sync, so a missing, oversized, or non-image picture just
+   * leaves the existing avatar alone rather than failing the sync.
+   */
+  async #syncAvatarFromAnyRouter(avatarUrl: string | null): Promise<void> {
+    if (!avatarUrl) return;
+    try {
+      // setAvatar only accepts JPEG/PNG, so ask for those rather than the WebP most image CDNs
+      // hand a browser by default.
+      const res = await fetch(avatarUrl, { headers: { Accept: "image/png,image/jpeg" } });
+      if (!res.ok) throw new Error(`avatar fetch failed (${res.status})`);
+      const data = new Uint8Array(await res.arrayBuffer());
+      // setAvatar enforces the size limit and JPEG/PNG magic bytes.
+      await this.setAvatar(data);
+    } catch (err) {
+      logger.warn("failed to sync AnyRouter avatar", {
+        event: "anyrouter.avatar.sync.failed", error: err,
+      });
+    }
   }
 
   disconnectAnyRouter(): Promise<void> {
