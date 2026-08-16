@@ -332,7 +332,6 @@ function ProvidersPage() {
           fetchAll()
         }}
         authenticatedApi={authenticatedApi}
-        aiConfig={aiConfig}
       />
     </div>
   )

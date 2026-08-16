@@ -89,6 +89,15 @@ export function FigmaLogo({ size = 20 }: { size?: number }) {
   )
 }
 
+export function McpLogo({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="#1a1d21">
+      <path d="M15.688 2.343a2.588 2.588 0 0 0-3.61 0l-9.626 9.44a.863.863 0 0 1-1.203 0 .823.823 0 0 1 0-1.18l9.626-9.44a4.313 4.313 0 0 1 6.016 0 4.116 4.116 0 0 1 1.204 3.54 4.3 4.3 0 0 1 3.609 1.18l.05.05a4.115 4.115 0 0 1 0 5.9l-8.706 8.537a.274.274 0 0 0 0 .393l1.788 1.754a.823.823 0 0 1 0 1.18.863.863 0 0 1-1.203 0l-1.788-1.753a1.92 1.92 0 0 1 0-2.754l8.706-8.538a2.47 2.47 0 0 0 0-3.54l-.05-.049a2.588 2.588 0 0 0-3.607 0l-7.172 7.03-.005.005-.009.009-6.723 6.593a.863.863 0 0 1-1.204 0 .823.823 0 0 1 0-1.18l7.176-7.035.006-.005.007-.006.006-.006.008-.009 6.72-6.59a2.47 2.47 0 0 0-.001-3.537z"/>
+      <path d="M14.485 4.703a.823.823 0 0 0 0-1.18.863.863 0 0 0-1.204 0l-5.943 5.826a4.116 4.116 0 0 0 0 5.9 4.314 4.314 0 0 0 6.016 0l5.943-5.827a.823.823 0 0 0 0-1.18.863.863 0 0 0-1.203 0l-5.943 5.827a2.588 2.588 0 0 1-3.61 0 2.47 2.47 0 0 1 0-3.54z"/>
+    </svg>
+  )
+}
+
 /** Map logo IDs to components */
 export const logoComponents: Record<string, React.FC<{ size?: number }>> = {
   slack: SlackLogo,
@@ -99,4 +108,5 @@ export const logoComponents: Record<string, React.FC<{ size?: number }>> = {
   notion: NotionLogo,
   linear: LinearLogo,
   figma: FigmaLogo,
+  mcp: McpLogo,
 }

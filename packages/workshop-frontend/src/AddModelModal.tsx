@@ -3,13 +3,10 @@ import { Dialog, Button, Input, Select, SensitiveInput, Collapsible, useKumoToas
 import {
   AiChatAuthorInfo,
   AiModelConfig,
-  AiModelProvider,
-  AiGatewayInfo,
   AnyRouterDeviceLoginStart,
   AnyRouterSuggestedModel,
   SUGGESTED_MODELS,
   defaultDirectModelApiUrl,
-  isDirectModelProvider,
 } from '@gadgets/workshop-shared/api'
 import { RpcStub } from 'capnweb'
 import { AuthenticatedApi } from '@gadgets/workshop-shared/api'
@@ -19,125 +16,11 @@ interface AddModelModalProps {
   onCancel: () => void
   onSuccess: () => void
   authenticatedApi: RpcStub<AuthenticatedApi>
-  aiConfig: AiGatewayInfo | null
 }
 
-type SelectionType =
-  | { type: 'suggested', provider: AiModelProvider, modelId: string, displayName: string }
-  | { type: 'custom', provider: AiModelProvider }
-
-const PROVIDER_LABELS: Record<AiModelProvider, string> = {
-  anthropic: 'Anthropic',
-  openai: 'OpenAI',
-  google: 'Google',
-  cloudflare: 'Cloudflare Workers AI',
-  ollama: 'Ollama',
-  anyrouter: 'AnyRouter',
-}
-
-// Placeholder hinting at the shape of each provider's API token.
-const API_TOKEN_PLACEHOLDERS: Record<AiModelProvider, string> = {
-  anthropic: 'sk-ant-...',
-  openai: 'sk-...',
-  google: 'AIza...',
-  cloudflare: 'Cloudflare API token',
-  ollama: '(optional)',
-  anyrouter: 'sk-ar-...',
-}
-
-// Example used in the custom-model placeholders for providers that have no suggested models
-// (currently Ollama, which serves whatever the user has pulled locally).
-const FALLBACK_EXAMPLE_MODEL = { modelId: 'gemma4:31b', name: 'Gemma 4 31B' }
-
-// Pick an example model to show in the custom-model placeholders for the given provider.
-function exampleModel(
-  provider: AiModelProvider,
-  anyRouterModels: AnyRouterSuggestedModel[],
-): { modelId: string, name: string } {
-  if (provider === 'anyrouter' && anyRouterModels[0]) {
-    return { modelId: anyRouterModels[0].id, name: anyRouterModels[0].name }
-  }
-  const first = Object.entries(SUGGESTED_MODELS[provider])[0]
-  return first ? { modelId: first[0], name: first[1].name } : FALLBACK_EXAMPLE_MODEL
-}
-
-// Encode a selection into a string value for the Select component.
-function encodeSelection(provider: AiModelProvider, modelId?: string): string {
-  return modelId ? `${provider}:${modelId}` : `other-${provider}`
-}
-
-// Decode a Select value back into a SelectionType.
-function decodeSelection(
-  value: string,
-  anyRouterById: Record<string, AnyRouterSuggestedModel>,
-): SelectionType {
-  if (value.startsWith('other-')) {
-    return { type: 'custom', provider: value.substring(6) as AiModelProvider }
-  }
-  const colonIndex = value.indexOf(':')
-  const provider = value.substring(0, colonIndex) as AiModelProvider
-  const modelId = value.substring(colonIndex + 1)
-  if (provider === 'anyrouter') {
-    const live = anyRouterById[modelId]
-    if (live) {
-      return { type: 'suggested', provider, modelId, displayName: live.name }
-    }
-    const staticName = SUGGESTED_MODELS.anyrouter[modelId]?.name
-    if (staticName) {
-      return { type: 'suggested', provider, modelId, displayName: staticName }
-    }
-    return { type: 'suggested', provider, modelId, displayName: modelId }
-  }
-  const displayName = SUGGESTED_MODELS[provider][modelId].name
-  return { type: 'suggested', provider, modelId, displayName }
-}
-
-// Build the flat list of options for the Select dropdown.
-function buildOptions(
-  gatewayMode: boolean,
-  enabledProviders: Set<string> | null,
-  anyRouterModels: AnyRouterSuggestedModel[],
-) {
-  const options: { value: string; label: string; provider: string }[] = []
-  const providerOrder = Object.keys(SUGGESTED_MODELS) as AiModelProvider[]
-
-  for (const provider of providerOrder) {
-    const direct = isDirectModelProvider(provider)
-    // Gateway mode only lists CF AI Gateway providers — plus direct-only providers (AnyRouter,
-    // Ollama), which users always add with their own tokens.
-    if (enabledProviders && !enabledProviders.has(provider) && !direct) continue
-
-    // In gateway mode, gateway-served suggested models are already built-in, so don't list them.
-    // Direct providers still list suggestions (they are never "built-in" via the gateway).
-    if (!gatewayMode || direct) {
-      if (provider === 'anyrouter') {
-        for (const model of anyRouterModels) {
-          options.push({
-            value: encodeSelection(provider, model.id),
-            label: `${model.name} · ${model.id}`,
-            provider,
-          })
-        }
-      } else {
-        for (const [modelId, model] of Object.entries(SUGGESTED_MODELS[provider])) {
-          options.push({
-            value: encodeSelection(provider, modelId),
-            label: model.name,
-            provider,
-          })
-        }
-      }
-    }
-
-    options.push({
-      value: encodeSelection(provider),
-      label: `Other ${PROVIDER_LABELS[provider] || provider}...`,
-      provider,
-    })
-  }
-
-  return options
-}
+// AnyRouter is the only model provider. Models come from the live AnyRouter catalog
+// (listAnyRouterSuggestedModels), plus a "custom model id" escape hatch.
+const CUSTOM_VALUE = 'custom'
 
 type AnyRouterLoginUi =
   | { phase: 'idle' }
@@ -150,26 +33,22 @@ type AnyRouterLoginUi =
   | { phase: 'connected' }
   | { phase: 'error'; message: string }
 
-export default function AddModelModal({ visible, onCancel, onSuccess, authenticatedApi, aiConfig }: AddModelModalProps) {
+export default function AddModelModal({ visible, onCancel, onSuccess, authenticatedApi }: AddModelModalProps) {
   const toasts = useKumoToastManager()
 
   const [loading, setLoading] = useState(false)
-  const [selection, setSelection] = useState<SelectionType | null>(null)
   const [selectValue, setSelectValue] = useState<string | undefined>(undefined)
 
   // Form fields (used for custom models)
   const [modelId, setModelId] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [apiToken, setApiToken] = useState('')
-  const [accountId, setAccountId] = useState('')
-  const [apiUrl, setApiUrl] = useState('')
+  const [apiUrl, setApiUrl] = useState(defaultDirectModelApiUrl('anyrouter') ?? '')
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  // Advanced settings collapsible state
-  const [advancedOpen, setAdvancedOpen] = useState(false)
-  const [pasteKeyOpen, setPasteKeyOpen] = useState(false)
+  const [keyOptionsOpen, setKeyOptionsOpen] = useState(false)
 
   // Live AnyRouter suggestions + device login
   const [anyRouterModels, setAnyRouterModels] = useState<AnyRouterSuggestedModel[]>(() =>
@@ -183,12 +62,10 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const activeDeviceCodeRef = useRef<string | null>(null)
 
-  const gatewayMode = aiConfig?.enabled === true
-  const enabledProviders: Set<string> | null = gatewayMode
-    ? new Set(aiConfig.enabledProviders)
+  const isCustom = selectValue === CUSTOM_VALUE
+  const selectedModel = !isCustom && selectValue
+    ? anyRouterModels.find((m) => m.id === selectValue) ?? null
     : null
-
-  const anyRouterById = Object.fromEntries(anyRouterModels.map((m) => [m.id, m]))
 
   const clearPollTimer = useCallback(() => {
     if (pollTimerRef.current != null) {
@@ -220,16 +97,13 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
   // Reset all state when dialog closes
   useEffect(() => {
     if (!visible) {
-      setSelection(null)
       setSelectValue(undefined)
       setModelId('')
       setDisplayName('')
       setApiToken('')
-      setAccountId('')
-      setApiUrl('')
+      setApiUrl(defaultDirectModelApiUrl('anyrouter') ?? '')
       setErrors({})
-      setAdvancedOpen(false)
-      setPasteKeyOpen(false)
+      setKeyOptionsOpen(false)
       stopAnyRouterLogin()
     }
   }, [visible, stopAnyRouterLogin])
@@ -266,7 +140,6 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
             clearPollTimer()
             activeDeviceCodeRef.current = null
             setApiToken(result.accessToken)
-            setPasteKeyOpen(false)
             setErrors((prev) => ({ ...prev, apiToken: '' }))
             setAnyRouterLogin({ phase: 'connected' })
             toasts.add({
@@ -275,15 +148,7 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
             })
             break
           case 'denied':
-            clearPollTimer()
-            activeDeviceCodeRef.current = null
-            setAnyRouterLogin({ phase: 'error', message: result.message })
-            break
           case 'expired':
-            clearPollTimer()
-            activeDeviceCodeRef.current = null
-            setAnyRouterLogin({ phase: 'error', message: result.message })
-            break
           case 'error':
             clearPollTimer()
             activeDeviceCodeRef.current = null
@@ -326,58 +191,28 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
   const handleModelSelect = (value: string) => {
     setSelectValue(value)
     setErrors({})
-    const sel = decodeSelection(value, anyRouterById)
-    setSelection(sel)
-
-    if (sel.type === 'custom') {
+    if (value === CUSTOM_VALUE) {
       setModelId('')
       setDisplayName('')
     } else {
-      setModelId(sel.modelId)
-      setDisplayName(sel.displayName)
+      const model = anyRouterModels.find((m) => m.id === value)
+      setModelId(value)
+      setDisplayName(model?.name ?? value)
     }
-    // Keep a connected AnyRouter token when switching models under the same provider.
-    if (sel.provider !== 'anyrouter') {
-      setApiToken('')
-      stopAnyRouterLogin()
-    } else if (anyRouterLogin.phase !== 'connected') {
-      setApiToken('')
-    }
-    setAccountId('')
-    setApiUrl(defaultDirectModelApiUrl(sel.provider) ?? '')
   }
 
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {}
 
-    if (!selection) {
-      newErrors.selection = gatewayMode ? 'Please select a provider' : 'Please select a model'
+    if (!selectValue) {
+      newErrors.selection = 'Please select a model'
     }
-
-    if (selection?.type === 'custom') {
+    if (isCustom) {
       if (!modelId.trim()) newErrors.modelId = 'Please enter the model ID'
       if (!displayName.trim()) newErrors.displayName = 'Please enter a display name'
     }
-
-    const isOllama = selection?.provider === 'ollama'
-    const isCloudflare = selection?.provider === 'cloudflare'
-    const direct = selection ? isDirectModelProvider(selection.provider) : false
-    // Direct providers always need their own credentials, including under AI Gateway mode.
-    const showCredentials = !gatewayMode || direct
-
-    if (showCredentials && selection && !isOllama && !apiToken.trim()) {
-      newErrors.apiToken = selection.provider === 'anyrouter'
-        ? 'Connect with AnyRouter or paste an API key'
-        : 'Please enter your API token'
-    }
-
-    if (showCredentials && isCloudflare && !accountId.trim()) {
-      newErrors.accountId = 'Please enter your Cloudflare account ID'
-    }
-
-    if (showCredentials && isOllama && !apiUrl.trim()) {
-      newErrors.apiUrl = 'Please enter the Ollama API URL'
-    }
+    // No key required up front: the deployment mints one automatically when it can
+    // (provisionAnyRouterKey); otherwise submit surfaces the connect/paste options.
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -388,13 +223,27 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
 
     setLoading(true)
     try {
-      const isSuggested = selection!.type === 'suggested'
-      const finalModelId = isSuggested ? selection!.modelId : modelId.trim()
-      const finalDisplayName = isSuggested ? selection!.displayName : displayName.trim()
-      const direct = isDirectModelProvider(selection!.provider)
-      // Platform AI Gateway ignores apiToken/apiUrl for gateway-served providers; direct-only
-      // providers always store and use the user's own credentials.
-      const collectCredentials = !gatewayMode || direct
+      // The user's key, or an automatically minted one when the deployment supports it.
+      let finalToken = apiToken.trim()
+      if (!finalToken) {
+        const provisioned = await authenticatedApi.provisionAnyRouterKey().catch((err) => {
+          console.error('AnyRouter key provisioning failed:', err)
+          return null
+        })
+        if (!provisioned) {
+          setErrors((prev) => ({
+            ...prev,
+            apiToken: 'Connect with AnyRouter or paste an API key',
+          }))
+          setKeyOptionsOpen(true)
+          return
+        }
+        finalToken = provisioned.apiToken
+        setApiToken(finalToken)
+      }
+
+      const finalModelId = isCustom ? modelId.trim() : selectValue!
+      const finalDisplayName = isCustom ? displayName.trim() : (selectedModel?.name ?? selectValue!)
 
       const profile: AiChatAuthorInfo = {
         type: 'agent',
@@ -403,11 +252,10 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
       }
 
       const config: AiModelConfig = {
-        provider: selection!.provider,
+        provider: 'anyrouter',
         model: finalModelId,
-        apiToken: collectCredentials ? apiToken.trim() : '',
-        ...(collectCredentials && accountId.trim() && { accountId: accountId.trim() }),
-        ...(collectCredentials && apiUrl.trim() && { apiUrl: apiUrl.trim() }),
+        apiToken: finalToken,
+        ...(apiUrl.trim() && { apiUrl: apiUrl.trim() }),
       }
 
       await authenticatedApi.addModel(profile, config)
@@ -421,25 +269,6 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
     }
   }
 
-  const options = buildOptions(gatewayMode, enabledProviders, anyRouterModels)
-  const showCustomFields = selection?.type === 'custom'
-  const example = selection ? exampleModel(selection.provider, anyRouterModels) : null
-  const isOllama = selection?.provider === 'ollama'
-  const isCloudflare = selection?.provider === 'cloudflare'
-  const isAnyRouter = selection?.provider === 'anyrouter'
-  const showCredentials = !gatewayMode || (selection != null && isDirectModelProvider(selection.provider))
-
-  // Group options by provider for rendering with visual separators.
-  const groupedOptions: { provider: string; items: typeof options }[] = []
-  for (const opt of options) {
-    const last = groupedOptions[groupedOptions.length - 1]
-    if (last && last.provider === opt.provider) {
-      last.items.push(opt)
-    } else {
-      groupedOptions.push({ provider: opt.provider, items: [opt] })
-    }
-  }
-
   return (
     <Dialog.Root open={visible} onOpenChange={(open) => { if (!open) onCancel() }}>
       <Dialog className="p-6" size="lg">
@@ -448,43 +277,38 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
         </Dialog.Title>
 
         <div className="space-y-4">
-          {/* Model / Provider selection */}
+          {/* Model selection — the AnyRouter catalog is the only source of models. */}
           <Select
-            label={gatewayMode ? 'Select Provider' : 'Select Model'}
+            label="Select Model"
             className="w-full text-sm"
-            placeholder={gatewayMode ? 'Choose a provider...' : 'Choose an AI model...'}
+            placeholder="Choose an AnyRouter model..."
             value={selectValue}
             onValueChange={(v) => handleModelSelect(v as string)}
             error={errors.selection}
             renderValue={(v) => {
-              const opt = options.find(o => o.value === v)
-              return opt?.label ?? String(v)
+              if (v === CUSTOM_VALUE) return 'Other AnyRouter model...'
+              const model = anyRouterModels.find((m) => m.id === v)
+              return model ? `${model.name} · ${model.id}` : String(v)
             }}
           >
-            {groupedOptions.map((group, groupIndex) => (
-              <div key={group.provider}>
-                {groupIndex > 0 && (
-                  <div className="h-px bg-kumo-line my-1 mx-2" />
-                )}
-                <div className="px-3 py-1.5 text-xs font-medium text-kumo-subtle select-none">
-                  {PROVIDER_LABELS[group.provider as AiModelProvider] || group.provider}
-                </div>
-                {group.items.map(opt => (
-                  <Select.Option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </Select.Option>
-                ))}
-              </div>
+            {anyRouterModels.map((model) => (
+              <Select.Option key={model.id} value={model.id}>
+                {model.name} · {model.id}
+              </Select.Option>
             ))}
+            <div className="h-px bg-kumo-line my-1 mx-2" />
+            <Select.Option value={CUSTOM_VALUE}>
+              Other AnyRouter model...
+            </Select.Option>
           </Select>
 
           {/* Custom model fields */}
-          {showCustomFields && (
+          {isCustom && (
             <>
               <Input
                 label="Model ID"
-                placeholder={`e.g., ${example!.modelId}`}
-                description={`The model identifier as specified by the provider (e.g., '${example!.modelId}')`}
+                placeholder={`e.g., ${anyRouterModels[0]?.id ?? 'z-ai/glm-5.2'}`}
+                description="The AnyRouter catalog id, in provider/model form"
                 value={modelId}
                 onChange={(e) => { setModelId(e.target.value); setErrors(prev => ({ ...prev, modelId: '' })) }}
                 error={errors.modelId}
@@ -493,7 +317,7 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
 
               <Input
                 label="Display Name"
-                placeholder={`e.g., ${example!.name}`}
+                placeholder={`e.g., ${anyRouterModels[0]?.name ?? 'GLM-5.2 (AnyRouter)'}`}
                 description="Human-readable name shown in the UI"
                 value={displayName}
                 onChange={(e) => { setDisplayName(e.target.value); setErrors(prev => ({ ...prev, displayName: '' })) }}
@@ -503,179 +327,107 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
             </>
           )}
 
-          {/* Cloudflare account ID (the Workers AI REST endpoint is account-scoped) */}
-          {showCredentials && isCloudflare && (
-            <Input
-              label="Cloudflare Account ID"
-              placeholder="e.g., 0123456789abcdef0123456789abcdef"
-              description="The Cloudflare account to bill for Workers AI usage"
-              value={accountId}
-              onChange={(e) => { setAccountId(e.target.value); setErrors(prev => ({ ...prev, accountId: '' })) }}
-              error={errors.accountId}
-              variant={errors.accountId ? 'error' : 'default'}
-            />
-          )}
+          {/* API key: minted automatically on add when the deployment supports it; the options
+              below cover using your own key instead. */}
+          <Collapsible.Root open={keyOptionsOpen} onOpenChange={setKeyOptionsOpen}>
+            <Collapsible.DefaultTrigger>
+              {anyRouterLogin.phase === 'connected' || apiToken
+                ? 'API key: using your own key'
+                : 'API key: created automatically (or use your own)'}
+            </Collapsible.DefaultTrigger>
+            <Collapsible.DefaultPanel>
+              <div className="space-y-3 rounded-lg border border-kumo-line bg-kumo-tint/40 p-3">
+                <p className="text-[12px] leading-[16px] tracking-[-0.2px] text-kumo-subtle">
+                  Leave empty to have a key minted for you automatically. To bill your own
+                  AnyRouter account instead, sign in with AnyRouter to pick or create a key, or
+                  paste one below.
+                </p>
 
-          {/* AnyRouter: device login (pick existing key or mint new) + optional paste */}
-          {showCredentials && isAnyRouter && (
-            <div className="space-y-3 rounded-lg border border-kumo-line bg-kumo-tint/40 p-3">
-              <div className="text-sm font-medium tracking-[-0.25px] text-kumo-default">
-                AnyRouter API key
-              </div>
-              <p className="text-[12px] leading-[16px] tracking-[-0.2px] text-kumo-subtle">
-                Sign in with AnyRouter to pick an existing key or create a new one. Your key stays
-                on this deployment and is never shared with AnyRouter again after connect.
-              </p>
-
-              {anyRouterLogin.phase === 'connected' ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="rounded-full bg-[rgba(16,185,129,0.12)] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.4px] text-emerald-700">
-                    Connected
-                  </span>
-                  <span className="text-[12px] text-kumo-subtle">
-                    Key ready · {apiToken ? `${apiToken.slice(0, 10)}…` : 'stored'}
-                  </span>
-                  <Button
-                    variant="secondary"
-                    onClick={() => {
-                      setApiToken('')
-                      stopAnyRouterLogin()
-                      setPasteKeyOpen(false)
-                    }}
-                  >
-                    Disconnect
-                  </Button>
-                </div>
-              ) : anyRouterLogin.phase === 'waiting' ? (
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="rounded-md border border-kumo-line bg-kumo-base px-3 py-2 font-mono text-lg font-semibold tracking-[0.15em] text-kumo-default">
-                      {anyRouterLogin.start.userCode}
-                    </div>
+                {anyRouterLogin.phase === 'connected' ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-[rgba(16,185,129,0.12)] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.4px] text-emerald-700">
+                      Connected
+                    </span>
+                    <span className="text-[12px] text-kumo-subtle">
+                      Key ready · {apiToken ? `${apiToken.slice(0, 10)}…` : 'stored'}
+                    </span>
                     <Button
                       variant="secondary"
-                      onClick={() =>
-                        window.open(
-                          anyRouterLogin.start.verificationUriComplete,
-                          '_blank',
-                          'noopener,noreferrer',
-                        )
-                      }
+                      onClick={() => {
+                        setApiToken('')
+                        stopAnyRouterLogin()
+                      }}
                     >
-                      Open AnyRouter
-                    </Button>
-                    <Button variant="secondary" onClick={stopAnyRouterLogin}>
-                      Cancel
+                      Disconnect
                     </Button>
                   </div>
-                  <p className="text-[12px] text-kumo-subtle">{anyRouterLogin.statusText}</p>
-                </div>
-              ) : anyRouterLogin.phase === 'error' ? (
-                <div className="space-y-2">
-                  <p className="text-[12px] text-red-600">{anyRouterLogin.message}</p>
-                  <Button variant="primary" onClick={startAnyRouterConnect}>
-                    Try again
+                ) : anyRouterLogin.phase === 'waiting' ? (
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="rounded-md border border-kumo-line bg-kumo-base px-3 py-2 font-mono text-lg font-semibold tracking-[0.15em] text-kumo-default">
+                        {anyRouterLogin.start.userCode}
+                      </div>
+                      <Button
+                        variant="secondary"
+                        onClick={() =>
+                          window.open(
+                            anyRouterLogin.start.verificationUriComplete,
+                            '_blank',
+                            'noopener,noreferrer',
+                          )
+                        }
+                      >
+                        Open AnyRouter
+                      </Button>
+                      <Button variant="secondary" onClick={stopAnyRouterLogin}>
+                        Cancel
+                      </Button>
+                    </div>
+                    <p className="text-[12px] text-kumo-subtle">{anyRouterLogin.statusText}</p>
+                  </div>
+                ) : anyRouterLogin.phase === 'error' ? (
+                  <div className="space-y-2">
+                    <p className="text-[12px] text-red-600">{anyRouterLogin.message}</p>
+                    <Button variant="primary" onClick={startAnyRouterConnect}>
+                      Try again
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    onClick={startAnyRouterConnect}
+                    loading={anyRouterLogin.phase === 'starting'}
+                  >
+                    Connect with AnyRouter
                   </Button>
-                </div>
-              ) : (
-                <Button
-                  variant="primary"
-                  onClick={startAnyRouterConnect}
-                  loading={anyRouterLogin.phase === 'starting'}
-                >
-                  Connect with AnyRouter
-                </Button>
-              )}
+                )}
 
-              {errors.apiToken && (
-                <p className="text-[12px] text-red-600">{errors.apiToken}</p>
-              )}
+                <SensitiveInput
+                  label="API Token"
+                  placeholder="sk-ar-..."
+                  description="From https://anyrouter.dev/dashboard (starts with sk-ar-)"
+                  value={apiToken}
+                  onValueChange={(v) => {
+                    setApiToken(v)
+                    setErrors((prev) => ({ ...prev, apiToken: '' }))
+                  }}
+                  error={errors.apiToken}
+                  variant={errors.apiToken ? 'error' : 'default'}
+                />
 
-              <Collapsible.Root open={pasteKeyOpen} onOpenChange={setPasteKeyOpen}>
-                <Collapsible.DefaultTrigger>
-                  Or paste an API key manually
-                </Collapsible.DefaultTrigger>
-                <Collapsible.DefaultPanel>
-                  <SensitiveInput
-                    label="API Token"
-                    placeholder={API_TOKEN_PLACEHOLDERS.anyrouter}
-                    description="From https://anyrouter.dev/dashboard (starts with sk-ar-)"
-                    value={apiToken}
-                    onValueChange={(v) => {
-                      setApiToken(v)
-                      setErrors((prev) => ({ ...prev, apiToken: '' }))
-                      if (v.trim()) {
-                        setAnyRouterLogin({ phase: 'connected' })
-                      }
-                    }}
-                    error={errors.apiToken}
-                    variant={errors.apiToken ? 'error' : 'default'}
-                  />
-                </Collapsible.DefaultPanel>
-              </Collapsible.Root>
-            </div>
-          )}
-
-          {/* API Token (non-AnyRouter providers) */}
-          {showCredentials && selection && !isAnyRouter && (
-            <SensitiveInput
-              label="API Token"
-              placeholder={API_TOKEN_PLACEHOLDERS[selection.provider]}
-              description={
-                isOllama
-                  ? 'Optional for local Ollama access'
-                  : isCloudflare
-                  ? 'An API token with Workers AI Read + Edit permissions (in the dashboard: Workers AI > Use REST API > Create a Workers AI API Token)'
-                  : `Your ${PROVIDER_LABELS[selection.provider]} API token for billing`
-              }
-              value={apiToken}
-              onValueChange={(v) => { setApiToken(v); setErrors(prev => ({ ...prev, apiToken: '' })) }}
-              error={errors.apiToken}
-              variant={errors.apiToken ? 'error' : 'default'}
-            />
-          )}
-
-          {/* Ollama API URL (always visible for Ollama) */}
-          {showCredentials && isOllama && (
-            <Input
-              label="API URL"
-              placeholder="http://localhost:11434"
-              description="URL of your Ollama server"
-              value={apiUrl}
-              onChange={(e) => { setApiUrl(e.target.value); setErrors(prev => ({ ...prev, apiUrl: '' })) }}
-              error={errors.apiUrl}
-              variant={errors.apiUrl ? 'error' : 'default'}
-            />
-          )}
-
-          {/* AnyRouter API URL (default prefilled; always visible so users can override) */}
-          {showCredentials && isAnyRouter && (
-            <Input
-              label="API URL"
-              placeholder="https://anyrouter.dev/api/v1"
-              description="AnyRouter OpenAI-compatible base URL (model ids use provider/model form)"
-              value={apiUrl}
-              onChange={(e) => setApiUrl(e.target.value)}
-            />
-          )}
-
-          {/* Advanced Settings for non-Ollama, non-Cloudflare, non-AnyRouter providers */}
-          {showCredentials && selection && !isOllama && !isCloudflare && !isAnyRouter && (
-            <Collapsible.Root
-              open={advancedOpen}
-              onOpenChange={setAdvancedOpen}
-            >
-              <Collapsible.DefaultTrigger>Advanced Settings</Collapsible.DefaultTrigger>
-              <Collapsible.DefaultPanel>
                 <Input
                   label="API URL"
-                  placeholder="https://..."
-                  description="Override the default API endpoint (useful for proxies like Cloudflare AI Gateway)"
+                  placeholder="https://anyrouter.dev/api/v1"
+                  description="AnyRouter OpenAI-compatible base URL (model ids use provider/model form)"
                   value={apiUrl}
                   onChange={(e) => setApiUrl(e.target.value)}
                 />
-              </Collapsible.DefaultPanel>
-            </Collapsible.Root>
+              </div>
+            </Collapsible.DefaultPanel>
+          </Collapsible.Root>
+
+          {errors.apiToken && !keyOptionsOpen && (
+            <p className="text-[12px] text-red-600">{errors.apiToken}</p>
           )}
         </div>
 
@@ -690,7 +442,7 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
             variant="primary"
             onClick={handleSubmit}
             loading={loading}
-            disabled={!selection}
+            disabled={!selectValue}
           >
             Add Model
           </Button>

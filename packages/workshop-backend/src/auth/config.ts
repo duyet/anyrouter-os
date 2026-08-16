@@ -6,6 +6,8 @@
 // "Continue with ..." button alongside the normal username/password form (unless password auth is
 // disabled). All OFF by default.
 
+import { isClerkConfigured } from "./clerk.js";
+
 /**
  * Parse the AUTH_GATEKEEPERS allowlist into a list of gatekeeper vendor ids (lowercased). These are
  * the gatekeepers permitted to drive sign-in; a vendor must also actually advertise `providesAuth`
@@ -23,11 +25,14 @@ export function hasAuthGatekeepers(env: Cloudflare.Env): boolean {
 }
 
 /**
- * Whether username/password login + signup is available. Enabled by default. An installation can
- * set DISABLE_PASSWORD_AUTH=true to be OAuth-only — but that only takes effect when at least one
- * auth gatekeeper is allowlisted, otherwise we'd lock everyone out, so password auth stays on.
+ * Whether username/password login + signup is available. Enabled by default. Configuring Clerk
+ * sign-in (CLERK_PUBLISHABLE_KEY) replaces it entirely — Clerk becomes the only way in. Otherwise,
+ * an installation can set DISABLE_PASSWORD_AUTH=true to be OAuth-only — but that only takes effect
+ * when at least one auth gatekeeper is allowlisted, otherwise we'd lock everyone out, so password
+ * auth stays on.
  */
 export function isPasswordAuthEnabled(env: Cloudflare.Env): boolean {
+  if (isClerkConfigured(env)) return false;
   if (env.DISABLE_PASSWORD_AUTH !== "true") return true;
   return !hasAuthGatekeepers(env);
 }

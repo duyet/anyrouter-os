@@ -8,6 +8,7 @@ import { hashPassword } from "./passwordHash";
 import { useServerConfig, useServerConfigError, useSiteName } from "./ServerConfigContext";
 import { useDocumentTitle } from "./useDocumentTitle";
 import OAuthButtons from "./components/auth/OAuthButtons";
+import ClerkLogin from "./components/auth/ClerkLogin";
 import SiteLogo from "./components/SiteLogo";
 import { useConnectionLost } from "./RpcContext";
 
@@ -102,9 +103,12 @@ export default function SignupPage({ rpcStub }: SignupPageProps) {
   }
 
   const authVendors = serverConfig.authVendors ?? [];
+  // Clerk covers sign-up too (its <SignIn> UI links to account creation), so it replaces the
+  // password form and gatekeeper buttons entirely when configured.
+  const clerkKey = serverConfig.clerkPublishableKey;
   const signupsEnabled = serverConfig.signupsEnabled;
   // The password create-account form requires both password auth AND open signups.
-  const passwordAuthEnabled = serverConfig.passwordAuthEnabled && signupsEnabled;
+  const passwordAuthEnabled = !clerkKey && serverConfig.passwordAuthEnabled && signupsEnabled;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-kumo-base px-4 relative overflow-hidden">
@@ -136,7 +140,9 @@ export default function SignupPage({ rpcStub }: SignupPageProps) {
           <p className="text-sm text-kumo-subtle mt-1">Create your account</p>
         </div>
 
-        {!signupsEnabled && (
+        {clerkKey && <ClerkLogin rpcStub={rpcStub} publishableKey={clerkKey} />}
+
+        {!clerkKey && !signupsEnabled && (
           <Banner
             variant="default"
             title="Signups are closed"
@@ -199,7 +205,7 @@ export default function SignupPage({ rpcStub }: SignupPageProps) {
         )}
 
         {/* Gatekeeper sign-in options, shown whenever any auth vendor is configured. */}
-        {authVendors.length > 0 && (
+        {!clerkKey && authVendors.length > 0 && (
           <div className={passwordAuthEnabled ? "mt-6" : ""}>
             {passwordAuthEnabled && (
               <div className="flex items-center gap-3 mb-4">

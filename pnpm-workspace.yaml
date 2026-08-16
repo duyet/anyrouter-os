@@ -43,6 +43,8 @@ minimumReleaseAgeExclude:
   - "@cloudflare/workerd-*"
 
 allowBuilds:
+  # Postinstall is telemetry only; the package works without it.
+  '@clerk/shared': false
   '@google/genai': true
   core-js-pure: true
   esbuild: true

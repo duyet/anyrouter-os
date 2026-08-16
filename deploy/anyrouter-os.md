@@ -13,8 +13,8 @@
 export CLOUDFLARE_API_TOKEN=…   # Workers edit
 export CLOUDFLARE_ACCOUNT_ID=7df185a18b98382c3240fa7ac4a37075
 
-# Frontend (Access-mode SPA)
-cd packages/workshop-frontend && VITE_CF_ACCESS_MODE=true pnpm build && cd ../..
+# Frontend (Clerk sign-in — no Access mode)
+cd packages/workshop-frontend && pnpm build && cd ../..
 
 # GitHub gatekeeper (OAuth secrets live here, not on the backend)
 cd packages/gatekeeper-github
@@ -31,13 +31,30 @@ pnpm exec wrangler deploy --config wrangler.anyrouter-os.jsonc
 # Backend
 cd ../workshop-backend
 pnpm exec wrangler deploy --config wrangler.anyrouter-os.jsonc
-# First time / rotated token:
-# printf '%s' "$CF_AI_GATEWAY_API_TOKEN" | pnpm exec wrangler secret put CF_AI_GATEWAY_API_TOKEN --config wrangler.anyrouter-os.jsonc
+# First time / rotated secrets:
+# Clerk Backend API key (sk_…) — resolves the signed-in user's email from the session token:
+# printf '%s' "$CLERK_SECRET_KEY" | pnpm exec wrangler secret put CLERK_SECRET_KEY --config wrangler.anyrouter-os.jsonc
+# AnyRouter Management key (ak_…, write:llm-keys) — mints per-user sk-ar keys during onboarding:
+# printf '%s' "$ANYROUTER_MANAGEMENT_KEY" | pnpm exec wrangler secret put ANYROUTER_MANAGEMENT_KEY --config wrangler.anyrouter-os.jsonc
 
 # Router + custom domain
 cd ../router
 pnpm exec wrangler deploy --config wrangler.anyrouter-os.jsonc
 ```
+
+## Auth (Clerk)
+
+Sign-in is Clerk-only, sharing the anyrouter.dev Clerk instance
+(`CLERK_PUBLISHABLE_KEY = pk_live_Y2xlcmsuYW55cm91dGVyLmRldiQ` → `clerk.anyrouter.dev`), so any
+anyrouter.dev account works here. The backend verifies session JWTs against the instance JWKS and
+looks up the email via the Clerk Backend API (`CLERK_SECRET_KEY` secret). The old Zero Trust
+Access app for `os.anyrouter.dev` must be removed (or set to bypass) — `CF_ACCESS_AUD`/`ISS` are
+gone from the backend vars and the frontend is no longer built in Access mode.
+
+Model access is AnyRouter-only. Onboarding mints each user an `sk-ar-…` key automatically via the
+`ANYROUTER_MANAGEMENT_KEY` secret (billed to the operator's AnyRouter account); without that
+secret it falls back to the one-click AnyRouter device login. The `CF_AI_GATEWAY*` vars were
+removed along with the Workers AI built-in models.
 
 ## Workers
 

@@ -1,7 +1,7 @@
 import { RpcStub, RpcTarget, newHttpBatchRpcResponse, newWebSocketRpcSession, RpcSessionOptions } from "capnweb";
 import { validateRpc } from "capnweb-validate";
 import type { JWTPayload } from "jose";
-import { PublicApi, AuthenticatedApi, Overseer, GadgetMetadataWithTimestamps, AiChatAuthorInfo, AiModelConfig, AiGatewayInfo, AiModelProvider, ConnectedAccountsSubscriber, ConnectedAccountsFilter, GatekeeperVendorFilter, ObserverConfigCallback, BlueprintLibrarySummary, BlueprintPublicInfo, BlueprintUserSummary, BlueprintBindingAssignment, AgentSpawnerConfig, WorkpieceId, BLUEPRINT_SCREENSHOT_PATH_PREFIX, BLUEPRINT_SCREENSHOT_R2_PREFIX, blueprintScreenshotUrl, ServerConfig, CloudflareUsageInfo, CloudflareAccountOption, LoginAttempt, GatekeeperAppInfo, AdminApi, GatekeeperVendorInfo, OutputFormatOffer, ListOutputsResult, createOpenGadgetError, getOpenGadgetErrorCode, OPEN_GADGET_ERROR_CODES, AUTH_ERROR_CODES, createAuthError } from '@gadgets/workshop-shared/api';
+import { PublicApi, AuthenticatedApi, Overseer, GadgetMetadataWithTimestamps, AiChatAuthorInfo, AiModelConfig, AiGatewayInfo, AiModelProvider, ConnectedAccountsSubscriber, ConnectedAccountsFilter, GatekeeperVendorFilter, ObserverConfigCallback, BlueprintLibrarySummary, BlueprintPublicInfo, BlueprintUserSummary, BlueprintBindingAssignment, AgentSpawnerConfig, WorkpieceId, BLUEPRINT_SCREENSHOT_PATH_PREFIX, BLUEPRINT_SCREENSHOT_R2_PREFIX, blueprintScreenshotUrl, ServerConfig, CloudflareUsageInfo, CloudflareAccountOption, LoginAttempt, GatekeeperAppInfo, AdminApi, GatekeeperVendorInfo, OutputFormatOffer, ListOutputsResult, createOpenGadgetError, getOpenGadgetErrorCode, OPEN_GADGET_ERROR_CODES, AUTH_ERROR_CODES, createAuthError, DEFAULT_SITE_NAME } from '@gadgets/workshop-shared/api';
 import type { UiFeatureFlags } from "@gadgets/workshop-shared/feature-flags";
 import { getServerConfig } from "./deployment-config.js";
 import { isPasswordAuthEnabled, getAuthGatekeeperAllowlist } from "./auth/config.js";
@@ -17,10 +17,13 @@ import { GatekeeperUiFrame } from "@gadgets/workshop-shared/gatekeeper";
 import { LanguageModelGatekeeper } from "./ai-models";
 import { getAiGatewayConfig } from "./ai-gateway.js";
 import {
+  canProvisionAnyRouterKeys,
   fetchAnyRouterSuggestedModels,
   pollAnyRouterDeviceLogin,
+  provisionAnyRouterKey,
   startAnyRouterDeviceLogin,
 } from "./anyrouter-oauth.js";
+import { verifyClerkLogin } from "./auth/clerk.js";
 import { AdminSettings, AdminApiImpl } from "./admin-settings.js";
 import { BlueprintKvRecord, buildBlueprintArchiveStream, sanitizeBlueprintOutput, listFeaturedBlueprintsFromKv, parseBlueprintArchive, randomBlueprintId, readBlueprintContent, readBlueprintKvRecord } from "./blueprint-archive.js";
 import { GatekeeperConnectCallbackImpl, normalizeUsername, UserDurableObject, CLOUDFLARE_VENDOR_ID } from "./user";
@@ -219,9 +222,18 @@ class AuthenticatedApiImpl extends RpcTarget implements AuthenticatedApi {
 
   startAnyRouterDeviceLogin() {
     return startAnyRouterDeviceLogin({
-      clientName: "Cloudflare OS",
-      keyLabel: "Cloudflare OS",
+      clientName: DEFAULT_SITE_NAME,
+      keyLabel: DEFAULT_SITE_NAME,
     });
+  }
+
+  async provisionAnyRouterKey(): Promise<{ apiToken: string } | null> {
+    if (!canProvisionAnyRouterKeys(this.env)) return null;
+    // Label the key with the deployment name and the user it was minted for, so the operator's
+    // AnyRouter dashboard stays legible.
+    const apiToken = await provisionAnyRouterKey(
+        this.env, `${DEFAULT_SITE_NAME} – ${this.#userId.name!}`);
+    return { apiToken };
   }
 
   pollAnyRouterDeviceLogin(deviceCode: string) {
@@ -690,6 +702,27 @@ class PublicApiImpl extends RpcTarget implements PublicApi {
     // @ts-expect-error Cap'n Web RPC stubs and native RPC targets are compatible but the type
     //     system doesn't know this.
     return { url, attempt: new LoginAttemptImpl(pending) };
+  }
+
+  async loginWithClerk(clerkSessionToken: string): Promise<string | null> {
+    // Verifies against the Clerk instance's JWKS and resolves the verified email; throws when
+    // Clerk sign-in isn't configured or the token doesn't check out.
+    let email = await verifyClerkLogin(this.env, clerkSessionToken);
+
+    // Same account-resolution semantics as gatekeeper sign-in: the user DO is keyed by email,
+    // first sign-in creates the account (unless signups are closed), and password login stays off.
+    let userId = this.users.idFromName(email);
+    let signupsEnabled = (await readAdminConfig(this.env)).signupsEnabled;
+    let secret = await this.users.get(userId).loginOrCreateViaGatekeeper(email, signupsEnabled);
+    if (secret === null) return null;
+
+    recordAnalytics(this.ctx, this.env, {
+      event_name: "user_authenticated",
+      user_id: userId.toString(),
+      source: "clerk",
+    });
+
+    return `${email}:${secret}`;
   }
 
   async authenticate(token: string): Promise<AuthenticatedApi> {

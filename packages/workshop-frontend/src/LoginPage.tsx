@@ -9,6 +9,7 @@ import { useServerConfig, useServerConfigError, useSiteName } from './ServerConf
 import { useDocumentTitle } from './useDocumentTitle'
 import { useConnectionLost } from './RpcContext'
 import OAuthButtons from './components/auth/OAuthButtons'
+import ClerkLogin from './components/auth/ClerkLogin'
 import SiteLogo from './components/SiteLogo'
 
 
@@ -83,7 +84,9 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
   }
 
   const authVendors = serverConfig.authVendors ?? []
-  const passwordAuthEnabled = serverConfig.passwordAuthEnabled
+  // Clerk replaces every other sign-in method when configured (see ServerConfig.clerkPublishableKey).
+  const clerkKey = serverConfig.clerkPublishableKey
+  const passwordAuthEnabled = !clerkKey && serverConfig.passwordAuthEnabled
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-kumo-base px-4 relative overflow-hidden">
@@ -109,6 +112,11 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
           <h1 className="text-xl font-semibold text-kumo-default">{siteName}</h1>
           <p className="text-sm text-kumo-subtle mt-1">Sign in to your account</p>
         </div>
+
+        {/* Clerk is the only way in when configured (shared with anyrouter.dev). */}
+        {clerkKey && (
+          <ClerkLogin rpcStub={rpcStub} publishableKey={clerkKey} onSuccess={onLoginSuccess} />
+        )}
 
         {passwordAuthEnabled && (
           <>
@@ -159,7 +167,7 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
         )}
 
         {/* Gatekeeper sign-in options, shown whenever any auth vendor is configured. */}
-        {authVendors.length > 0 && (
+        {!clerkKey && authVendors.length > 0 && (
           <div className={passwordAuthEnabled ? 'mt-6' : ''}>
             {passwordAuthEnabled && (
               <div className="flex items-center gap-3 mb-4">

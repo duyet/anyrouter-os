@@ -83,8 +83,8 @@ export async function startAnyRouterDeviceLogin(options: {
   scope?: string;
 } = {}): Promise<AnyRouterDeviceLoginStart> {
   const body = {
-    client_name: options.clientName ?? "Cloudflare OS",
-    key_label: options.keyLabel ?? "Cloudflare OS",
+    client_name: options.clientName ?? "AnyRouter OS",
+    key_label: options.keyLabel ?? "AnyRouter OS",
     // Consent UI still lets the user narrow scopes; inference is the minimum we need.
     scope: options.scope ?? "inference",
   };
@@ -185,6 +185,53 @@ export async function pollAnyRouterDeviceLogin(
         message: data.error_description ?? `AnyRouter login error: ${err}`,
       };
   }
+}
+
+type ManagementEnv = { ANYROUTER_MANAGEMENT_KEY?: string };
+
+/** Whether the deployment can mint AnyRouter keys server-side (seamless onboarding). */
+export function canProvisionAnyRouterKeys(env: Cloudflare.Env): boolean {
+  return !!(env as ManagementEnv).ANYROUTER_MANAGEMENT_KEY;
+}
+
+/**
+ * Mint a fresh AnyRouter LLM key (`sk-ar-…`) for a user, using the deployment's Management key
+ * (`ak_…` with `write:llm-keys` scope, set via `wrangler secret put ANYROUTER_MANAGEMENT_KEY`).
+ * Keys minted this way belong to the deployment operator's AnyRouter account, so inference is
+ * billed there — this is what makes onboarding "sign in and go" with no key handling by the user.
+ *
+ * The plaintext secret is returned once by AnyRouter and never again; the caller stores it in the
+ * user's model config. Throws when the management key is missing or the API rejects the request.
+ *
+ * Docs: https://anyrouter.dev/docs/api-reference/keys.md
+ */
+export async function provisionAnyRouterKey(
+  env: Cloudflare.Env, label: string,
+): Promise<string> {
+  const managementKey = (env as ManagementEnv).ANYROUTER_MANAGEMENT_KEY;
+  if (!managementKey) {
+    throw new Error(
+        "ANYROUTER_MANAGEMENT_KEY is not configured, so this deployment can't mint AnyRouter " +
+        "keys automatically.");
+  }
+  const res = await fetch(`${ANYROUTER_API_BASE}/keys`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${managementKey}`,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify({ name: label }),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    throw new Error(`AnyRouter key provisioning failed (${res.status}): ${text.slice(0, 200)}`);
+  }
+  const data = JSON.parse(text) as { key?: string };
+  if (!data.key) {
+    throw new Error("AnyRouter key provisioning returned no key secret.");
+  }
+  return data.key;
 }
 
 /**

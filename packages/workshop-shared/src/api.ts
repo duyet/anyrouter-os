@@ -63,6 +63,16 @@ export interface PublicApi extends RpcTarget {
    */
   startGatekeeperLogin(vendorId: string): Promise<{ url: string; attempt: RpcStub<LoginAttempt> }>;
 
+  /**
+   * Sign in with a Clerk session JWT (from the Clerk instance in
+   * ServerConfig.clerkPublishableKey — the same instance anyrouter.dev uses). The server verifies
+   * the token against the instance's JWKS, resolves the account's verified email, and creates the
+   * user on first sign-in. Returns a session token to store and pass to `authenticate()`, or null
+   * when the account doesn't exist yet and signups are disabled. Throws when Clerk sign-in is not
+   * configured or the token doesn't verify.
+   */
+  loginWithClerk(clerkSessionToken: string): Promise<string | null>;
+
   /** Authenticates the user using an auth token (typically stored in localStorage). */
   authenticate(token: string): Promise<AuthenticatedApi>;
 
@@ -410,6 +420,14 @@ export interface AuthenticatedApi extends RpcTarget {
    * Falls back to a short static list when AnyRouter is unreachable.
    */
   listAnyRouterSuggestedModels(): Promise<AnyRouterSuggestedModel[]>;
+
+  /**
+   * Mint a fresh AnyRouter API key for this user, using the deployment's management key. Returns
+   * the one-time `sk-ar-…` secret to store on model configs via `addModel()`, or null when the
+   * deployment has no management key configured (the client falls back to the device login flow).
+   * This is what makes onboarding seamless: sign in, pick a model, go — no key handling.
+   */
+  provisionAnyRouterKey(): Promise<{ apiToken: string } | null>;
 
   /**
    * Start AnyRouter device-code login (RFC 8628). The user opens the verification URL and either
@@ -848,7 +866,7 @@ export const MAX_SITE_NAME_LENGTH = 40;
  * What this deployment calls itself when the admin has not set a custom `siteName`. Also the
  * product's own name, so it appears in prose the server and UI address to the user.
  */
-export const DEFAULT_SITE_NAME = "Cloudflare OS";
+export const DEFAULT_SITE_NAME = "AnyRouter OS";
 
 /**
  * The name to display for this deployment. Accepts an unset or not-yet-loaded `siteName` so both
@@ -1109,6 +1127,13 @@ export type ServerConfig = {
    * overrides the brand CSS variables with this (and derived shades) at runtime.
    */
   accentColor: string;
+
+  /**
+   * Clerk publishable key (pk_…, not a secret) when Clerk sign-in is configured. When set, the
+   * client renders Clerk as the sign-in method (passwordAuthEnabled is forced false) and completes
+   * login via `PublicApi.loginWithClerk()`.
+   */
+  clerkPublishableKey?: string;
 };
 
 /**
