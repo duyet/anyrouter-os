@@ -107,8 +107,17 @@ describe("fetchAnyRouterProfile", () => {
   });
 
   it("throws with the status when the request fails", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("unauthorized", { status: 401 })));
-    await expect(fetchAnyRouterProfile("sk-ar-v1-bad")).rejects.toThrow("401");
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("boom", { status: 500 })));
+    await expect(fetchAnyRouterProfile("sk-ar-v1-secret")).rejects.toThrow("500");
+  });
+
+  // A revoked or expired key is the user's to fix by approving again, so it must be
+  // distinguishable from a transient failure — the profile page tells them which happened.
+  it("tells the user to approve again when the key is rejected", async () => {
+    for (const status of [401, 403]) {
+      vi.stubGlobal("fetch", vi.fn(async () => new Response("nope", { status })));
+      await expect(fetchAnyRouterProfile("sk-ar-v1-bad")).rejects.toThrow(/approve access again/i);
+    }
   });
 });
 

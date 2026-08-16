@@ -120,6 +120,12 @@ export async function fetchAnyRouterProfile(apiToken: string): Promise<AnyRouter
     headers: { Authorization: `Bearer ${apiToken}`, Accept: "application/json" },
   });
   if (!res.ok) {
+    // A rejected key is the user's problem to fix (approve again); anything else is transient.
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(
+          "AnyRouter rejected the stored key — it was revoked or has expired. " +
+          "Approve access again to reconnect.");
+    }
     throw new Error(`AnyRouter profile request failed (${res.status}).`);
   }
   const data = await res.json() as MeResponse;

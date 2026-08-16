@@ -9,6 +9,7 @@ import type { AdminSettings } from "./admin-settings.js";
 import { isReservedBlueprintKey, readBlueprintKvRecord } from "./blueprint-archive.js";
 import { filterEnabledResources, isResourceDisabled, readAdminConfig } from "./admin-config.js";
 import { buildGatekeeperVendorMap } from "./auth/auth-vendors.js";
+import { fetchAnyRouterProfile } from "./anyrouter-oauth.js";
 
 const logger = createWorkshopLogger("workshop.user");
 
@@ -568,6 +569,21 @@ export class UserDurableObject extends DurableObject<Cloudflare.Env> {
       expiresAt: grant?.expiresAt ?? null,
       profile: grant?.profile ?? null,
     };
+  }
+
+  /**
+   * Re-fetch the account profile with the stored key. The key and its expiry are preserved —
+   * only the cached profile changes — and a failed fetch leaves the grant untouched so a flaky
+   * network call can't destroy a working connection.
+   */
+  async refreshAnyRouterProfile(): Promise<AnyRouterConnectionStatus> {
+    let grant = this.storage.anyrouterGrant.get();
+    if (!grant) {
+      throw new Error("AnyRouter is not connected. Connect it first.");
+    }
+    let profile = await fetchAnyRouterProfile(grant.apiToken);
+    this.storage.anyrouterGrant.put({ ...grant, profile });
+    return { connected: true, expiresAt: grant.expiresAt, profile };
   }
 
   async clearAnyRouterGrant(): Promise<void> {

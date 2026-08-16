@@ -1,10 +1,13 @@
 import { useKumoToastManager } from '@cloudflare/kumo'
 import { useAuthenticatedApi } from './AuthContext'
-import { useState, useEffect, useRef } from 'react'
-import { AiChatAuthorInfo } from '@gadgets/workshop-shared/api'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { AiChatAuthorInfo, AnyRouterConnectionStatus } from '@gadgets/workshop-shared/api'
 import { hashPassword } from './passwordHash'
 import { CF_ACCESS_MODE } from './useAuth'
-import { User, Pencil, Check, X, Lock, Camera, Copy, Eye, EyeSlash } from '@phosphor-icons/react'
+import { User, Pencil, Check, X, Lock, Camera, Copy, Eye, EyeSlash, ArrowsClockwise, ShieldCheck } from '@phosphor-icons/react'
+import { useServerConfig } from './ServerConfigContext'
+import { isAnyRouterGrantExpired } from './anyrouterOAuth'
+import { useAnyRouterConnect } from './useAnyRouterConnect'
 import { useAvatar, invalidateAvatarCache } from './useAvatar'
 import { compressAvatar, avatarBlobUrl } from './avatarUtils'
 import { useDocumentTitle } from './useDocumentTitle'
@@ -80,6 +83,146 @@ function PasswordField({
         <p className="mt-1 text-[12px] tracking-[-0.1px] text-kumo-subtle">{description}</p>
       ) : null}
     </div>
+  )
+}
+
+const SECONDARY_BTN =
+  'press inline-flex h-9 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-kumo-line bg-kumo-base px-3.5 text-[13px] font-medium tracking-[-0.25px] text-kumo-default transition-colors hover:bg-kumo-tint disabled:cursor-not-allowed disabled:opacity-60'
+
+function formatExpiry(expiresAt: string | null): string | null {
+  if (!expiresAt) return null
+  const t = Date.parse(expiresAt)
+  if (!Number.isFinite(t)) return null
+  return new Date(t).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+}
+
+/**
+ * The user's AnyRouter connection: who it is signed in as, when the key expires, and the two
+ * things they can do about it — Sync (re-read the account from AnyRouter with the stored key)
+ * and Approve again (re-run the consent flow, which is also how newly added permissions get
+ * granted and how a revoked key is replaced).
+ */
+function AnyRouterSection() {
+  const { authenticatedApi } = useAuthenticatedApi()
+  const serverConfig = useServerConfig()
+  const toasts = useKumoToastManager()
+
+  const [connection, setConnection] = useState<AnyRouterConnectionStatus | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [syncing, setSyncing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const read = useCallback(
+    () => authenticatedApi.getAnyRouterConnection(),
+    [authenticatedApi],
+  )
+
+  useEffect(() => {
+    let cancelled = false
+    read()
+      .then((status) => { if (!cancelled) setConnection(status) })
+      .catch(() => { if (!cancelled) setError('Could not read your AnyRouter connection.') })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [read])
+
+  const connect = useAnyRouterConnect({
+    clientId: serverConfig?.anyrouterOauthClientId,
+    read,
+    onConnected: (status) => {
+      setConnection(status)
+      setError(null)
+      toasts.add({ title: 'AnyRouter access approved', variant: 'success' })
+    },
+    onError: setError,
+  })
+
+  const handleSync = async () => {
+    setSyncing(true)
+    setError(null)
+    try {
+      const status = await authenticatedApi.refreshAnyRouterProfile()
+      setConnection(status)
+      toasts.add({ title: 'Synced with AnyRouter', variant: 'success' })
+    } catch (err) {
+      // The grant is deliberately left in place: the fix is to approve again, not to lose the key.
+      setError(err instanceof Error ? err.message : 'Could not sync with AnyRouter.')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  if (loading) return null
+
+  const profile = connection?.profile
+  const expired = isAnyRouterGrantExpired(connection?.expiresAt ?? null)
+  const expiry = formatExpiry(connection?.expiresAt ?? null)
+
+  return (
+    <section className="flex flex-col gap-3">
+      <SectionLabel>AnyRouter</SectionLabel>
+      <div className="divide-y divide-kumo-line overflow-hidden rounded-xl border border-kumo-line bg-kumo-base">
+        <div className="flex items-center gap-4 px-5 py-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-kumo-fill">
+            {profile?.avatarUrl ? (
+              <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <ShieldCheck size={20} className="text-kumo-subtle" />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[14px] font-medium tracking-[-0.25px] text-kumo-default">
+              {connection?.connected
+                ? profile?.name || profile?.username || profile?.email || 'AnyRouter account'
+                : 'Not connected'}
+            </p>
+            <p className="mt-0.5 truncate text-[12px] leading-4 tracking-[-0.2px] text-kumo-subtle">
+              {!connection?.connected
+                ? 'Approve access to run inference on your own AnyRouter key'
+                : expired
+                  ? 'Your sign-in key has expired — approve again to keep models working'
+                  : profile?.email
+                    ? `${profile.email}${expiry ? ` · key expires ${expiry}` : ''}`
+                    : expiry ? `Key expires ${expiry}` : 'Connected'}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 px-5 py-4">
+          <button
+            type="button"
+            onClick={() => connect.start()}
+            disabled={connect.state === 'waiting'}
+            className={PRIMARY_BTN}
+          >
+            <ShieldCheck size={14} weight="bold" />
+            {connect.state === 'waiting'
+              ? 'Approve in the AnyRouter tab…'
+              : connection?.connected ? 'Approve again' : 'Connect AnyRouter'}
+          </button>
+          {connection?.connected && (
+            <button
+              type="button"
+              onClick={handleSync}
+              disabled={syncing}
+              className={SECONDARY_BTN}
+            >
+              <ArrowsClockwise size={14} className={syncing ? 'animate-spin' : undefined} />
+              {syncing ? 'Syncing…' : 'Sync account data'}
+            </button>
+          )}
+          {connect.state === 'waiting' && (
+            <button type="button" onClick={connect.stop} className={SECONDARY_BTN}>
+              Cancel
+            </button>
+          )}
+        </div>
+
+        {error && (
+          <p className="px-5 py-3 text-[12px] tracking-[-0.1px] text-kumo-danger">{error}</p>
+        )}
+      </div>
+    </section>
   )
 }
 
@@ -375,6 +518,8 @@ export default function SettingsPage() {
             </div>
           </div>
         </section>
+
+        <AnyRouterSection />
 
         {/* Security — only for password accounts (hidden under CF Access or gatekeeper sign-in) */}
         {!CF_ACCESS_MODE && hasPassword === true && (

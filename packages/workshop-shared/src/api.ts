@@ -428,6 +428,14 @@ export interface AuthenticatedApi extends RpcTarget {
   /** The stored AnyRouter grant's status (never the secret). */
   getAnyRouterConnection(): Promise<AnyRouterConnectionStatus>;
 
+  /**
+   * Re-fetch the AnyRouter account profile with the stored key and return the updated status.
+   * The key and its expiry are left alone — this only refreshes the cached profile. Throws when
+   * AnyRouter rejects the key (revoked or expired), leaving the grant in place so a transient
+   * failure never destroys a working connection.
+   */
+  refreshAnyRouterProfile(): Promise<AnyRouterConnectionStatus>;
+
   /** Forget the stored AnyRouter grant. Models using it stop working until re-connected. */
   disconnectAnyRouter(): Promise<void>;
 
