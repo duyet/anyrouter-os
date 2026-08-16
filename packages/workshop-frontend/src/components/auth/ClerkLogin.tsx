@@ -1,8 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { RpcStub } from 'capnweb'
 import { PublicApi } from '@gadgets/workshop-shared/api'
-import { ClerkProvider, SignIn, useAuth as useClerkAuth } from '@clerk/clerk-react'
-import { Banner, Loader } from '@cloudflare/kumo'
+import {
+  ClerkProvider, SignIn, useAuth as useClerkAuth, useClerk, useUser,
+} from '@clerk/clerk-react'
+import { Banner, Button, Loader } from '@cloudflare/kumo'
+import {
+  allowClerkAutoSignIn, isClerkAutoSignInSuppressed, suppressClerkAutoSignIn,
+} from '../../clerkAutoSignIn'
 
 interface ClerkLoginProps {
   rpcStub: RpcStub<PublicApi>
@@ -32,13 +37,28 @@ function ClerkSessionBridge({
   onSuccess?: () => void
 }) {
   const { isLoaded, isSignedIn, getToken } = useClerkAuth()
+  const { user } = useUser()
+  const { signOut } = useClerk()
   const [error, setError] = useState<string | null>(null)
+  // Read once on mount: the flag only changes from this component, and re-reading storage on every
+  // render would fight the state update below.
+  const [autoSignInSuppressed, setAutoSignInSuppressed] = useState(isClerkAutoSignInSuppressed)
   // Guard against re-entry: getToken()/loginWithClerk are async and this effect re-runs whenever
   // auth state changes, so without the ref one Clerk session could start several exchanges.
   const exchangingRef = useRef(false)
 
+  // Suppression only guards a session that outlived the user's sign-out. Once there is no session
+  // at all, whatever they sign in with next is a deliberate choice, so stop guarding — otherwise
+  // signing in through the form below would land back on the "you're signed out" screen.
   useEffect(() => {
-    if (!isLoaded || !isSignedIn || exchangingRef.current) return
+    if (isLoaded && !isSignedIn && autoSignInSuppressed) {
+      allowClerkAutoSignIn()
+      setAutoSignInSuppressed(false)
+    }
+  }, [isLoaded, isSignedIn, autoSignInSuppressed])
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || autoSignInSuppressed || exchangingRef.current) return
     exchangingRef.current = true
     let cancelled = false
     ;(async () => {
@@ -49,6 +69,7 @@ function ClerkSessionBridge({
         if (cancelled) return
         if (token) {
           localStorage.setItem('authToken', token)
+          allowClerkAutoSignIn()
           if (onSuccess) {
             onSuccess()
           } else {
@@ -67,12 +88,51 @@ function ClerkSessionBridge({
       }
     })()
     return () => { cancelled = true }
-  }, [isLoaded, isSignedIn, getToken, rpcStub, onSuccess])
+  }, [isLoaded, isSignedIn, autoSignInSuppressed, getToken, rpcStub, onSuccess])
 
   if (!isLoaded) {
     return (
       <div className="flex justify-center py-8">
         <Loader size="lg" />
+      </div>
+    )
+  }
+
+  // Signed out here, but the Clerk session is still good: offer the one-click way back in rather
+  // than taking it for them, and a way to leave that session entirely.
+  if (isSignedIn && autoSignInSuppressed) {
+    const label = user?.firstName || user?.username
+      || user?.primaryEmailAddress?.emailAddress || null
+    return (
+      <div className="flex flex-col items-center gap-4 py-6">
+        {error && <Banner variant="error" title={error} />}
+        <p className="text-sm text-kumo-subtle text-center">
+          {label ? `You're signed out. Continue as ${label}?` : "You're signed out."}
+        </p>
+        <Button
+          variant="primary"
+          onClick={() => {
+            allowClerkAutoSignIn()
+            setAutoSignInSuppressed(false)
+          }}
+        >
+          {label ? `Continue as ${label}` : 'Continue with AnyRouter'}
+        </Button>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            // Ending the shared Clerk session signs the user out of anyrouter.dev too, so it stays
+            // an explicit choice. Keep the flag set: the sign-in form should follow, not another
+            // automatic exchange.
+            suppressClerkAutoSignIn()
+            signOut().catch((err) => {
+              console.error('Clerk sign-out failed:', err)
+              setError('Could not sign out of AnyRouter. Try again.')
+            })
+          }}
+        >
+          Use a different account
+        </Button>
       </div>
     )
   }

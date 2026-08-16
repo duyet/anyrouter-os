@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { RpcStub } from 'capnweb'
 import { PublicApi, AuthenticatedApi } from '@gadgets/workshop-shared/api'
+import { suppressClerkAutoSignIn } from './clerkAutoSignIn'
 
 const CF_ACCESS_MODE = import.meta.env.VITE_CF_ACCESS_MODE === 'true'
 
@@ -98,6 +99,11 @@ export function useAuth(publicApi: RpcStub<PublicApi>) {
       window.location.assign('/cdn-cgi/access/logout')
       return
     }
+
+    // Clearing our own token is not enough where sign-in came from the shared Clerk instance: that
+    // session outlives it and the sign-in page would exchange it for a new token immediately. See
+    // clerkAutoSignIn.ts.
+    suppressClerkAutoSignIn()
 
     // Use functional updater to read current state (avoids stale closure).
     setAuthState(prev => {
