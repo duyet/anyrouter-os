@@ -9,8 +9,13 @@
 
 ## Redeploy
 
+`scripts/deploy-anyrouter-os.sh` does the usual path (frontend build → backend → router),
+reading credentials from `.env.local` at the repo root. Without them wrangler drops into an
+interactive OAuth login, which does nothing in a non-interactive shell. Deploy the gatekeepers
+by hand, as below, when they change.
+
 ```bash
-export CLOUDFLARE_API_TOKEN=…   # Workers edit
+export CLOUDFLARE_API_TOKEN=…   # Workers edit — or put it in .env.local
 export CLOUDFLARE_ACCOUNT_ID=7df185a18b98382c3240fa7ac4a37075
 
 # Frontend (Clerk sign-in — no Access mode)
