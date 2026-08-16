@@ -136,10 +136,10 @@ export default function OnboardingWizard({
     pollTimerRef.current = setInterval(check, 2500)
     try {
       const channel = new BroadcastChannel(ANYROUTER_OAUTH_CHANNEL)
-      channel.onmessage = () => {
+      channel.addEventListener('message', () => {
         channel.close()
         check()
-      }
+      }, { once: true })
     } catch {
       // Polling covers it.
     }

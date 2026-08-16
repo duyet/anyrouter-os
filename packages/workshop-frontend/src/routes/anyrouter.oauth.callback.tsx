@@ -71,7 +71,8 @@ function AnyRouterOAuthCallback() {
         setStatus('done')
         // Tell whoever opened the popup that the grant landed (they also poll as a fallback).
         try {
-          new BroadcastChannel(ANYROUTER_OAUTH_CHANNEL).postMessage({ type: 'connected' })
+          const channel = new BroadcastChannel(ANYROUTER_OAUTH_CHANNEL)
+          channel.postMessage({ type: 'connected' })
         } catch {
           // BroadcastChannel unavailable — the opener's polling covers it.
         }

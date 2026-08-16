@@ -11,8 +11,8 @@
     "dev-client": "cd packages/workshop-frontend && pnpm run dev",
     "dev-server": "node run-dev-server.js",
     "clean": "vp run -r clean",
-    "lint:check": "vp lint",
-    "lint:fix": "vp lint --fix",
+    "lint:check": "vp lint -A unicorn/require-post-message-target-origin",
+    "lint:fix": "vp lint --fix -A unicorn/require-post-message-target-origin",
     "types:check": "pnpm run build",
     "lint": "pnpm run lint:check && pnpm run types:check",
     "types:generate": "node scripts/generate-worker-types.mjs"
