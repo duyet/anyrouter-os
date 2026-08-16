@@ -179,6 +179,13 @@ export type AccountDescription = {
    * surfaces it as a nav entry / page using this title.
    */
   providesUi?: { title: string; icon?: AvatarImage };
+
+  /**
+   * True when this account holds a copy of the signed-in user's AnyRouter sign-in key (see
+   * GatekeeperVendor.createAccount's `anyrouterKey` option), so the Workshop knows to push a fresh
+   * key into it (via GatekeeperUser.setAnyrouterKey) whenever the user's AnyRouter grant is renewed.
+   */
+  usesAnyrouterKey?: boolean;
 }
 
 /** Describes metadata about a specific instance of a resource. Returned by Gatekeeper.describe(). */
@@ -509,14 +516,27 @@ export interface GatekeeperVendor extends WorkerEntrypoint {
 
   /**
    * Mint a NEW connected account, with no OAuth flow. Safe to expose on this public interface: it
-   * only *creates* accounts — it cannot look up or return an existing account — and it takes no
-   * arguments, so it carries no user identity. The Workshop persists the returned account (like an
-   * OAuth-connected account) and treats it as the authority thereafter. Present only on vendors that
-   * set VendorDescription.autoProvisionsAccount; callers gate on that flag rather than probing, since
-   * RPC stubs cannot report optional-method presence.
+   * only *creates* accounts — it cannot look up or return an existing account — and the only
+   * argument it takes is `options`, which carries material the Workshop already resolved for the
+   * signed-in user (never a raw user identity or lookup key). The Workshop persists the returned
+   * account (like an OAuth-connected account) and treats it as the authority thereafter. Present
+   * only on vendors that set VendorDescription.autoProvisionsAccount; callers gate on that flag
+   * rather than probing, since RPC stubs cannot report optional-method presence.
    */
-  createAccount?(): Promise<Fetcher<GatekeeperUser>>;
+  createAccount?(options?: CreateAccountOptions): Promise<Fetcher<GatekeeperUser>>;
 }
+
+/**
+ * Options for GatekeeperVendor.createAccount().
+ */
+export type CreateAccountOptions = {
+  /**
+   * The signed-in user's own AnyRouter sign-in key (sk-ar-…), supplied for vendors that connect to
+   * AnyRouter on the user's behalf so usage bills to the user's own account rather than the
+   * deployment's. Absent when the user has no AnyRouter grant.
+   */
+  anyrouterKey?: string;
+};
 
 export interface GatekeeperConnectCallback extends WorkerEntrypoint {
   /**
@@ -636,6 +656,14 @@ export interface GatekeeperUser extends WorkerEntrypoint {
    * SECURITY: As with connectAccount(), any returned URL must include a cryptographic nonce.
    */
   ensureResources(resourceUrlPatterns: string[]): Promise<{url?: string}>;
+
+  /**
+   * Replace this account's stored AnyRouter key, e.g. after the signed-in user's "Sign in with
+   * AnyRouter" grant is renewed and issues a new key. Present only on accounts whose describe()
+   * sets AccountDescription.usesAnyrouterKey; callers gate on that flag rather than probing, since
+   * RPC stubs cannot reliably report whether an optional method exists.
+   */
+  setAnyrouterKey?(key: string): Promise<void>;
 
   // ---------------------------------------------------------------------------
   // Singleton / management-UI capabilities. Present only on accounts created by

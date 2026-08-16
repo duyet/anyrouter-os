@@ -53,7 +53,10 @@
     // Dual logo lockup: the AnyRouter mark leads, the deployment's own mark (the themed `<Hexagon>`
     // SiteLogo renders as its fallback) follows. The asset is square and carries its own
     // prefers-color-scheme rule, so it stays legible in both themes inside an <img>.
-    "SITE_LOGO_SECONDARY_URL": "/anyrouter-logo.svg"
+    "SITE_LOGO_SECONDARY_URL": "/anyrouter-logo.svg",
+    // Every user gets the AnyRouter MCP server (GATEKEEPER_MCP, vendor id "mcp") connected
+    // automatically at signup, authenticated with their own AnyRouter key -- no admin action needed.
+    "AMBIENT_GATEKEEPER_MODES": "{\"mcp\":\"enabled\"}"
   },
   "observability": {
     "enabled": true,

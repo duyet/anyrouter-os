@@ -11,7 +11,9 @@ import { validateRpc, skipRpcValidation } from "capnweb-validate";
 import { createLogger } from "@gadgets/backend-utils/logger";
 import {
   stripTrailingSlashes,
+  type AccountDescription,
   type AvatarImage,
+  type CreateAccountOptions,
   type Gatekeeper,
   type GatekeeperConnectCallback,
   type GatekeeperConnectOptions,
@@ -189,6 +191,9 @@ export class GatekeeperVendor extends WorkerEntrypoint<Env> implements Gatekeepe
       description:
         "Connect a Model Context Protocol server and use its tools from a Gadget. Reads happen " +
         "straight away. Anything that writes waits for your approval.",
+      // Only a deployment with its own MCP server configured has anything to auto-provision an
+      // account against; without one, `createAccount` has no endpoint to connect to.
+      autoProvisionsAccount: defaultEndpoint(this.env) !== undefined,
     };
   }
 
@@ -211,6 +216,74 @@ export class GatekeeperVendor extends WorkerEntrypoint<Env> implements Gatekeepe
     // generated per resource in `McpGatekeeperImpl.getTypeScriptTypes()`.
     return MCP_BASE_TYPES;
   }
+
+  /**
+   * Auto-provisions this deployment's own MCP server (`MCP_DEFAULT_ENDPOINT`), authenticated with
+   * the signed-in user's own AnyRouter key rather than an interactive OAuth flow. Requires both a
+   * configured endpoint and a key: a user with no AnyRouter grant must not get an account that
+   * looks connected but fails on first use.
+   *
+   * Reuses `McpAccountBase.beginConnect` for the actual handshake (probing the endpoint and
+   * recording the connection) rather than duplicating that logic. `beginConnect` is written for the
+   * browser-driven OAuth handshake, which always hands the finished account to a callback instead
+   * of returning it, so `McpAutoProvisionCallback` stands in for that callback and delivers the
+   * account back into this call via `pendingAutoProvisions`.
+   */
+  async createAccount(options?: CreateAccountOptions): Promise<Fetcher<GatekeeperUser>> {
+    const endpoint = defaultEndpoint(this.env);
+    if (!endpoint) {
+      throw new Error(
+        "This deployment has no default MCP endpoint configured (MCP_DEFAULT_ENDPOINT), so an " +
+        "account can't be auto-provisioned.");
+    }
+    const anyrouterKey = options?.anyrouterKey;
+    if (!anyrouterKey) {
+      throw new Error(
+        "No AnyRouter key was supplied, so this account can't be connected. Sign in with " +
+        "AnyRouter first.");
+    }
+
+    const accountObjectId = this.ctx.exports.McpAccount.newUniqueId();
+    const account = this.ctx.exports.McpAccount.get(accountObjectId);
+    await account.setAnyrouterKey(anyrouterKey);
+
+    // `beginConnect` is written for the browser-driven OAuth handshake, so it hands the finished
+    // account to the stored callback instead of returning it. Auto-provisioning has no browser and
+    // no Workshop-supplied callback, so it parks a no-op there and mints the capability here
+    // instead -- an account stub is just `GatekeeperUserImpl` over the account's id, which this
+    // Worker can construct as well as the account DO can.
+    const initiationNonce = generateNonce();
+    await account.setCallback(this.ctx.exports.McpAutoProvisionCallback({}), initiationNonce);
+    const outcome = await account.beginConnect(initiationNonce, {
+      endpoint,
+      serverId: serverIdFromEndpoint(endpoint),
+      serverName: "AnyRouter",
+      provenance: "deployment",
+      auth: "token",
+    });
+    if (outcome.kind !== "done") {
+      throw new Error(
+        `Connecting the AnyRouter MCP server at ${hostOf(endpoint)} unexpectedly required an ` +
+        `interactive step.`);
+    }
+    const props: McpGatekeeperUserProps = { accountObjectId: accountObjectId.toString() };
+    return this.ctx.exports.GatekeeperUserImpl({ props });
+  }
+}
+
+/**
+ * Stand-in `GatekeeperConnectCallback` for `GatekeeperVendor.createAccount()`'s auto-provision
+ * flow. `McpAccountBase.complete()` refuses to finish a connect with no callback stored, but an
+ * auto-provisioned account has no browser waiting and no Workshop callback to notify -- the vendor
+ * returns the account to its caller directly -- so every method here is deliberately empty.
+ */
+@validateRpc()
+export class McpAutoProvisionCallback extends WorkerEntrypoint<Env>
+  implements GatekeeperConnectCallback {
+
+  async complete(_account: Fetcher<GatekeeperUser>): Promise<void> {}
+  async credentialsExpired(): Promise<void> {}
+  async credentialsRestored(): Promise<void> {}
 }
 
 // ---------------------------------------------------------------------------
@@ -232,6 +305,26 @@ export class McpAccount extends McpAccountBase<Env> {
   protected mintAccount(): Fetcher<GatekeeperUser> {
     const props: McpGatekeeperUserProps = { accountObjectId: this.ctx.id.toString() };
     return this.ctx.exports.GatekeeperUserImpl({ props });
+  }
+
+  /**
+   * The stored AnyRouter key, for the account `GatekeeperVendor.createAccount()` connected with
+   * `auth: "token"`. Withheld once the account no longer names this deployment's current default
+   * endpoint (a repoint or a deployment that dropped MCP_DEFAULT_ENDPOINT), per the base class
+   * contract: a stale facet must not receive a bearer minted for a server it no longer points at.
+   */
+  protected override staticToken(server: ConnectedServer): string | null {
+    const endpoint = defaultEndpoint(this.env);
+    if (!endpoint || !sameEndpoint(server.endpoint, endpoint)) return null;
+    return this.ctx.storage.kv.get<string>("anyrouterKey") ?? null;
+  }
+
+  /**
+   * Replaces the stored AnyRouter key, e.g. when the user's "Sign in with AnyRouter" grant is
+   * renewed. Never touches the connected endpoint.
+   */
+  async setAnyrouterKey(key: string): Promise<void> {
+    this.ctx.storage.kv.put("anyrouterKey", key);
   }
 
   /**
@@ -262,6 +355,22 @@ export class GatekeeperUserImpl
 
   protected [mcpGatekeeperUserContext]() {
     return { account: this.#account(), avatar: MCP_AVATAR, baseUrl: getBaseUrl(this.env) };
+  }
+
+  /**
+   * As the shared base, plus `usesAnyrouterKey` for an account `GatekeeperVendor.createAccount()`
+   * connected with the user's own AnyRouter key (identified the same way `staticToken` withholds a
+   * stale credential: `auth === "token"`, the only auth kind that flow ever produces).
+   */
+  async describe(): Promise<AccountDescription> {
+    const account = this.#account();
+    const [base, server] = await Promise.all([super.describe(), account.getServer()]);
+    return server.auth === "token" ? { ...base, usesAnyrouterKey: true } : base;
+  }
+
+  /** Delegates to the account DO; see `GatekeeperUser.setAnyrouterKey`. */
+  async setAnyrouterKey(key: string): Promise<void> {
+    return this.#account().setAnyrouterKey(key);
   }
 
   async getSupportedResources(): Promise<SupportedResource[]> {

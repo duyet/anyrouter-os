@@ -51,6 +51,7 @@ export type ProvidedAccountInfo = {
 // usable directly, the way the runtime stub actually behaves.
 type AccountCreatorStub = Required<Pick<GatekeeperVendor, "createAccount">>;
 type SingletonAccountStub = Required<Pick<GatekeeperUser, "getSingletonGatekeeperClass" | "startAppUi">>;
+type AnyrouterKeyStub = Required<Pick<GatekeeperUser, "setAnyrouterKey">>;
 
 function areCredentialsValid(record: ConnectedAccountRecord): boolean {
   if (record.credentialsExpired) return false;
@@ -564,6 +565,28 @@ export class UserDurableObject extends DurableObject<Cloudflare.Env> {
   async setAnyRouterGrant(
       apiToken: string, expiresAt: string | null, profile: AnyRouterProfile | null): Promise<void> {
     this.storage.anyrouterGrant.put({ apiToken, expiresAt, profile });
+    await this.#pushAnyrouterKeyToConnectedAccounts(apiToken);
+  }
+
+  // Push a freshly (re)issued AnyRouter key into every connected account that holds a copy of it
+  // (AccountDescription.usesAnyrouterKey), so a renewed grant doesn't leave those accounts stuck
+  // using an expired one. Best-effort per account: a broken account must not stop the user from
+  // finishing "Sign in with AnyRouter" -- log and move on, the same way #provisionMissingAccounts
+  // tolerates one failing vendor.
+  async #pushAnyrouterKeyToConnectedAccounts(key: string): Promise<void> {
+    let pushes = [...this.#connectedAccountRecords()]
+        .filter(rec => rec.description.usesAnyrouterKey)
+        .map(async rec => {
+          try {
+            await (rec.account as unknown as AnyrouterKeyStub).setAnyrouterKey(key);
+          } catch (err) {
+            logger.warn("failed to push renewed AnyRouter key to a connected account", {
+              event: "account.anyrouter_key.push.failed",
+              accountId: rec.id, vendorId: rec.vendorId, error: err,
+            });
+          }
+        });
+    await Promise.all(pushes);
   }
 
   /** The stored grant's status, never the secret. */
@@ -1187,8 +1210,12 @@ export class UserDurableObject extends DurableObject<Cloudflare.Env> {
   // Mint a vendor's connected account with no OAuth flow and persist it as auto-provisioned. The
   // caller must have already confirmed the vendor sets autoProvisionsAccount (so createAccount is
   // present) and that the user has no account for it yet.
+  //
+  // `anyrouterKey` is passed for every vendor, not just the ones that use it: a vendor that doesn't
+  // connect to AnyRouter on the user's behalf simply ignores it (CreateAccountOptions is optional).
   async #createAutoProvisionedAccount(vendorId: string, vendor: Service<GatekeeperVendor>): Promise<void> {
-    let account = await (vendor as unknown as AccountCreatorStub).createAccount();
+    let anyrouterKey = this.storage.anyrouterGrant.get()?.apiToken;
+    let account = await (vendor as unknown as AccountCreatorStub).createAccount({ anyrouterKey });
     // Resolve the description before allocating the id, so a describe() failure doesn't burn a slot.
     let description = await account.describe();
     let accountId = this.storage.nextAccountId.get();

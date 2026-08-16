@@ -70,6 +70,12 @@ declare global {
       // URL of a second mark shown alongside the (admin-uploaded) primary site logo as a
       // horizontal lockup, e.g. pairing a vendor mark with the default Cloudflare OS mark.
       SITE_LOGO_SECONDARY_URL?: string;
+
+      // Deployment-wide default for AdminConfig.ambientGatekeeperModes (see provisioning-policy.ts):
+      // a JSON object of vendorId -> mode, e.g. {"mcp":"enabled"}. Seeds the default for any vendor
+      // the admin hasn't explicitly set from the admin panel; an explicit admin choice always wins.
+      // See admin-config.ts's readAdminConfig.
+      AMBIENT_GATEKEEPER_MODES?: string;
     }
   }
 }

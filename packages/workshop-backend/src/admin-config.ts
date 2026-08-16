@@ -11,6 +11,9 @@
 import { AmbientGatekeeperMode, BannerConfig, BlueprintBinding, BlueprintMetadata, BlueprintOutput, DEFAULT_BANNER_COLOR, OutputFormatOffer, isAmbientGatekeeperMode, isBannerColor, isOutputIcon } from "@gadgets/workshop-shared/api";
 import { SupportedResource } from "@gadgets/workshop-shared/gatekeeper";
 import { ADMIN_CONFIG_KEY, BlueprintKvEnv, readBlueprintKvRecord, sanitizeBlueprintOutput } from "./blueprint-archive.js";
+import { createWorkshopLogger } from "./observability";
+
+const logger = createWorkshopLogger("workshop.admin.config");
 
 export type AdminConfig = {
   /**
@@ -323,9 +326,56 @@ export function serializeAdminConfig(config: AdminConfig): string {
   return JSON.stringify(config);
 }
 
-/** Read the admin config from the KV mirror. Cheap enough for the hot path (a single KV get). */
+/**
+ * Deployment-wide default `ambientGatekeeperModes`, read from the `AMBIENT_GATEKEEPER_MODES` env var
+ * (a JSON object of vendorId -> mode). Seeds the default for a vendor the admin hasn't explicitly
+ * set (see `readAdminConfig`, which applies this under the admin's own choices). Malformed JSON or
+ * an invalid mode is logged and that entry ignored, rather than failing the whole deployment.
+ */
+function ambientGatekeeperModeEnvDefaults(env: Cloudflare.Env): Record<string, AmbientGatekeeperMode> {
+  let raw = (env as { AMBIENT_GATEKEEPER_MODES?: string }).AMBIENT_GATEKEEPER_MODES;
+  if (!raw) return {};
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    logger.warn("AMBIENT_GATEKEEPER_MODES is not valid JSON; ignoring", {
+      event: "admin_config.ambient_gatekeeper_modes_env.invalid_json", error: err,
+    });
+    return {};
+  }
+  if (!parsed || typeof parsed !== "object") return {};
+
+  let modes: Record<string, AmbientGatekeeperMode> = {};
+  for (let [vendorId, mode] of Object.entries(parsed as Record<string, unknown>)) {
+    if (isAmbientGatekeeperMode(mode)) {
+      modes[vendorId.toLowerCase()] = mode;
+    } else {
+      logger.warn("AMBIENT_GATEKEEPER_MODES has an invalid mode for a vendor; ignoring that entry", {
+        event: "admin_config.ambient_gatekeeper_modes_env.invalid_mode", vendorId,
+      });
+    }
+  }
+  return modes;
+}
+
+/**
+ * Read the admin config from the KV mirror. Cheap enough for the hot path (a single KV get).
+ *
+ * `AMBIENT_GATEKEEPER_MODES` seeds a deployment-wide default for any vendor the admin hasn't
+ * explicitly set (see `ambientGatekeeperModeEnvDefaults`); an admin choice always wins, since it's
+ * spread in last. The default is applied only here, at read time -- never persisted into the KV
+ * mirror -- so removing or changing the env var takes effect immediately rather than being frozen
+ * into whatever was last written.
+ */
 export async function readAdminConfig(env: Cloudflare.Env): Promise<AdminConfig> {
-  return parseAdminConfig(await env.BLUEPRINTS.get(ADMIN_CONFIG_KEY));
+  let config = parseAdminConfig(await env.BLUEPRINTS.get(ADMIN_CONFIG_KEY));
+  let envDefaults = ambientGatekeeperModeEnvDefaults(env);
+  if (Object.keys(envDefaults).length === 0) return config;
+  return {
+    ...config,
+    ambientGatekeeperModes: { ...envDefaults, ...config.ambientGatekeeperModes },
+  };
 }
 
 // --- Resource-disable helpers ---

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_ADMIN_CONFIG, defaultOutputFormatId, parseAdminConfig, reorderFormats, resolveFormatOutput, sanitizeOutputOverrides, serializeAdminConfig } from "../src/admin-config.js";
+import { DEFAULT_ADMIN_CONFIG, defaultOutputFormatId, parseAdminConfig, readAdminConfig, reorderFormats, resolveFormatOutput, sanitizeOutputOverrides, serializeAdminConfig } from "../src/admin-config.js";
+
+// Minimal stand-in for the BLUEPRINTS KV mirror `readAdminConfig` reads from.
+function envWithStoredConfig(stored: object | null, extra: Record<string, string> = {}) {
+  return {
+    BLUEPRINTS: { get: async () => stored ? JSON.stringify(stored) : null },
+    ...extra,
+  } as unknown as Cloudflare.Env;
+}
 
 describe("parseAdminConfig", () => {
   it("backfills fields missing from a config persisted before they existed", () => {
@@ -115,5 +123,44 @@ describe("admin config site logo", () => {
     let config = parseAdminConfig('{"siteLogoConfigured":true}');
     expect(config.siteLogoConfigured).toBe(true);
     expect(parseAdminConfig(serializeAdminConfig(config))).toEqual(config);
+  });
+});
+
+// The deployment default that turns "every user gets the AnyRouter MCP account" on for
+// anyrouter-os (AMBIENT_GATEKEEPER_MODES) without forcing every deployment to opt in explicitly
+// through the admin panel.
+describe("readAdminConfig AMBIENT_GATEKEEPER_MODES default", () => {
+  it("applies the env default when the admin hasn't set a mode for that vendor", async () => {
+    let env = envWithStoredConfig(null, { AMBIENT_GATEKEEPER_MODES: '{"mcp":"enabled"}' });
+    let config = await readAdminConfig(env);
+    expect(config.ambientGatekeeperModes.mcp).toBe("enabled");
+  });
+
+  it("lets an admin-set mode win over the env default", async () => {
+    let env = envWithStoredConfig(
+      { ambientGatekeeperModes: { mcp: "disabled" } },
+      { AMBIENT_GATEKEEPER_MODES: '{"mcp":"enabled"}' });
+    let config = await readAdminConfig(env);
+    expect(config.ambientGatekeeperModes.mcp).toBe("disabled");
+  });
+
+  it("ignores malformed JSON in the env var", async () => {
+    let env = envWithStoredConfig(null, { AMBIENT_GATEKEEPER_MODES: "not json" });
+    let config = await readAdminConfig(env);
+    expect(config.ambientGatekeeperModes).toEqual({});
+  });
+
+  it("ignores an invalid mode for one vendor without dropping the rest", async () => {
+    let env = envWithStoredConfig(null, {
+      AMBIENT_GATEKEEPER_MODES: '{"mcp":"enabled","other":"not-a-real-mode"}',
+    });
+    let config = await readAdminConfig(env);
+    expect(config.ambientGatekeeperModes).toEqual({ mcp: "enabled" });
+  });
+
+  it("leaves the config untouched when the env var is unset", async () => {
+    let env = envWithStoredConfig({ ambientGatekeeperModes: { google: "optional" } });
+    let config = await readAdminConfig(env);
+    expect(config.ambientGatekeeperModes).toEqual({ google: "optional" });
   });
 });
