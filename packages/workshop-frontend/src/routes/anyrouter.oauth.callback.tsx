@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import { Banner, Loader } from '@cloudflare/kumo'
+import { Check } from '@phosphor-icons/react'
 import { useAuthenticatedApi } from '../AuthContext'
 import {
   ANYROUTER_OAUTH_CHANNEL,
@@ -76,8 +77,10 @@ function AnyRouterOAuthCallback() {
         } catch {
           // BroadcastChannel unavailable — the opener's polling covers it.
         }
+        // Popups close themselves once the user has had a moment to read the confirmation; a
+        // full tab has nothing to close, so it returns to the app instead.
         if (window.opener) {
-          setTimeout(() => window.close(), 800)
+          setTimeout(() => window.close(), 1500)
         } else {
           navigate({ to: '/' })
         }
@@ -97,9 +100,21 @@ function AnyRouterOAuthCallback() {
         </>
       )}
       {status === 'done' && (
-        <p className="text-sm text-kumo-default">
-          AnyRouter connected. You can close this window.
-        </p>
+        <>
+          <div className="w-10 h-10 rounded-full bg-kumo-brand flex items-center justify-center">
+            <Check size={20} weight="bold" className="text-kumo-inverse" />
+          </div>
+          <p className="text-base font-medium text-kumo-default">AnyRouter connected</p>
+          <p className="text-sm text-kumo-subtle">
+            You can close this window and go back to AnyRouter OS.
+          </p>
+          <button
+            onClick={() => window.close()}
+            className="px-4 py-2 text-sm font-medium rounded-lg text-kumo-inverse bg-kumo-brand hover:bg-kumo-brand-hover transition-all duration-150"
+          >
+            Close window
+          </button>
+        </>
       )}
       {status === 'error' && message && <Banner variant="error" title={message} />}
     </div>
