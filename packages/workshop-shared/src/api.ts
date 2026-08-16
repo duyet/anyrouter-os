@@ -143,9 +143,14 @@ export interface ConnectedAccountsSubscriber {
   /**
    * If `credentialsValid` is false, the account's credentials are known to be expired, and the
    * UI should call reconnectAccount() to fix this if the user tries to select this account.
+   *
+   * `builtIn` marks an account the deployment provisions for every user (a "forced" ambient
+   * vendor). It is listed so the user can see what is already connected on their behalf, but it
+   * has no connect or disconnect action — the deployment owns it.
    */
   add(id: number, description: AccountDescription, vendor: VendorDescription,
-      supportedResources: SupportedResource[], credentialsValid: boolean, vendorId: string): void;
+      supportedResources: SupportedResource[], credentialsValid: boolean, vendorId: string,
+      builtIn?: boolean): void;
   remove(id: number): void;
 
   /** Called after add() has been called for all accounts known so far. */

@@ -28,6 +28,9 @@ interface ConnectConnectorModalProps {
   credentialsValid?: boolean
   disconnecting?: boolean
   onDisconnect?: () => void
+  // True for an account the deployment provisions for every user. The server refuses to remove
+  // one, so manage mode shows what it is and offers no Disconnect.
+  builtIn?: boolean
   grantedResourceUrlPatterns?: string[]
   // Manage mode: invoked to expand the grant to include the given resource `urlPattern`s.
   onEnsureResources?: (resourceUrlPatterns: string[]) => void
@@ -50,6 +53,7 @@ export default function ConnectConnectorModal({
   credentialsValid = true,
   disconnecting = false,
   onDisconnect,
+  builtIn = false,
   grantedResourceUrlPatterns,
   onEnsureResources,
   ensuringResourceUrlPatterns = [],
@@ -399,14 +403,16 @@ export default function ConnectConnectorModal({
                         </WorkshopButton>
                       )}
                     />
-                    <WorkshopButton
-                      tone="danger"
-                      onClick={handleDisconnect}
-                      disabled={disconnecting}
-                      className="!h-9"
-                    >
-                      Disconnect
-                    </WorkshopButton>
+                    {!builtIn && (
+                      <WorkshopButton
+                        tone="danger"
+                        onClick={handleDisconnect}
+                        disabled={disconnecting}
+                        className="!h-9"
+                      >
+                        Disconnect
+                      </WorkshopButton>
+                    )}
                   </>
                 )}
               </>

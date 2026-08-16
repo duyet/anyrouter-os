@@ -1313,16 +1313,19 @@ export class UserDurableObject extends DurableObject<Cloudflare.Env> {
     let disabledGatekeeperSet = new Set(config.disabledGatekeepers);
 
     async function notifyAdd(record: ConnectedAccountRecord) {
-      // Ambient (auto-provisioned) accounts only appear in the Connectors list when their vendor is
-      // "optional" — i.e. the user opted in and can manage/remove it. "enabled" (forced) accounts have
-      // nothing to manage, and "disabled" ones are dormant, so both are hidden.
-      // Forced accounts are included when observer verification explicitly requests them.
+      // Ambient (auto-provisioned) accounts: "optional" ones are the user's to manage, "disabled"
+      // ones are dormant and stay hidden. "enabled" (forced) accounts are the deployment's, so they
+      // are listed only for callers that ask for them (the Connectors page, to show what is already
+      // connected; observer verification, to check it) and are flagged `builtIn` so the UI offers no
+      // connect or disconnect action.
+      let builtIn = false;
       if (record.autoProvisioned) {
         let mode = ambientGatekeeperMode(config, record.vendorId);
         if (mode === "disabled" ||
             (mode === "enabled" && !filter?.includeForcedAutoProvisionedAccounts)) {
           return;
         }
+        builtIn = mode === "enabled";
       }
       if (disabledGatekeeperSet.has(record.vendorId)) {
         return;  // Whole gatekeeper disabled by admin.
@@ -1376,7 +1379,7 @@ export class UserDurableObject extends DurableObject<Cloudflare.Env> {
 
       seenIds.add(record.id);
       subscriber.add(record.id, record.description, vendorDescription,
-          supportedResources, credentialsValid, record.vendorId).catch(unsubscribe)
+          supportedResources, credentialsValid, record.vendorId, builtIn).catch(unsubscribe)
     }
 
     let dbSubscriber = {

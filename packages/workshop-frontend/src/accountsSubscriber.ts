@@ -12,6 +12,8 @@ export interface AccountEvent {
   supportedResources: SupportedResource[]
   credentialsValid: boolean
   vendorId: string
+  /** Provisioned by the deployment for every user: shown for transparency, not removable. */
+  builtIn: boolean
 }
 
 export interface AccountHandlers {
@@ -42,8 +44,10 @@ export class AccountsSubscriberAdapter extends RpcTarget implements ConnectedAcc
 
   add(id: number, description: AccountDescription, vendor: VendorDescription,
       supportedResources: SupportedResource[] = [], credentialsValid: boolean = true,
-      vendorId: string = ''): void {
-    this.#handlers.add({ id, description, vendor, supportedResources, credentialsValid, vendorId })
+      vendorId: string = '', builtIn: boolean = false): void {
+    this.#handlers.add({
+      id, description, vendor, supportedResources, credentialsValid, vendorId, builtIn,
+    })
   }
 
   remove(id: number): void {

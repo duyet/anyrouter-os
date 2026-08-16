@@ -37,6 +37,8 @@ interface AccountEntry {
   vendorDescription: VendorDescription
   supportedResources: SupportedResource[]
   credentialsValid: boolean
+  /** Connected by the deployment for every user: listed, but with nothing to connect or remove. */
+  builtIn: boolean
 }
 
 interface VendorEntry {
@@ -516,7 +518,7 @@ function ConnectorsPage() {
       })
 
     const subscriber = new AccountsSubscriberAdapter({
-      add({ id, description, vendor, supportedResources, credentialsValid, vendorId }) {
+      add({ id, description, vendor, supportedResources, credentialsValid, vendorId, builtIn }) {
         if (cancelled) return
         accountMap.set(id, {
           id,
@@ -525,6 +527,7 @@ function ConnectorsPage() {
           vendorDescription: vendor,
           supportedResources,
           credentialsValid,
+          builtIn,
         })
         setAccounts(Array.from(accountMap.values()))
       },
@@ -537,7 +540,10 @@ function ConnectorsPage() {
       },
     })
 
-    const subscription = authenticatedApi.subscribeConnectedAccounts(subscriber)
+    // Ask for the deployment's own forced accounts too: they are connected on the user's behalf,
+    // so hiding them made the page claim nothing was connected when something was.
+    const subscription = authenticatedApi.subscribeConnectedAccounts(
+      subscriber, { includeForcedAutoProvisionedAccounts: true })
     subscription.catch((err) => {
       if (cancelled) return
       logRpcFailure('Failed to subscribe to connected accounts:', err)
@@ -793,6 +799,7 @@ function ConnectorsPage() {
                       </span>
                     }
                     tagline={tagline}
+                    badge={account.builtIn ? { label: 'Built-in', tone: 'popular' } : undefined}
                     state={account.credentialsValid ? 'connected' : 'expired'}
                     onClick={() => handleOpenManage(account.id)}
                     onReconnect={() => handleReconnect(account.id)}
@@ -860,6 +867,7 @@ function ConnectorsPage() {
           logoUrl={activeVendor.description.logo?.url}
           color={activeVendor.description.color}
           autoProvisions={isTargetAmbient}
+          builtIn={activeAccount?.builtIn ?? false}
           connecting={connecting}
           onConfirm={handleConfirmConnect}
           accountDescription={activeAccount?.accountDescription}
