@@ -13,6 +13,7 @@ import Header from '../components/Header'
 import AppShell from '../components/AppShell/AppShell'
 import LoginPage from '../LoginPage'
 import OnboardingWizard from '../OnboardingWizard'
+import { ANYROUTER_OAUTH_CALLBACK_PATH } from '../anyrouterOAuth'
 
 export const Route = createRootRoute({
   component: RootComponent,
@@ -43,7 +44,7 @@ function RootComponent() {
   const isWorkspaceEditor = pathname.startsWith('/workspace/') || pathname.startsWith('/gadget/')
   // AnyRouter's consent redirect lands here in a popup. It is a machine step, not a destination,
   // so it must render even while onboarding is incomplete — that is exactly when it runs.
-  const isAnyRouterCallback = pathname === '/anyrouter/oauth/callback'
+  const isAnyRouterCallback = pathname === ANYROUTER_OAUTH_CALLBACK_PATH
 
   const handleLoginSuccess = () => {
     const token = localStorage.getItem('authToken')

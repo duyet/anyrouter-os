@@ -13,6 +13,7 @@ import SiteLogo from './components/SiteLogo'
 import { useDocumentTitle } from './useDocumentTitle'
 import {
   ANYROUTER_OAUTH_CHANNEL,
+  ANYROUTER_PRICING_URL,
   beginAnyRouterOAuth,
   isAnyRouterGrantExpired,
 } from './anyrouterOAuth'
@@ -30,7 +31,8 @@ const WHAT_IT_DOES: { title: string; body: string }[] = [
   },
   {
     title: 'Wire in your tools',
-    body: 'Connect GitHub and MCP servers, and your agents can use them as granted resources.',
+    body: 'Connect the services and MCP servers this deployment offers, and your agents can '
+      + 'use them as granted resources.',
   },
   {
     title: 'Your models, your bill',
@@ -367,7 +369,7 @@ export default function OnboardingWizard({
                   <p className="mt-5 text-xs text-kumo-subtle">
                     Needs an{' '}
                     <a
-                      href="https://anyrouter.dev/pricing"
+                      href={ANYROUTER_PRICING_URL}
                       target="_blank"
                       rel="noreferrer"
                       className="text-kumo-brand hover:underline"

@@ -11,13 +11,22 @@
 
 const AUTHORIZE_URL = 'https://anyrouter.dev/api/v1/mcp/oauth/authorize'
 
+/** Where AnyRouter explains the plans a sign-in key requires. */
+export const ANYROUTER_PRICING_URL = 'https://anyrouter.dev/pricing'
+
+/**
+ * Path AnyRouter redirects back to. The router matches it, the root shell exempts it from the
+ * onboarding gate, and the redirect_uri is built from it — one definition keeps those in step.
+ */
+export const ANYROUTER_OAUTH_CALLBACK_PATH = '/anyrouter/oauth/callback'
+
 const PENDING_KEY = 'anyrouterOAuthPending'
 
 /** Channel the callback route uses to tell the opener the grant landed. */
 export const ANYROUTER_OAUTH_CHANNEL = 'anyrouter-oauth'
 
 export function anyrouterOAuthRedirectUri(): string {
-  return `${window.location.origin}/anyrouter/oauth/callback`
+  return `${window.location.origin}${ANYROUTER_OAUTH_CALLBACK_PATH}`
 }
 
 function base64url(bytes: Uint8Array): string {
