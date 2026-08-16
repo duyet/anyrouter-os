@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import { Banner, Loader } from '@cloudflare/kumo'
 import { Check } from '@phosphor-icons/react'
+import { WorkshopButton } from '../components/WorkshopControls'
 import { useAuthenticatedApi } from '../AuthContext'
 import {
   ANYROUTER_OAUTH_CHANNEL,
@@ -111,12 +112,7 @@ function AnyRouterOAuthCallback() {
           <p className="text-sm text-kumo-subtle">
             You can close this window and go back to AnyRouter OS.
           </p>
-          <button
-            onClick={() => window.close()}
-            className="px-4 py-2 text-sm font-medium rounded-lg text-kumo-inverse bg-kumo-brand hover:bg-kumo-brand-hover transition-all duration-150"
-          >
-            Close window
-          </button>
+          <WorkshopButton onClick={() => window.close()}>Close window</WorkshopButton>
         </>
       )}
       {status === 'error' && message && <Banner variant="error" title={message} />}
