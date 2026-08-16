@@ -65,30 +65,29 @@ account, paste that URL, complete AnyRouter OAuth once. Tools from the gateway (
 you connected in the AnyRouter dashboard) become grantable resources.
 
 
-## Account move (2026-08-16)
+## Account move (2026-08-16) — done
 
-Moved from `23050adb6c92e313643a29e1ba64c88a` to `7df185a18b98382c3240fa7ac4a37075`.
-KV ids, R2 buckets, AI Gateway, Access app and DO state are all account-scoped, so before the
-first deploy on the new account:
+Moved from `23050adb6c92e313643a29e1ba64c88a` to `7df185a18b98382c3240fa7ac4a37075`, all four
+Workers redeployed. Everything below is account-scoped, so it was re-provisioned, not moved:
 
-```bash
-pnpm exec wrangler kv namespace create BLUEPRINTS   # paste id into workshop-backend config
-pnpm exec wrangler kv namespace create AVATARS
-pnpm exec wrangler r2 bucket create cowork-blueprint-content
-```
+- KV `BLUEPRINTS` `e0198c767f464f9d924aed0990b004a0` (was `8cf665d8…`)
+- KV `AVATARS` `f47b716d46ec433db94dbc9c0db2321f` (was `2627a086…`)
+- R2 `cowork-blueprint-content` — already existed in the new account
+- AI Gateway `anyrouter` (was `cowork-ai`); authentication is on, so `CF_AI_GATEWAY_API_TOKEN`
+  still needs a `wrangler secret put` on the backend
+- Zero Trust: new Access app "AnyRouter OS" for `os.anyrouter.dev`, aud
+  `1a17701011c030fe75fc07e509495cce76a0f80066c506e667958e52e1c563e6`, team
+  `https://anyr.cloudflareaccess.com`, one allow policy for `duyet.cs@gmail.com`
+- GitHub gatekeeper `CLIENT_ID` / `CLIENT_SECRET` re-put from `.env.local`
+- Zone `anyrouter.dev` was already in the new account, so the custom domain bound cleanly
 
-Then create AI Gateway `cowork-ai` in the new account, re-put `CF_AI_GATEWAY_API_TOKEN`, create a
-Zero Trust Access app for `os.anyrouter.dev` and update `CF_ACCESS_AUD` / `CF_ACCESS_ISS`, and make
-sure the `anyrouter.dev` zone lives in the new account (custom-domain route fails otherwise).
+**Durable Object state did not migrate** — user/workspace DOs start empty. KV blueprint/avatar
+contents were not copied; the old namespaces still hold them under `23050adb…`.
 
-## Storage (old account — ids below are NOT valid on the new account)
+## Old-account storage (ids NOT valid on the new account)
 
 - KV blueprints `8cf665d809904fb0943ba11dab6bae91`
 - KV avatars `2627a086155246e0b92507ed111eb930`
-- R2 `cowork-blueprint-content`
-
-Durable Object state is **per Worker script name**. Moving from `cowork-backend` to
-`anyrouter-os-backend` starts empty user/workspace DO storage (re-login).
 
 ## Access
 
