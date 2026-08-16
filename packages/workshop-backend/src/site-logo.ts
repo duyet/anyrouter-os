@@ -35,6 +35,11 @@ export function siteLogoImage(configured: boolean): AvatarImage | undefined {
   return { url: SITE_LOGO_PATH };
 }
 
+/** The second mark shown alongside the primary logo (SITE_LOGO_SECONDARY_URL), or undefined. */
+export function siteLogoSecondary(env: Cloudflare.Env): AvatarImage | undefined {
+  return env.SITE_LOGO_SECONDARY_URL ? { url: env.SITE_LOGO_SECONDARY_URL } : undefined;
+}
+
 /** Serves the current logo bytes from R2 as a safely typed public image. */
 export async function serveSiteLogo(
     request: Request, bucket: Pick<R2Bucket, "get">): Promise<Response> {

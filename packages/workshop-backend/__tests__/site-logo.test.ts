@@ -4,6 +4,7 @@ import {
   SITE_LOGO_R2_KEY,
   serveSiteLogo,
   siteLogoImage,
+  siteLogoSecondary,
   validateSiteLogo,
 } from "../src/site-logo.js";
 
@@ -36,6 +37,13 @@ describe("site logo asset", () => {
   it("returns the canonical URL only when a logo is configured", () => {
     expect(siteLogoImage(false)).toBeUndefined();
     expect(siteLogoImage(true)).toEqual({ url: "/api/site-logo" });
+  });
+
+  it("returns the secondary mark only when SITE_LOGO_SECONDARY_URL is set", () => {
+    expect(siteLogoSecondary({} as unknown as Cloudflare.Env)).toBeUndefined();
+    expect(siteLogoSecondary(
+      { SITE_LOGO_SECONDARY_URL: "/favicon.svg" } as unknown as Cloudflare.Env,
+    )).toEqual({ url: "/favicon.svg" });
   });
 
   it("serves PNG bytes with short mutable caching and nosniff", async () => {

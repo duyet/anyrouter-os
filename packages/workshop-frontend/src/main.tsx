@@ -145,7 +145,10 @@ function AppWithConnection() {
         if (!cancelled) {
           setServerConfig(cfg.siteLogo ? {
             ...cfg,
-            siteLogo: { url: cacheBustSiteLogoUrl(cfg.siteLogo.url) },
+            siteLogo: {
+              ...cfg.siteLogo,
+              url: cfg.siteLogo.url ? cacheBustSiteLogoUrl(cfg.siteLogo.url) : undefined,
+            },
           } : cfg);
         }
       })

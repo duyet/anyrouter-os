@@ -1049,6 +1049,19 @@ export type AuthVendorInfo = {
 };
 
 /**
+ * The deployment's custom logo, optionally paired with a second mark shown alongside it as a
+ * horizontal lockup (e.g. a vendor mark next to the default Cloudflare OS mark). `secondary` is
+ * env-var configured, not admin-managed.
+ */
+export type SiteLogo = {
+  /** Admin-uploaded primary logo, or undefined to fall back to the default Cloudflare OS mark. */
+  url?: string;
+
+  /** Second mark rendered alongside the primary as a horizontal lockup, when configured. */
+  secondary?: AvatarImage;
+};
+
+/**
  * Deployment-level configuration that the client needs at boot to decide what UI to render.
  * Returned by `PublicApi.getServerConfig()`. Contains no secrets.
  */
@@ -1078,8 +1091,9 @@ export type ServerConfig = {
    */
   siteName: string;
 
-  /** Custom deployment logo, or undefined to use the default Cloudflare OS mark. */
-  siteLogo?: AvatarImage;
+  /** Custom deployment logo, optionally paired with a second mark, or undefined to use the default
+   * Cloudflare OS mark. */
+  siteLogo?: SiteLogo;
 
   /** Deployment-wide top-bar notice (centered text in the top navigation bar). Empty when none is set. */
   announcement: string;

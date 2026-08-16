@@ -1,14 +1,14 @@
 // Builds the public ServerConfig the client fetches at boot. Aggregates sign-in (auth/, env-driven)
 // and the admin-configured branding (admin-config.ts). Contains no secrets.
 
-import { AuthVendorInfo, ServerConfig } from "@gadgets/workshop-shared/api";
+import { AuthVendorInfo, ServerConfig, SiteLogo } from "@gadgets/workshop-shared/api";
 import { createWorkshopLogger } from "./observability";
 import { getAuthGatekeeperAllowlist, isPasswordAuthEnabled } from "./auth/config.js";
 import { getAuthVendorBinding } from "./auth/auth-vendors.js";
 import { getClerkPublishableKey } from "./auth/clerk.js";
 import { getAnyRouterOauthClientId } from "./anyrouter-oauth.js";
 import { readAdminConfig } from "./admin-config.js";
-import { siteLogoImage } from "./site-logo.js";
+import { siteLogoImage, siteLogoSecondary } from "./site-logo.js";
 
 const logger = createWorkshopLogger("workshop.deployment.config");
 
@@ -39,6 +39,14 @@ export async function getAuthVendors(env: Cloudflare.Env): Promise<AuthVendorInf
   return results.filter((v): v is AuthVendorInfo => v !== null);
 }
 
+/** Combines the admin-uploaded primary logo with the env-configured secondary mark, if either is set. */
+function resolveSiteLogo(env: Cloudflare.Env, siteLogoConfigured: boolean): SiteLogo | undefined {
+  const primary = siteLogoImage(siteLogoConfigured);
+  const secondary = siteLogoSecondary(env);
+  if (!primary && !secondary) return undefined;
+  return { url: primary?.url, secondary };
+}
+
 export async function getServerConfig(env: Cloudflare.Env): Promise<ServerConfig> {
   // The admin-config KV get and the per-vendor describe() RPCs are independent — run them
   // concurrently so the KV get isn't serialized ahead of N cross-Worker calls on every (re)connect.
@@ -52,7 +60,7 @@ export async function getServerConfig(env: Cloudflare.Env): Promise<ServerConfig
     passwordAuthEnabled: isPasswordAuthEnabled(env),
     signupsEnabled: config.signupsEnabled,
     siteName: config.siteName,
-    siteLogo: siteLogoImage(config.siteLogoConfigured),
+    siteLogo: resolveSiteLogo(env, config.siteLogoConfigured),
     announcement: config.announcement,
     banner: config.banner.text,
     bannerColor: config.banner.color,

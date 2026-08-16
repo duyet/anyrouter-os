@@ -66,6 +66,10 @@ declare global {
       // via AnyRouter dynamic client registration — see deploy/anyrouter-os.md). Enables the
       // authorize/consent flow that grants each user's own inference key.
       ANYROUTER_OAUTH_CLIENT_ID?: string;
+
+      // URL of a second mark shown alongside the (admin-uploaded) primary site logo as a
+      // horizontal lockup, e.g. pairing a vendor mark with the default Cloudflare OS mark.
+      SITE_LOGO_SECONDARY_URL?: string;
     }
   }
 }

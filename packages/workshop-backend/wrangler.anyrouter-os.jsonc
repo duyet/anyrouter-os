@@ -49,7 +49,11 @@
     // registry (anyrouter repo, packages/lib/src/oauth/first-party-apps.ts) — not a DCR row.
     "ANYROUTER_OAUTH_CLIENT_ID": "anyrouter-os",
     "DEPLOY_URL": "https://os.cloudflare.app/deploy/?instance=d638574e-856d-47b8-a671-65cd9c463840",
-    "PUBLIC_BASE_URL": "https://os.anyrouter.dev"
+    "PUBLIC_BASE_URL": "https://os.anyrouter.dev",
+    // Dual logo lockup: the AnyRouter mark leads, the deployment's own mark (the themed `<Hexagon>`
+    // SiteLogo renders as its fallback) follows. The asset is square and carries its own
+    // prefers-color-scheme rule, so it stays legible in both themes inside an <img>.
+    "SITE_LOGO_SECONDARY_URL": "/anyrouter-logo.svg"
   },
   "observability": {
     "enabled": true,
