@@ -156,6 +156,7 @@ function ClerkSessionBridge({
   return (
     <div className="flex flex-col items-center gap-4">
       {error && <Banner variant="error" title={error} />}
+      {/* <SignIn> loads Clerk's hosted UI in an iframe; index.html frame-src must allow those origins. */}
       <SignIn routing="hash" />
     </div>
   )
