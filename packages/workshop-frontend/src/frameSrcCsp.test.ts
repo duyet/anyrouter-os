@@ -1,14 +1,6 @@
-import { readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-
-const here = dirname(fileURLToPath(import.meta.url))
-const indexHtml = readFileSync(resolve(here, '../index.html'), 'utf8')
-const wrangler = readFileSync(
-  resolve(here, '../../workshop-backend/wrangler.anyrouter-os.jsonc'),
-  'utf8',
-)
+import indexHtml from '../index.html?raw'
+import wrangler from '../../workshop-backend/wrangler.anyrouter-os.jsonc?raw'
 
 function frameSrcDirective(html: string): string {
   const match = html.match(
@@ -22,7 +14,7 @@ function frameSrcDirective(html: string): string {
 
 function frontendApiFromPublishableKey(publishableKey: string): string {
   const encoded = publishableKey.replace(/^pk_(live|test)_/, '')
-  const domain = Buffer.from(encoded, 'base64').toString('utf8').replace(/\$$/, '')
+  const domain = atob(encoded).replace(/\$$/, '')
   return `https://${domain}`
 }
 
