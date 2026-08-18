@@ -22,9 +22,7 @@ import {
   type Icon,
 } from '@phosphor-icons/react'
 
-// A few example work tasks shown under the Home composer, so a new user immediately sees the kind
-// of thing they can ask for. Picking one drops a starter prompt into the composer (it does not
-// auto-send) so the user can tweak it before running.
+/** Domain a Home starter lives in, used to keep the pool mixed rather than all office 1:1s. */
 export type SuggestionDomain =
   | 'writing'
   | 'data'
@@ -33,6 +31,7 @@ export type SuggestionDomain =
   | 'research'
   | 'ops'
 
+/** One example task under the Home composer. Picking it fills the prompt; it does not auto-send. */
 export type TaskSuggestion = {
   id: string
   label: string
@@ -42,8 +41,10 @@ export type TaskSuggestion = {
   domain: SuggestionDomain
 }
 
-// Formats are advertised by example rather than by a row of "Start with Docs" buttons, so the
-// first move isn't "pick a file type". The formats themselves are in the composer's `+` menu.
+/**
+ * Starter prompts advertised by example rather than a row of "Start with Docs" buttons, so the
+ * first move isn't "pick a file type". The formats themselves are in the composer's `+` menu.
+ */
 export const SUGGESTIONS: TaskSuggestion[] = [
   {
     id: 'one-on-one',
@@ -253,11 +254,14 @@ function SuggestionRow({
   )
 }
 
-// How many of the suggestions above to show at once. The list is longer than the page should be:
-// four rows is inspiration, seven is a menu to read. Which three appear is chosen per visit, so the
-// ones below the fold still get seen -- and so Home doesn't look like it only does one thing.
+/**
+ * How many of the suggestions above to show at once. The list is longer than the page should be:
+ * four rows is inspiration, seven is a menu to read. Which three appear is chosen per visit, so the
+ * ones below the fold still get seen — and so Home doesn't look like it only does one thing.
+ */
 export const VISIBLE_SUGGESTIONS = 3
 
+/** Fisher–Yates shuffle, then take the first {@link VISIBLE_SUGGESTIONS}. `random` is injectable for tests. */
 export function pickSuggestions(random: () => number = Math.random): TaskSuggestion[] {
   const shuffled = [...SUGGESTIONS]
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -267,6 +271,7 @@ export function pickSuggestions(random: () => number = Math.random): TaskSuggest
   return shuffled.slice(0, VISIBLE_SUGGESTIONS)
 }
 
+/** Home "Get started" list: three shuffled starters that seed the composer via `onPick`. */
 export default function HomeTaskSuggestions({
   onPick,
 }: {

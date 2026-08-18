@@ -41,7 +41,7 @@ describe('Home task suggestion pool', () => {
     }
 
     const domains = new Set(SUGGESTIONS.map((s) => s.domain))
-    expect([...domains].sort()).toEqual([...DOMAINS].sort())
+    expect(domains).toEqual(new Set(DOMAINS))
     expect(SUGGESTIONS.filter((s) => s.domain === 'writing').length).toBeLessThan(
       SUGGESTIONS.length / 2,
     )
