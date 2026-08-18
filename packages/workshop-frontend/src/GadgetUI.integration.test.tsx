@@ -176,6 +176,21 @@ describe('GadgetUI RPC recovery', () => {
     return child
   }
 
+  it('embeds gadget UI as srcdoc with no network frames of its own', async () => {
+    const gadget = fakeGadget('ui', 'document.body.textContent = "ui"')
+    await act(async () => {
+      root.render(<GadgetUI gadget={gadget.stub} height="100px" />)
+    })
+    await vi.waitFor(() => expect(container.querySelector('iframe')).not.toBeNull())
+    const iframe = container.querySelector('iframe')!
+    expect(iframe.getAttribute('src')).toBeNull()
+    expect(iframe.srcdoc).toContain("frame-src 'none'")
+    expect(iframe.getAttribute('sandbox')).toBe(
+      'allow-scripts allow-popups allow-popups-to-escape-sandbox',
+    )
+    expect(iframe.getAttribute('sandbox')).not.toContain('allow-same-origin')
+  })
+
   it('keeps the iframe while redirecting calls to the replacement gadget client', async () => {
     const first = fakeGadget('first', 'document.body.textContent = "first"')
     await act(async () => {

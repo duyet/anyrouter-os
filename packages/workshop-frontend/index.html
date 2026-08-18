@@ -4,8 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Prevents Gadget UI frames from navigating away from their srcdoc. DO NOT REMOVE. -->
-    <meta http-equiv="Content-Security-Policy" content="frame-src srcdoc:;">
+    <!--
+      Parent-document lock: a Gadget UI srcdoc frame cannot navigate to the network (its own CSP
+      cannot stop that). DO NOT REMOVE srcdoc:. Clerk's hosted <SignIn> (and Turnstile / Clerk
+      protection frames) also load as iframes, so this deployment's Clerk origins are allowlisted —
+      FAPI from CLERK_PUBLISHABLE_KEY (clerk.anyrouter.dev), Account Portal, Turnstile, protect.
+      Do not widen to https: or *.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="frame-src srcdoc: https://clerk.anyrouter.dev https://accounts.anyrouter.dev https://challenges.cloudflare.com https://*.protect.clerk.com;">
 
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
