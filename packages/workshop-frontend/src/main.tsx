@@ -119,6 +119,8 @@ let currentStub = startConnection();
 currentStub.onRpcBroken(handleBroken);
 
 const router = createRouter()
+// Re-apply after the module loads. The blocking script in index.html already set data-mode
+// before CSS paint; this keeps the JS path (storage / system changes) authoritative.
 applyStoredThemeMode()
 
 function AppWithConnection() {

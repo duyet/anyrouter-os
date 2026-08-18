@@ -11,6 +11,7 @@ import { useConnectionLost } from './RpcContext'
 import OAuthButtons from './components/auth/OAuthButtons'
 import ClerkLogin from './components/auth/ClerkLogin'
 import SiteLogo from './components/SiteLogo'
+import ThemeModeButton from './components/ThemeModeButton'
 
 
 interface LoginPageProps {
@@ -182,6 +183,10 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
             <OAuthButtons rpcStub={rpcStub} vendors={authVendors} onSuccess={onLoginSuccess} />
           </div>
         )}
+
+        <div className="mt-8 flex justify-center">
+          <ThemeModeButton size="lg" />
+        </div>
       </div>
     </div>
   )

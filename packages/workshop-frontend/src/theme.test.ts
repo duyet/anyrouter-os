@@ -1,0 +1,75 @@
+// @vitest-environment jsdom
+
+import { readFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { afterEach, describe, expect, it } from 'vitest'
+import {
+  THEME_MODE_STORAGE_KEY,
+  applyStoredThemeMode,
+  applyThemeMode,
+  readThemeMode,
+} from './theme'
+
+const INDEX_HTML = readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), '../index.html'),
+  'utf8',
+)
+
+function stubMatchMedia(prefersDark: boolean) {
+  window.matchMedia = (query: string) => ({
+    matches: query.includes('prefers-color-scheme: dark') ? prefersDark : false,
+    media: query,
+    addEventListener() {},
+    removeEventListener() {},
+    addListener() {},
+    removeListener() {},
+    dispatchEvent() { return false },
+    onchange: null,
+  })
+}
+
+function colorSchemeMeta() {
+  return document.head.querySelector('meta[name="color-scheme"]')
+}
+
+describe('theme', () => {
+  afterEach(() => {
+    localStorage.clear()
+    document.documentElement.removeAttribute('data-mode')
+    document.documentElement.style.colorScheme = ''
+    colorSchemeMeta()?.remove()
+  })
+
+  it('applyThemeMode sets data-mode, color-scheme style, and the color-scheme meta', () => {
+    stubMatchMedia(false)
+    applyThemeMode('dark')
+    expect(document.documentElement.getAttribute('data-mode')).toBe('dark')
+    expect(document.documentElement.style.colorScheme).toBe('dark')
+    expect(colorSchemeMeta()?.getAttribute('content')).toBe('dark')
+  })
+
+  it('applyStoredThemeMode follows gadgets:theme-mode, else the OS preference', () => {
+    stubMatchMedia(true)
+    expect(readThemeMode()).toBe('system')
+    expect(applyStoredThemeMode()).toBe('dark')
+
+    localStorage.setItem(THEME_MODE_STORAGE_KEY, 'light')
+    expect(applyStoredThemeMode()).toBe('light')
+    expect(document.documentElement.getAttribute('data-mode')).toBe('light')
+  })
+})
+
+describe('index.html theme boot script', () => {
+  it('is a classic render-blocking script that reads the same storage key', () => {
+    expect(INDEX_HTML).toContain(`localStorage.getItem('${THEME_MODE_STORAGE_KEY}')`)
+    expect(INDEX_HTML).toMatch(/<script>\s*\(function \(\) \{/)
+    expect(INDEX_HTML).toContain("root.setAttribute('data-mode', mode)")
+    expect(INDEX_HTML).toContain('root.style.colorScheme = mode')
+    expect(INDEX_HTML).toContain("meta.setAttribute('name', 'color-scheme')")
+    // Must not be a module: type=module is deferred and would paint CSS first.
+    const boot = INDEX_HTML.match(/<script>([\s\S]*?)<\/script>/)
+    expect(boot).not.toBeNull()
+    expect(boot![0]).not.toContain('type="module"')
+  })
+})

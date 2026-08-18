@@ -3,6 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Apply the stored / OS theme before the CSS bundle paints. `applyStoredThemeMode()` in
+      main.tsx runs only after the module graph (and styles.css) load, which flashes light
+      tokens at dark-preferring visitors. Keep the localStorage key in sync with
+      THEME_MODE_STORAGE_KEY in src/theme.ts.
+    -->
+    <script>
+      (function () {
+        var mode = 'light'
+        try {
+          var stored = localStorage.getItem('gadgets:theme-mode')
+          if (stored === 'light' || stored === 'dark') {
+            mode = stored
+          } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            mode = 'dark'
+          }
+        } catch (e) {}
+        var root = document.documentElement
+        root.setAttribute('data-mode', mode)
+        root.style.colorScheme = mode
+        var meta = document.querySelector('meta[name="color-scheme"]')
+        if (!meta) {
+          meta = document.createElement('meta')
+          meta.setAttribute('name', 'color-scheme')
+          document.head.appendChild(meta)
+        }
+        meta.setAttribute('content', mode)
+      })()
+    </script>
 
     <!--
       Parent-document lock: a Gadget UI srcdoc frame cannot navigate to the network (its own CSP

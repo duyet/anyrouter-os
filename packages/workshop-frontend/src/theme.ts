@@ -16,7 +16,13 @@ import { applyAccentColor as applyAccentColorToStyle } from '@gadgets/workshop-s
 export type ThemeMode = 'light' | 'dark' | 'system'
 export type ResolvedThemeMode = 'light' | 'dark'
 
-const THEME_MODE_STORAGE_KEY = 'gadgets:theme-mode'
+/**
+ * localStorage key for the user's theme preference.
+ *
+ * The render-blocking boot script in `index.html` reads this same key before CSS paint.
+ * Keep the two in sync.
+ */
+export const THEME_MODE_STORAGE_KEY = 'gadgets:theme-mode'
 
 function isThemeMode(value: string | null): value is ThemeMode {
   return value === 'light' || value === 'dark' || value === 'system'
@@ -53,6 +59,14 @@ export function applyThemeMode(mode: ThemeMode): ResolvedThemeMode {
 
   root.setAttribute('data-mode', resolved)
   root.style.colorScheme = resolved
+
+  let meta = document.querySelector('meta[name="color-scheme"]')
+  if (!meta) {
+    meta = document.createElement('meta')
+    meta.setAttribute('name', 'color-scheme')
+    document.head.appendChild(meta)
+  }
+  meta.setAttribute('content', resolved)
 
   return resolved
 }
