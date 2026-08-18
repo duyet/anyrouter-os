@@ -24,10 +24,12 @@ describe('public icons', () => {
   })
 
   it('ships a real ICO so /favicon.ico is not the SPA document', () => {
-    const ico = readFileSync(join(publicDir, 'favicon.ico'))
+    const ico = new Uint8Array(readFileSync(join(publicDir, 'favicon.ico')))
     // ICONDIR: reserved 0, type 1 (icon)
     expect([...ico.subarray(0, 4)]).toEqual([0, 0, 1, 0])
-    expect(ico.includes(Buffer.from('<!DOCTYPE html>'))).toBe(false)
+    const prefix = new TextDecoder().decode(ico.subarray(0, 15))
+    expect(prefix.startsWith('<!DOCTYPE')).toBe(false)
+    expect(prefix.startsWith('<html')).toBe(false)
     expect(ico.byteLength).toBeGreaterThan(64)
   })
 })
