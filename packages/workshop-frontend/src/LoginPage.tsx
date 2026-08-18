@@ -13,7 +13,6 @@ import ClerkLogin from './components/auth/ClerkLogin'
 import SiteLogo from './components/SiteLogo'
 import ThemeModeButton from './components/ThemeModeButton'
 
-
 interface LoginPageProps {
   rpcStub: RpcStub<PublicApi>
   onLoginSuccess?: () => void

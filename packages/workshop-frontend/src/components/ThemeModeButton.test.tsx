@@ -3,7 +3,7 @@
 
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { ThemeProvider } from '../ThemeContext'
 import ThemeModeButton from './ThemeModeButton'
 
@@ -12,6 +12,19 @@ import ThemeModeButton from './ThemeModeButton'
 describe('ThemeModeButton', () => {
   let root: Root | undefined
   let container: HTMLDivElement | undefined
+
+  beforeEach(() => {
+    window.matchMedia = (query: string) => ({
+      matches: false,
+      media: query,
+      addEventListener() {},
+      removeEventListener() {},
+      addListener() {},
+      removeListener() {},
+      dispatchEvent() { return false },
+      onchange: null,
+    })
+  })
 
   afterEach(() => {
     act(() => root?.unmount())

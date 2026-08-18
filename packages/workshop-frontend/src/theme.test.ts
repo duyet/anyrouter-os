@@ -1,7 +1,11 @@
 // @vitest-environment jsdom
 
+// Vitest runs under node, but the src/ tsconfig only has browser types — hence the suppressions.
+// @ts-expect-error node builtin without @types/node
 import { readFileSync } from 'node:fs'
+// @ts-expect-error node builtin without @types/node
 import { dirname, join } from 'node:path'
+// @ts-expect-error node builtin without @types/node
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
 import {
