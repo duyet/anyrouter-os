@@ -47,7 +47,7 @@ everyone), **ambiguous** (needs a decision).
 
 | DO | Addressed by | Provenance | Scope |
 |---|---|---|---|
-| `UserDurableObject` | `idFromName(email)` / `idFromName(username)` | verified Clerk email (`server.ts:696`), verified CF Access claim (`server.ts:712`), gatekeeper-verified email (`auth/login-flow.ts:110`), or a session-token prefix authenticated against that same DO (`server.ts:676-677`) | **per-user** |
+| `UserDurableObject` | `idFromName(email)` / `idFromName(username)` | verified Clerk email (`server.ts:696`), gatekeeper-verified email (`auth/login-flow.ts:110`), or a session-token prefix authenticated against that same DO (`server.ts:676-677`) | **per-user** |
 | `OverseerDurableObject` | `idFromString(workspaceId)` (`server.ts:219`), `newUniqueId()` on create (`server.ts:280`, `:442`) | client-supplied id, but authorization is inside `open()` | **per-workspace** |
 | `AdminSettings` | `getByName("")` | constant singleton (`admin-settings.ts:52`) | **per-deployment** |
 | `PendingLogin` | `newUniqueId()`, id never exposed (`server.ts:657`) | server-minted | per-login-attempt |
@@ -115,9 +115,9 @@ within a workspace they rely on UUID secrecy alone.
 (`server.ts:209`), no state. **Analytics** — per-deployment write-only pipeline that records
 `user_id` *and* `gadget_owner_user_id` on the same row (`analytics.ts:33-83`); no read path exists
 anywhere in the codebase, so it is operator-visible only. **DO telemetry** — logs raw DO ids
-(`do-telemetry.ts:52-57`), operator-visible only. **`FRONTEND_ERROR_RATE_LIMITER`** — per-user when
-CF Access is configured, otherwise **shared per source IP**, with a literal `"unknown"` bucket for
-callers lacking the header (`client-errors.ts:108-124`); availability only.
+(`do-telemetry.ts:52-57`), operator-visible only. **`FRONTEND_ERROR_RATE_LIMITER`** — **shared per
+source IP**, with a literal `"unknown"` bucket for callers lacking the header
+(`client-errors.ts:108-124`); availability only.
 
 **`packages/router`** — **per-deployment, no state.** It is the trust boundary that decides which
 requests reach which worker: `/api/*` and `/blueprint-screenshot/*` to the backend,

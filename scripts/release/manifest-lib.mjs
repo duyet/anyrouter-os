@@ -170,7 +170,7 @@ export function buildWorkerEntry({ pkgName, config, mainModule, modules, deployI
       not_found_handling: config.assets.not_found_handling,
       run_worker_first: config.assets.run_worker_first,
       // Filled by the caller (build-release) with
-      // { access: { manifest: { "/path": { hash, size } } } }.
+      // { default: { manifest: { "/path": { hash, size } } } }.
       variants: {},
     };
   }
@@ -184,7 +184,7 @@ export function buildWorkerEntry({ pkgName, config, mainModule, modules, deployI
   let gatekeeperBindingExpansion;
   if (kind === "backend") {
     // Deliberate contract: the manifest carries only $PUBLIC_BASE_URL. The backend's other
-    // instance-state vars (ADMINS, DEPLOY_URL, CF_ACCESS_*) are injected by
+    // instance-state vars (ADMINS, DEPLOY_URL) are injected by
     // the deploy service's backendExtraVars at PUT time, never manifest-templated.
     vars.PUBLIC_BASE_URL = "$PUBLIC_BASE_URL";
     // Every deployed backend gets the Workers AI binding (hardcoded like PUBLIC_BASE_URL, not

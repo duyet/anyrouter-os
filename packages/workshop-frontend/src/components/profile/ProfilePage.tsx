@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react'
 import { useKumoToastManager } from '@cloudflare/kumo'
 import { AiChatAuthorInfo } from '@gadgets/workshop-shared/api'
 import { useAuthenticatedApi } from '../../AuthContext'
-import { CF_ACCESS_MODE } from '../../useAuth'
 import { invalidateAvatarCache } from '../../useAvatar'
 import { useDocumentTitle } from '../../useDocumentTitle'
 import { AnyRouterSection } from './AnyRouterSection'
@@ -65,8 +64,8 @@ export default function ProfilePage() {
       <div className="mt-6 flex flex-col gap-9">
         <AnyRouterSection onIdentityChanged={handleIdentityChanged} />
 
-        {/* Only for password accounts (hidden under CF Access or gatekeeper sign-in). */}
-        {!CF_ACCESS_MODE && hasPassword === true && userInfo && (
+        {/* Only for password accounts (hidden under gatekeeper sign-in). */}
+        {hasPassword === true && userInfo && (
           <PasswordSection userId={userInfo.id} />
         )}
       </div>

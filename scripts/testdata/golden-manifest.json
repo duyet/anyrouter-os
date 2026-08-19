@@ -972,7 +972,7 @@
           "/gatekeeper/*"
         ],
         "variants": {
-          "access": {
+          "default": {
             "manifest": {
               "/assets/app.js": {
                 "hash": "8d2e76555a7166d0e6b7da22cabfa055",

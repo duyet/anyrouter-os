@@ -3,16 +3,12 @@ import { RpcStub } from 'capnweb'
 import { PublicApi, AuthenticatedApi } from '@gadgets/workshop-shared/api'
 import { suppressClerkAutoSignIn } from './clerkAutoSignIn'
 
-const CF_ACCESS_MODE = import.meta.env.VITE_CF_ACCESS_MODE === 'true'
-
 interface AuthState {
   token: string | null
   authenticatedApi: RpcStub<AuthenticatedApi> | null
   isLoading: boolean
   error: string | null
 }
-
-export { CF_ACCESS_MODE }
 
 export function useAuth(publicApi: RpcStub<PublicApi>) {
   const [authState, setAuthState] = useState<AuthState>({
@@ -28,42 +24,18 @@ export function useAuth(publicApi: RpcStub<PublicApi>) {
   authenticatedApiRef.current = authState.authenticatedApi
 
   useEffect(() => {
-    if (CF_ACCESS_MODE) {
-      authenticateWithCfAccess()
+    const storedToken = localStorage.getItem('authToken')
+    if (storedToken) {
+      authenticateWithToken(storedToken)
     } else {
-      const storedToken = localStorage.getItem('authToken')
-      if (storedToken) {
-        authenticateWithToken(storedToken)
-      } else {
-        setAuthState(prev => ({ ...prev, isLoading: false }))
-      }
+      setAuthState(prev => ({ ...prev, isLoading: false }))
     }
     return () => {
-      // The authenticateWithXxx functions also dispose the old stub via their setAuthState
-      // updater, so this may double-dispose on reconnect. That's fine — dispose is idempotent.
+      // authenticateWithToken also disposes the old stub via its setAuthState updater, so this
+      // may double-dispose on reconnect. That's fine — dispose is idempotent.
       authenticatedApiRef.current?.[Symbol.dispose]()
     }
   }, [publicApi])
-
-  const authenticateWithCfAccess = () => {
-    setAuthState(prev => {
-      if (prev.authenticatedApi) {
-        prev.authenticatedApi[Symbol.dispose]()
-      }
-      return { ...prev, authenticatedApi: null, isLoading: true, error: null }
-    })
-
-    // Use promise pipelining - no need to await. The CF Access JWT is already attached
-    // to the request by the browser (injected by the Access service worker/cookie), so
-    // the server validates it and returns an authenticated stub immediately.
-    const authenticatedApi = publicApi.authenticateFromCfAccess()
-    setAuthState({
-      token: null,
-      authenticatedApi,
-      isLoading: false,
-      error: null
-    })
-  }
 
   const authenticateWithToken = (token: string) => {
     setAuthState(prev => {
@@ -95,11 +67,6 @@ export function useAuth(publicApi: RpcStub<PublicApi>) {
   }
 
   const logout = () => {
-    if (CF_ACCESS_MODE) {
-      window.location.assign('/cdn-cgi/access/logout')
-      return
-    }
-
     // Clearing our own token is not enough where sign-in came from the shared Clerk instance: that
     // session outlives it and the sign-in page would exchange it for a new token immediately. See
     // clerkAutoSignIn.ts.

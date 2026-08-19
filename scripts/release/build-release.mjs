@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Builds an immutable release: every deployable worker bundled exactly as `wrangler deploy`
-// would upload it (dry-run + outdir, with the repo's pinned wrangler), plus the Access-mode
+// would upload it (dry-run + outdir, with the repo's pinned wrangler), plus the
 // workshop-frontend asset build, plus the release manifest that describes it all.
 //
 // Output layout (mirrored to R2 by upload-release.mjs):
@@ -70,11 +70,9 @@ function pinnedWranglerVersion() {
   return pkg.version;
 }
 
-// Builds the Access-mode frontend (VITE_CF_ACCESS_MODE is a build-time flag,
-// workshop-frontend/src/useAuth.ts) — the one asset variant every release carries.
+// Builds the frontend — the one asset variant every release carries.
 function buildFrontend() {
-  const env = { ...process.env, VITE_CF_ACCESS_MODE: "true" };
-  run("pnpm", ["run", "build"], { cwd: FRONTEND_DIR, env });
+  run("pnpm", ["run", "build"], { cwd: FRONTEND_DIR });
   return collectAssets(join(FRONTEND_DIR, "dist"));
 }
 
@@ -92,7 +90,7 @@ function main() {
   // 1. Frontend first: the router's wrangler.jsonc points its assets directory at
   //    workshop-frontend/dist, so it must exist before the router's dry-run.
   const assetVariants = {
-    access: buildFrontend(),
+    default: buildFrontend(),
   };
   for (const { blobs } of Object.values(assetVariants)) {
     for (const [hash, blob] of blobs) {

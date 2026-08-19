@@ -1,6 +1,5 @@
 import { RpcStub, RpcTarget, newHttpBatchRpcResponse, newWebSocketRpcSession, RpcSessionOptions } from "capnweb";
 import { validateRpc } from "capnweb-validate";
-import type { JWTPayload } from "jose";
 import { PublicApi, AuthenticatedApi, Overseer, GadgetMetadataWithTimestamps, AiChatAuthorInfo, AiModelConfig, AnyRouterConnectionStatus, ConnectedAccountsSubscriber, ConnectedAccountsFilter, GatekeeperVendorFilter, ObserverConfigCallback, BlueprintLibrarySummary, BlueprintPublicInfo, BlueprintUserSummary, BlueprintBindingAssignment, AgentSpawnerConfig, WorkpieceId, BLUEPRINT_SCREENSHOT_PATH_PREFIX, BLUEPRINT_SCREENSHOT_R2_PREFIX, blueprintScreenshotUrl, ServerConfig, LoginAttempt, GatekeeperAppInfo, AdminApi, GatekeeperVendorInfo, OutputFormatOffer, ListOutputsResult, createOpenGadgetError, getOpenGadgetErrorCode, OPEN_GADGET_ERROR_CODES, AUTH_ERROR_CODES, createAuthError } from '@gadgets/workshop-shared/api';
 import type { UiFeatureFlags } from "@gadgets/workshop-shared/feature-flags";
 import { getServerConfig } from "./deployment-config.js";
@@ -27,7 +26,6 @@ import { ExternalMessageGateway } from "./external-message-gateway";
 import { RpcStub as NativeRpcStub } from "cloudflare:workers";
 import { recordAnalytics } from "./analytics";
 import { handleClientErrorRequest } from "./client-errors.js";
-import { verifyCfAccessJwt } from "./access.js";
 import { resolveUiFeatureFlags } from "./feature-flags";
 import { serveSiteLogo, SITE_LOGO_PATH } from "./site-logo.js";
 import { createWorkshopLogger } from "./observability";
@@ -66,9 +64,6 @@ export { ExternalMessageGateway };
 
 // Declare optional environment variables here since they may be omitted from wrangler.jsonc.
 type Env = Cloudflare.Env & {
-  // Set these if using Cloudflare Access for authentication, otherwise username/password is used.
-  CF_ACCESS_AUD?: string,  // audience
-  CF_ACCESS_ISS?: string,  // team URL, i.e. https://<team>.cloudflareaccess.com
   DEV?: boolean;
   FLAGS?: Flagship;
 }
@@ -695,8 +690,7 @@ class PublicApiImpl extends RpcTarget implements PublicApi {
   users: DurableObjectNamespace<UserDurableObject>;
 
   constructor(private ctx: ExecutionContext, private env: Env,
-      private abortSession: (reason: Error) => void,
-      private accessPayload?: JWTPayload) {
+      private abortSession: (reason: Error) => void) {
     super();
     this.users = this.ctx.exports.UserDurableObject;
   }
@@ -765,35 +759,7 @@ class PublicApiImpl extends RpcTarget implements PublicApi {
     return new AuthenticatedApiImpl(this.ctx, this.env, userId, this.abortSession);
   }
 
-  async authenticateFromCfAccess(): Promise<AuthenticatedApi> {
-    if (!this.accessPayload) {
-      throw createAuthError(AUTH_ERROR_CODES.notAuthenticatedWithAccess);
-    }
-
-    let email = this.accessPayload.email as string;
-    let userId = this.users.idFromName(email);
-    let signupsEnabled = (await readAdminConfig(this.env)).signupsEnabled;
-    let accountCreated =
-        await this.users.get(userId).authenticateFromCfAccess(email, signupsEnabled);
-    if (accountCreated) {
-      recordAnalytics(this.ctx, this.env, {
-        event_name: "account_created",
-        user_id: userId.toString(),
-        source: "cf_access",
-      });
-    }
-    recordAnalytics(this.ctx, this.env, {
-      event_name: "user_authenticated",
-      user_id: userId.toString(),
-      source: "cf_access",
-    });
-    return new AuthenticatedApiImpl(this.ctx, this.env, userId, this.abortSession);
-  }
-
   async login(username: string, passwordHash: Uint8Array): Promise<string | null> {
-    if (this.env.CF_ACCESS_AUD) {
-      throw new Error("This deployment requires Cloudflare Access authentication.");
-    }
     if (!isPasswordAuthEnabled(this.env)) {
       throw new Error("Password login is disabled on this deployment. Use a sign-in option.");
     }
@@ -815,9 +781,6 @@ class PublicApiImpl extends RpcTarget implements PublicApi {
 
   async createAccount(username: string, displayName: string, passwordHash: Uint8Array)
       : Promise<string | null> {
-    if (this.env.CF_ACCESS_AUD) {
-      throw new Error("This deployment requires Cloudflare Access authentication.");
-    }
     if (!isPasswordAuthEnabled(this.env)) {
       throw new Error("Password signup is disabled on this deployment. Use a sign-in option.");
     }
@@ -909,23 +872,6 @@ export default {
             }));
       }
 
-      let accessPayload: JWTPayload | undefined;
-
-      if (env.CF_ACCESS_AUD) {
-        if (req.headers.get("Origin") !== url.origin) {
-          return new Response("Cross-origin API access not allowed.", { status: 403 });
-        }
-
-        const payload = await verifyCfAccessJwt(req, env);
-        if (!payload) return new Response("Invalid CF access JWT.", { status: 403 });
-
-        if (!payload.email) {
-          return new Response("Access JWT didn't specify email address.", { status: 403 });
-        }
-
-        accessPayload = payload;
-      }
-
       // HACK: Implement `abortSession` callback by closing the websocket.
       // TODO: When ctx.abort() becomes non-experimental, consider using that instead.
       let abortController = new AbortController();
@@ -936,7 +882,7 @@ export default {
       };
 
       return await newWorkersRpcResponse(req,
-          new PublicApiImpl(ctx, env, abortSession, accessPayload),
+          new PublicApiImpl(ctx, env, abortSession),
           { abortSignal: abortController.signal });
     }
 

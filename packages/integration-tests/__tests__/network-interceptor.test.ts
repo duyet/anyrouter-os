@@ -53,7 +53,7 @@ it("asks handlers in order and takes the first non-null answer", async () => {
 });
 
 it("supports a handler that parks until the test provides an answer", async () => {
-  // Load-bearing for the CF Access transfer mock: the Worker starts polling before the test knows
+  // Load-bearing for OAuth polling mocks: the Worker starts polling before the test knows
   // what to serve, so a handler must be able to wait (see the Handler type's doc comment).
   let serve!: (body: string) => void;
   const parked = new Promise<string>(resolve => { serve = resolve; });

@@ -77,14 +77,6 @@ export interface PublicApi extends RpcTarget {
   authenticate(token: string): Promise<AuthenticatedApi>;
 
   /**
-   * Like authenticate() but the server is expected to be sitting behind Cloudflare Access, and the
-   * client is expected to have already authenticated with Access (before they could load the
-   * application in their browser at all). The credentials from the Cloudflare Access session will
-   * be used to authenticate the user.
-   */
-  authenticateFromCfAccess(): Promise<AuthenticatedApi>;
-
-  /**
    * Login with username and password.
    *
    * Returns a token to store in local storage and pass to `authenticate()` in the future.
@@ -346,7 +338,6 @@ export const getOpenGadgetErrorCode = openGadgetErrors.getCode;
 /** Stable error codes attached to authentication failures. */
 export const AUTH_ERROR_CODES = {
   invalidSessionToken: "INVALID_SESSION_TOKEN",
-  notAuthenticatedWithAccess: "NOT_AUTHENTICATED_WITH_ACCESS",
 } as const;
 
 /** An expected authentication failure code. */
@@ -356,7 +347,6 @@ export type AuthErrorCode = typeof AUTH_ERROR_CODES[keyof typeof AUTH_ERROR_CODE
  * classification fallback. */
 export const AUTH_ERROR_MESSAGES: Record<AuthErrorCode, string> = {
   [AUTH_ERROR_CODES.invalidSessionToken]: "invalid session token",
-  [AUTH_ERROR_CODES.notAuthenticatedWithAccess]: "Not authenticated with Access.",
 };
 
 const authErrors = codedErrorFamily(AUTH_ERROR_MESSAGES);

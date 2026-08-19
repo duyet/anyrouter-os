@@ -40,18 +40,13 @@ declare global {
 
       // ---------------------------------------------------------------------------------------------
       // Optional features: sign-in via authentication gatekeepers. All OFF by default; existing
-      // password / Cloudflare Access deployments are unaffected. OAuth app credentials live on the
-      // gatekeeper Workers, not here.
+      // password-only deployments are unaffected. OAuth app credentials live on the gatekeeper
+      // Workers, not here.
       // ---------------------------------------------------------------------------------------------
-
-      // Cloudflare Access configuration. When CF_ACCESS_AUD is set, the deployment authenticates via
-      // Cloudflare Access (SSO). (Also referenced via a local Env extension in server.ts.)
-      CF_ACCESS_AUD?: string;   // audience
-      CF_ACCESS_ISS?: string;   // team URL, e.g. https://<team>.cloudflareaccess.com
 
       // Comma-separated allowlist of gatekeeper vendor ids permitted to drive sign-in (e.g.
       // "google,github,cloudflare"). A listed gatekeeper must also advertise providesAuth. Empty =
-      // no gatekeeper sign-in (password / CF Access only).
+      // no gatekeeper sign-in (password only).
       AUTH_GATEKEEPERS?: string;
 
       // Set to "true" to disable username/password login + signup (gatekeeper sign-in only). Only

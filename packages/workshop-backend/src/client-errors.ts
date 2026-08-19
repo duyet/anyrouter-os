@@ -4,12 +4,6 @@ import {
 } from "@gadgets/error-reporting";
 import type { ErrorEventV1, ErrorReporter } from "@gadgets/backend-utils/error-reporting";
 import { createLogger } from "@gadgets/backend-utils/logger";
-import type { JWTPayload } from "jose";
-import {
-  accessRateLimitKey,
-  verifyCfAccessJwt,
-  type CfAccessEnv,
-} from "./access.js";
 
 // The bounded string fields can expand when encoded as UTF-8 or JSON escapes.
 const MAX_BODY_BYTES = 128 * 1024;
@@ -21,13 +15,9 @@ const logger = createLogger<ClientErrorLogFields>({ component: "workshop.client-
 export type ClientErrorEnv = Readonly<{
   FRONTEND_ERROR_REPORTER?: Pick<ErrorReporter, "report">;
   FRONTEND_ERROR_RATE_LIMITER?: Pick<RateLimit, "limit">;
-}> & CfAccessEnv;
+}>;
 
 type WaitUntilContext = Pick<ExecutionContext, "waitUntil">;
-type AccessVerifier = (
-  request: Request,
-  env: CfAccessEnv,
-) => Promise<JWTPayload | null>;
 
 async function readBoundedJson(request: Request): Promise<unknown | "too-large" | "invalid"> {
   const declaredLength = Number(request.headers.get("content-length"));
@@ -90,8 +80,7 @@ function toReporterEvent(report: FrontendErrorReportV1): ErrorEventV1 {
 export async function handleClientErrorRequest(
     request: Request,
     env: ClientErrorEnv,
-    ctx: WaitUntilContext,
-    verifyAccess: AccessVerifier = verifyCfAccessJwt): Promise<Response> {
+    ctx: WaitUntilContext): Promise<Response> {
   if (request.method !== "POST") {
     return new Response("Method Not Allowed", { status: 405, headers: { allow: "POST" } });
   }
@@ -109,18 +98,7 @@ export async function handleClientErrorRequest(
   if (!reporter || !limiter) return new Response(null, { status: 204 });
 
   try {
-    let key: string;
-    if (env.CF_ACCESS_AUD) {
-      const payload = await verifyAccess(request, env);
-      if (!payload) return new Response("Invalid CF access JWT.", { status: 403 });
-      const accessKey = await accessRateLimitKey(payload);
-      if (!accessKey) {
-        return new Response("Access JWT didn't specify a user identity.", { status: 403 });
-      }
-      key = accessKey;
-    } else {
-      key = request.headers.get("cf-connecting-ip") ?? "unknown";
-    }
+    const key = request.headers.get("cf-connecting-ip") ?? "unknown";
     const outcome = await limiter.limit({ key });
     if (!outcome.success) return new Response(null, { status: 204 });
   } catch (error) {

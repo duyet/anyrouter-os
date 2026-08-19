@@ -48,7 +48,7 @@ function buildTestManifest() {
     wranglerVersion: "0.0.0-fixture",
     workers,
     assetVariants: {
-      access: collectAssets(join(TESTDATA, "fixture-assets", "access")),
+      default: collectAssets(join(TESTDATA, "fixture-assets", "access")),
     },
   });
 }
@@ -116,7 +116,7 @@ test("worker entries carry the deploy contract", () => {
   assert.equal(backend.migrations[0].tag, "v0");
   assert.ok(backend.migrations[0].new_sqlite_classes.includes("UserDurableObject"));
 
-  // Router: serves the access asset variant, binds the backend by templated worker name.
+  // Router: serves the default asset variant, binds the backend by templated worker name.
   const router = workers["router"];
   assert.deepEqual(
       router.bindings.find((b) => b.name === "WORKSHOP_BACKEND"),
@@ -124,7 +124,7 @@ test("worker entries carry the deploy contract", () => {
   assert.ok(router.bindings.some((b) => b.type === "assets" && b.name === "ASSETS"));
   assert.ok(router.assetsConfig.run_worker_first.includes("/gatekeeper/*"));
   assert.equal(router.assetsConfig.not_found_handling, "single-page-application");
-  assert.deepEqual(Object.keys(router.assetsConfig.variants), ["access"]);
+  assert.deepEqual(Object.keys(router.assetsConfig.variants), ["default"]);
   for (const variant of Object.values(router.assetsConfig.variants)) {
     for (const { hash } of Object.values(variant.manifest)) {
       assert.ok(manifest.assets[hash], `asset blob ${hash} missing from release index`);

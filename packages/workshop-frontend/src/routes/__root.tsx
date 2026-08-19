@@ -6,7 +6,7 @@ import { RpcStub } from 'capnweb'
 import { AuthenticatedApi } from '@gadgets/workshop-shared/api'
 import { useRpcStub, useConnectionLost } from '../RpcContext'
 import { markConnectionRestored } from '../main'
-import { useAuth, CF_ACCESS_MODE } from '../useAuth'
+import { useAuth } from '../useAuth'
 import { AuthProvider } from '../AuthContext'
 import { FeatureFlagsProvider } from '../FeatureFlagsContext'
 import Header from '../components/Header'
@@ -75,16 +75,6 @@ function RootComponent() {
         >
           Retry
         </button>
-      </div>
-    )
-  }
-
-  // CF Access mode: show spinner while pipelined auth resolves
-  if (!isAuthenticated && CF_ACCESS_MODE && !standalone) {
-    return (
-      <div className="min-h-screen flex items-center justify-center flex-col gap-4 bg-kumo-base">
-        <div className="w-8 h-8 border-2 border-kumo-brand border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-kumo-subtle">Authenticating...</p>
       </div>
     )
   }

@@ -18,7 +18,7 @@ by hand, as below, when they change.
 export CLOUDFLARE_API_TOKEN=…   # Workers edit — or put it in .env.local
 export CLOUDFLARE_ACCOUNT_ID=7df185a18b98382c3240fa7ac4a37075
 
-# Frontend (Clerk sign-in — no Access mode)
+# Frontend (Clerk sign-in)
 cd packages/workshop-frontend && pnpm build && cd ../..
 
 # GitHub gatekeeper (OAuth secrets live here, not on the backend)
@@ -52,8 +52,8 @@ Sign-in is Clerk-only, sharing the anyrouter.dev Clerk instance
 (`CLERK_PUBLISHABLE_KEY = pk_live_Y2xlcmsuYW55cm91dGVyLmRldiQ` → `clerk.anyrouter.dev`), so any
 anyrouter.dev account works here. The backend verifies session JWTs against the instance JWKS and
 looks up the email via the Clerk Backend API (`CLERK_SECRET_KEY` secret). The old Zero Trust
-Access app for `os.anyrouter.dev` must be removed (or set to bypass) — `CF_ACCESS_AUD`/`ISS` are
-gone from the backend vars and the frontend is no longer built in Access mode.
+Access app for `os.anyrouter.dev` must be removed (or set to bypass) — Cloudflare Access
+authentication has been removed from the backend and frontend entirely.
 
 Model access is AnyRouter-only, via **"Sign in with AnyRouter"**: AnyRouter OS is a registered
 OAuth client of anyrouter.dev. On onboarding (and in the Add Model dialog) the user approves a
@@ -159,4 +159,4 @@ contents were not copied; the old namespaces still hold them under `23050adb…`
 ## Access
 
 Zero Trust Access is intentionally NOT in front of `os.anyrouter.dev` — Clerk is the only gate.
-`CF_ACCESS_AUD` / `CF_ACCESS_ISS` are not set on this deployment.
+The backend no longer supports Cloudflare Access authentication at all.
