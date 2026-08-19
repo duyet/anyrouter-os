@@ -1,4 +1,12 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import {
+  cloneElement,
+  isValidElement,
+  useEffect,
+  useState,
+  type CSSProperties,
+  type ReactElement,
+  type ReactNode,
+} from 'react'
 import { useServerConfig } from '../ServerConfigContext'
 
 export default function SiteLogo({
@@ -42,6 +50,15 @@ export default function SiteLogo({
   // making it render shorter than the square OS mark beside it. An explicit inline height also
   // beats the framework's `img { height: auto }` reset, which would otherwise ignore the attribute.
   const markStyle = { height: size, width: 'auto' as const }
+  // Strip any margin the caller's fallback mark carries (the default OS square uses `mb-3` for when
+  // it stands alone): inside this centered flex a bottom margin shifts that mark up relative to the
+  // image beside it, so despite equal heights the two look misaligned. An inline style beats the
+  // class, keeping the marks the same height AND aligned.
+  const alignedFallback = isValidElement(children)
+    ? cloneElement(children as ReactElement<{ style?: CSSProperties }>, {
+        style: { ...(children as ReactElement<{ style?: CSSProperties }>).props.style, margin: 0 },
+      })
+    : children
   return (
     <span className={`flex items-center gap-1.5 ${className ?? ''}`}>
       {/* The configured mark leads the lockup; the deployment's own mark follows it. */}
@@ -54,7 +71,7 @@ export default function SiteLogo({
           onError={() => setSecondaryFailed(true)}
         />
       )}
-      {!src || failed ? children : (
+      {!src || failed ? alignedFallback : (
         <img
           src={src}
           alt=""
