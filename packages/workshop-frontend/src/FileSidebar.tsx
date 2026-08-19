@@ -1,5 +1,6 @@
 import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react'
-import { Dialog, DropdownMenu, useKumoToastManager } from '@cloudflare/kumo'
+import { useKumoToastManager } from '@/components/ui/toast'
+import { Dialog, DropdownMenu } from '@/components/ui'
 import { DotsThree, DownloadSimple, Pencil, Plus, Trash, X } from '@phosphor-icons/react'
 import DeleteConfirmationDialog from './components/DeleteConfirmationDialog'
 import { WorkshopButton, WorkshopIconButton, WorkshopInput } from './components/WorkshopControls'
@@ -114,9 +115,9 @@ export default function FileSidebar({
   }
 
   return (
-    <div className="flex h-full w-[244px] flex-col border-r border-kumo-line bg-kumo-base">
+    <div className="flex h-full w-[244px] flex-col border-r border-border bg-background">
       <div className="flex h-9 shrink-0 items-center justify-between gap-2 px-3 pt-3 pb-2">
-        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-kumo-inactive">
+        <span className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
           Files
         </span>
         <WorkshopIconButton
@@ -124,7 +125,7 @@ export default function FileSidebar({
           disabled={editLocked}
           aria-label="New file"
           title="New file"
-          className="!h-6 !w-6 text-kumo-subtle hover:bg-kumo-tint hover:text-kumo-default"
+          className="!h-6 !w-6 text-muted-foreground hover:bg-muted hover:text-foreground"
         >
           <Plus size={14} weight="bold" />
         </WorkshopIconButton>
@@ -179,15 +180,15 @@ export default function FileSidebar({
         }}
       >
         <Dialog
-          className="!z-[1000] !w-[min(420px,calc(100vw-32px))] overflow-hidden bg-kumo-base p-0 !top-[18%] !-translate-y-0"
+          className="!z-[1000] !w-[min(420px,calc(100vw-32px))] overflow-hidden bg-background p-0 !top-[18%] !-translate-y-0"
           size="sm"
         >
-          <div className="flex items-start justify-between gap-4 border-b border-kumo-line px-5 py-4">
+          <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
             <div className="min-w-0">
-              <Dialog.Title className="text-[15px] leading-5 font-medium tracking-[-0.3px] text-kumo-default">
+              <Dialog.Title className="text-[15px] leading-5 font-medium tracking-[-0.3px] text-foreground">
                 New file
               </Dialog.Title>
-              <Dialog.Description className="mt-1 text-[12px] leading-4 font-normal tracking-[-0.2px] text-kumo-subtle">
+              <Dialog.Description className="mt-1 text-[12px] leading-4 font-normal tracking-[-0.2px] text-muted-foreground">
                 Create a new file in this gadget.
               </Dialog.Description>
             </div>
@@ -225,7 +226,7 @@ export default function FileSidebar({
             />
           </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-kumo-line bg-kumo-base px-5 py-3">
+          <div className="flex items-center justify-end gap-2 border-t border-border bg-background px-5 py-3">
             <Dialog.Close
               render={(props) => (
                 <WorkshopButton
@@ -256,7 +257,7 @@ export default function FileSidebar({
           }
         }}
         title="Delete file?"
-        description={<>This removes <span className="font-mono text-kumo-default">{deletingFile}</span> from the gadget. You can&apos;t undo this.</>}
+        description={<>This removes <span className="font-mono text-foreground">{deletingFile}</span> from the gadget. You can&apos;t undo this.</>}
         onConfirm={confirmDelete}
       />
     </div>
@@ -324,10 +325,10 @@ function FileRow({
       className={[
         'group relative mb-[2px] flex h-7 items-center gap-2 rounded-md px-2 text-[13px] leading-[18px] tracking-[-0.2px] transition-[background-color,box-shadow,color,opacity] duration-150 ease-out',
         isRenaming
-          ? 'bg-kumo-base ring-1 ring-kumo-ring/40'
+          ? 'bg-background ring-1 ring-ring/40'
           : isActive
-            ? 'file-row-active cursor-pointer bg-kumo-recessed text-kumo-default font-medium'
-            : 'cursor-pointer text-kumo-default hover:bg-kumo-tint',
+            ? 'file-row-active cursor-pointer bg-muted text-foreground font-medium'
+            : 'cursor-pointer text-foreground hover:bg-muted',
         isUnchanged && !isRenaming ? 'opacity-50' : '',
       ].join(' ')}
       onClick={isRenaming ? undefined : onSelect}
@@ -366,12 +367,12 @@ function FileRow({
           autoCapitalize="off"
           autoCorrect="off"
           aria-label={`Rename ${filename}`}
-          className="min-w-0 flex-1 bg-transparent text-[13px] leading-[18px] tracking-[-0.2px] text-kumo-default outline-none placeholder:text-kumo-inactive"
+          className="min-w-0 flex-1 bg-transparent text-[13px] leading-[18px] tracking-[-0.2px] text-foreground outline-none placeholder:text-muted-foreground"
         />
       ) : (
         <button
           type="button"
-          className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 self-stretch bg-transparent p-0 text-left text-[13px] leading-[18px] tracking-[-0.2px] text-inherit outline-none focus-visible:ring-2 focus-visible:ring-kumo-ring focus-visible:ring-offset-1 focus-visible:ring-offset-kumo-base"
+          className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 self-stretch bg-transparent p-0 text-left text-[13px] leading-[18px] tracking-[-0.2px] text-inherit outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
           aria-current={isActive ? 'page' : undefined}
           onClick={(event) => {
             event.stopPropagation()
@@ -381,7 +382,7 @@ function FileRow({
           <span className="min-w-0 flex-1 truncate">{filename}</span>
           {isStreamingActive && (
             <span
-              className="h-1.5 w-1.5 shrink-0 rounded-full bg-kumo-success"
+              className="h-1.5 w-1.5 shrink-0 rounded-full bg-success"
               aria-label={`${filename} is being edited`}
               title="Agent is editing this file"
             />
@@ -396,7 +397,7 @@ function FileRow({
               <WorkshopIconButton
                 aria-label={`Actions for ${filename}`}
                 onClick={(event) => event.stopPropagation()}
-                className="!h-5 !w-5 text-kumo-inactive opacity-0 hover:bg-kumo-tint hover:text-kumo-default focus-visible:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100 data-[popup-open]:opacity-100"
+                className="!h-5 !w-5 text-muted-foreground opacity-0 hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-focus-within:opacity-100 group-hover:opacity-100 data-[popup-open]:opacity-100"
               >
                 <DotsThree size={14} weight="bold" />
               </WorkshopIconButton>
@@ -404,12 +405,12 @@ function FileRow({
           />
           <DropdownMenu.Content
             onClick={(event) => event.stopPropagation()}
-            className="themed-floating-shadow !z-[1100] !min-w-[144px] rounded-lg border border-kumo-line bg-kumo-base p-1"
+            className="themed-floating-shadow !z-[1100] !min-w-[144px] rounded-lg border border-border bg-background p-1"
           >
             <DropdownMenu.Item
               icon={<DownloadSimple size={12} className="mr-2" />}
               onClick={onDownload}
-              className="!h-auto rounded-md !px-2.5 !py-1.5 text-[12px] leading-4 tracking-[-0.2px] text-kumo-default transition-colors data-highlighted:bg-kumo-tint"
+              className="!h-auto rounded-md !px-2.5 !py-1.5 text-[12px] leading-4 tracking-[-0.2px] text-foreground transition-colors data-highlighted:bg-muted"
             >
               Download
             </DropdownMenu.Item>
@@ -418,7 +419,7 @@ function FileRow({
                 <DropdownMenu.Item
                   icon={<Pencil size={12} className="mr-2" />}
                   onClick={onRename}
-                  className="!h-auto rounded-md !px-2.5 !py-1.5 text-[12px] leading-4 tracking-[-0.2px] text-kumo-default transition-colors data-highlighted:bg-kumo-tint"
+                  className="!h-auto rounded-md !px-2.5 !py-1.5 text-[12px] leading-4 tracking-[-0.2px] text-foreground transition-colors data-highlighted:bg-muted"
                 >
                   Rename
                 </DropdownMenu.Item>
@@ -426,7 +427,7 @@ function FileRow({
                   icon={<Trash size={12} className="mr-2" />}
                   variant="danger"
                   onClick={onDelete}
-                  className="!h-auto rounded-md !px-2.5 !py-1.5 text-[12px] leading-4 tracking-[-0.2px] transition-colors data-highlighted:bg-kumo-danger-tint"
+                  className="!h-auto rounded-md !px-2.5 !py-1.5 text-[12px] leading-4 tracking-[-0.2px] transition-colors data-highlighted:bg-destructive/10"
                 >
                   Delete
                 </DropdownMenu.Item>
@@ -440,10 +441,10 @@ function FileRow({
 }
 
 function getStatusDotClass(status: FileChangeStatus | undefined, isDirty: boolean): string | null {
-  if (isDirty) return 'bg-kumo-danger'
-  if (status === 'added') return 'bg-kumo-success'
-  if (status === 'deleted') return 'bg-kumo-danger'
-  if (status === 'modified') return 'bg-kumo-warning'
+  if (isDirty) return 'bg-destructive'
+  if (status === 'added') return 'bg-success'
+  if (status === 'deleted') return 'bg-destructive'
+  if (status === 'modified') return 'bg-warning'
   if (status === 'unchanged') return null
   return null
 }

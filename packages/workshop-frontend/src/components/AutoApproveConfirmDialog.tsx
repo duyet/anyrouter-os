@@ -1,4 +1,4 @@
-import { Dialog } from '@cloudflare/kumo'
+import { Dialog } from '@/components/ui'
 import { X } from '@phosphor-icons/react'
 import { WorkshopButton, WorkshopIconButton } from './WorkshopControls'
 
@@ -33,17 +33,17 @@ export default function AutoApproveConfirmDialog({
       }}
     >
       <Dialog
-        className="!z-[1000] !w-[min(440px,calc(100vw-32px))] overflow-hidden bg-kumo-base p-0 !top-[20%] !-translate-y-0"
+        className="!z-[1000] !w-[min(440px,calc(100vw-32px))] overflow-hidden bg-background p-0 !top-[20%] !-translate-y-0"
         size="sm"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-kumo-line px-5 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div className="min-w-0">
-            <Dialog.Title className="text-[15px] leading-5 font-medium tracking-[-0.3px] text-kumo-default">
+            <Dialog.Title className="text-[15px] leading-5 font-medium tracking-[-0.3px] text-foreground">
               Always approve “{actionLabel}”?
             </Dialog.Title>
-            <Dialog.Description className="mt-1 text-[12px] leading-4 font-normal tracking-[-0.2px] text-kumo-subtle">
-              Future <span className="font-medium text-kumo-default">{actionLabel}</span> actions on{' '}
-              <span className="font-medium text-kumo-default">{resourceTitle}</span> will be applied
+            <Dialog.Description className="mt-1 text-[12px] leading-4 font-normal tracking-[-0.2px] text-muted-foreground">
+              Future <span className="font-medium text-foreground">{actionLabel}</span> actions on{' '}
+              <span className="font-medium text-foreground">{resourceTitle}</span> will be applied
               automatically, without asking for approval. This action will be applied now too.
             </Dialog.Description>
           </div>
@@ -61,7 +61,7 @@ export default function AutoApproveConfirmDialog({
           />
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-kumo-line bg-kumo-base px-5 py-3">
+        <div className="flex items-center justify-end gap-2 border-t border-border bg-background px-5 py-3">
           <Dialog.Close
             render={(props) => (
               <WorkshopButton {...props} className="!h-9" disabled={isProcessing}>

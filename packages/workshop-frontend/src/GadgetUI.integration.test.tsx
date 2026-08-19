@@ -18,11 +18,17 @@ afterAll(() => {
   }
 })
 
-vi.mock('@cloudflare/kumo', () => ({
-  Banner: () => null,
-  Loader: () => null,
-  Text: ({ children }: { children: ReactNode }) => children,
-}))
+vi.mock('@/components/ui', () => {
+  const Banner = Object.assign(
+    () => null,
+    { Action: ({ children }: { children: ReactNode }) => <button type="button">{children}</button> },
+  )
+  return {
+    Banner,
+    Loader: () => null,
+    Text: ({ children }: { children: ReactNode }) => children,
+  }
+})
 
 import GadgetUI from './GadgetUI'
 

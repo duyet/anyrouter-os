@@ -17,11 +17,11 @@ const cache = new Map<string, string>()
 
 function brandColor(): string {
   let value = getComputedStyle(document.documentElement)
-    .getPropertyValue('--color-kumo-brand')
+    .getPropertyValue('--primary')
     .trim()
   // A CSS variable can resolve to something a data URL can't carry (a `color-mix()`, or nothing at
   // all before styles load), so anything but plain hex falls back to a theme-neutral color.
-  return /^#[0-9a-fA-F]{3,8}$/.test(value) ? value : '#888888'
+  return /^#[0-9a-fA-F]{3,8}$/.test(value) ? value : '#ff4801'
 }
 
 export async function formatIconDataUrl(icon: OutputIcon): Promise<string | undefined> {

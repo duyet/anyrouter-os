@@ -1,4 +1,4 @@
-import { Button, Input, InputArea } from '@cloudflare/kumo'
+import { Button, Input, InputArea } from '@/components/ui'
 import type { ComponentProps, ReactNode } from 'react'
 
 const buttonBaseClassName =
@@ -6,11 +6,11 @@ const buttonBaseClassName =
 
 const buttonToneClassNames = {
   primary:
-    '!h-9 bg-kumo-contrast px-3 text-kumo-inverse enabled:hover:bg-kumo-strong disabled:opacity-50',
+    '!h-9 bg-foreground px-3 text-primary-foreground enabled:hover:bg-foreground disabled:opacity-50',
   secondary:
-    '!h-8 border border-kumo-line bg-kumo-base px-3 text-kumo-default enabled:hover:bg-kumo-elevated disabled:opacity-40',
+    '!h-8 border border-border bg-background px-3 text-foreground enabled:hover:bg-card disabled:opacity-40',
   danger:
-    '!h-8 bg-kumo-danger px-3 text-white enabled:hover:opacity-90 disabled:opacity-50',
+    '!h-8 bg-destructive px-3 text-white enabled:hover:opacity-90 disabled:opacity-50',
 } as const
 
 type WorkshopButtonTone = keyof typeof buttonToneClassNames
@@ -54,10 +54,10 @@ export function WorkshopIconButton({
   ...props
 }: WorkshopIconButtonProps) {
   const toneClassName = tone === 'primary'
-    ? 'bg-kumo-contrast text-kumo-inverse enabled:hover:bg-kumo-strong enabled:hover:text-kumo-inverse'
+    ? 'bg-foreground text-primary-foreground enabled:hover:bg-foreground enabled:hover:text-primary-foreground'
     : danger
-      ? 'text-kumo-subtle enabled:hover:bg-kumo-danger-tint enabled:hover:text-kumo-danger'
-      : 'text-kumo-subtle enabled:hover:bg-kumo-tint enabled:hover:text-kumo-default'
+      ? 'text-muted-foreground enabled:hover:bg-destructive/10 enabled:hover:text-destructive'
+      : 'text-muted-foreground enabled:hover:bg-muted enabled:hover:text-foreground'
   const variant = tone === 'primary' ? 'primary' : 'ghost'
 
   return (
@@ -78,7 +78,7 @@ export function WorkshopInput({ className = '', ...props }: WorkshopInputProps) 
   return (
     <Input
       {...props}
-      className={`!h-9 rounded-lg border border-kumo-line bg-kumo-base px-3 text-[13px] leading-[18px] font-normal tracking-[-0.25px] text-kumo-default placeholder:text-kumo-inactive shadow-none focus:border-kumo-ring focus:outline-none focus:ring-1 focus:ring-kumo-ring/15 ${className}`}
+      className={`!h-9 rounded-lg border border-border bg-background px-3 text-[13px] leading-[18px] font-normal tracking-[-0.25px] text-foreground placeholder:text-muted-foreground shadow-none focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring/15 ${className}`}
     />
   )
 }
@@ -89,7 +89,7 @@ export function WorkshopInputArea({ className = '', ...props }: WorkshopInputAre
   return (
     <InputArea
       {...props}
-      className={`rounded-lg border border-kumo-line bg-kumo-base px-3 py-2 text-[13px] leading-[18px] font-normal tracking-[-0.25px] text-kumo-default placeholder:text-kumo-inactive shadow-none focus:border-kumo-ring focus:outline-none focus:ring-1 focus:ring-kumo-ring/15 ${className}`}
+      className={`rounded-lg border border-border bg-background px-3 py-2 text-[13px] leading-[18px] font-normal tracking-[-0.25px] text-foreground placeholder:text-muted-foreground shadow-none focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring/15 ${className}`}
     />
   )
 }

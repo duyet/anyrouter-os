@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useKumoToastManager } from '@cloudflare/kumo'
+import { useKumoToastManager } from '@/components/ui/toast'
 import { useAuthenticatedApi } from './AuthContext'
 import {
   AiChatAuthorInfo,
@@ -188,13 +188,13 @@ export default function OnboardingWizard({
     || keyState.phase === 'error'
 
   return (
-    <div className="fixed inset-0 bg-kumo-base dotted-bg flex items-center justify-center overflow-y-auto py-8">
+    <div className="fixed inset-0 bg-background dotted-bg flex items-center justify-center overflow-y-auto py-8">
       {/* Soft radial glow at the top for depth */}
       <div
         className="absolute inset-x-0 top-0 h-[50vh] pointer-events-none"
         style={{
           background:
-            'radial-gradient(ellipse 60% 60% at 50% 0%, color-mix(in srgb, var(--color-kumo-brand) 8%, transparent) 0%, transparent 70%)',
+            'radial-gradient(ellipse 60% 60% at 50% 0%, color-mix(in srgb, var(--primary) 8%, transparent) 0%, transparent 70%)',
         }}
       />
 
@@ -210,9 +210,9 @@ export default function OnboardingWizard({
           }`}
         >
           <SiteLogo size={22}>
-            <Hexagon size={22} className="text-kumo-brand" weight="bold" />
+            <Hexagon size={22} className="text-primary" weight="bold" />
           </SiteLogo>
-          <span className="text-base font-semibold tracking-tight text-kumo-default">
+          <span className="text-base font-semibold tracking-tight text-foreground">
             {siteName}
           </span>
         </div>
@@ -220,14 +220,14 @@ export default function OnboardingWizard({
         {/* Header */}
         <div className="text-center mb-8">
           <h1
-            className={`text-3xl font-semibold text-kumo-default tracking-tight transition-all duration-500 delay-100 ${
+            className={`text-3xl font-semibold text-foreground tracking-tight transition-all duration-500 delay-100 ${
               mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
             }`}
           >
             {connectStep ? `Welcome to ${siteName}` : 'Pick your models'}
           </h1>
           <p
-            className={`mt-2 text-sm text-kumo-subtle transition-all duration-500 delay-200 ${
+            className={`mt-2 text-sm text-muted-foreground transition-all duration-500 delay-200 ${
               connectStep ? 'max-w-xl mx-auto' : ''
             } ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
           >
@@ -242,17 +242,17 @@ export default function OnboardingWizard({
         </div>
 
         {/* Card */}
-        <div className="overflow-hidden rounded-2xl border border-kumo-line bg-kumo-elevated shadow-xl shadow-black/[0.04]">
+        <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xl shadow-black/[0.04]">
           <div className="p-8 min-h-[320px]">
             {keyState.phase === 'checking' ? (
               <div className="flex items-center justify-center py-20">
-                <div className="w-6 h-6 border-2 border-kumo-brand border-t-transparent rounded-full animate-spin" />
+                <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               </div>
             ) : keyState.phase === 'disconnected' || keyState.phase === 'error' ? (
               <div className="grid md:grid-cols-2 gap-8 md:gap-10">
                 {/* What this is */}
                 <div>
-                  <h2 className="text-lg font-medium text-kumo-default mb-4">
+                  <h2 className="text-lg font-medium text-foreground mb-4">
                     What {siteName} does
                   </h2>
                   <ul className="space-y-3.5">
@@ -261,11 +261,11 @@ export default function OnboardingWizard({
                         <Check
                           size={16}
                           weight="bold"
-                          className="text-kumo-brand flex-shrink-0 mt-0.5"
+                          className="text-primary flex-shrink-0 mt-0.5"
                         />
                         <div>
-                          <p className="text-sm font-medium text-kumo-default">{title}</p>
-                          <p className="text-sm text-kumo-subtle">{body}</p>
+                          <p className="text-sm font-medium text-foreground">{title}</p>
+                          <p className="text-sm text-muted-foreground">{body}</p>
                         </div>
                       </li>
                     ))}
@@ -273,23 +273,23 @@ export default function OnboardingWizard({
                 </div>
 
                 {/* Connect */}
-                <div className="flex flex-col justify-center rounded-xl border border-kumo-line bg-kumo-tint p-6 text-center">
-                  <h2 className="text-lg font-medium text-kumo-default">
+                <div className="flex flex-col justify-center rounded-xl border border-border bg-muted p-6 text-center">
+                  <h2 className="text-lg font-medium text-foreground">
                     Connect your AnyRouter account to get started
                   </h2>
-                  <p className="mt-2 text-sm text-kumo-subtle">
+                  <p className="mt-2 text-sm text-muted-foreground">
                     One click grants {siteName} a key on your own AnyRouter account — usage is
                     billed to you, and you can revoke it any time from the AnyRouter dashboard.
                   </p>
                   {connect.state === 'waiting' ? (
                     <div className="mt-5 flex flex-col items-center gap-3">
-                      <div className="w-6 h-6 border-2 border-kumo-brand border-t-transparent rounded-full animate-spin" />
-                      <p className="text-xs text-kumo-subtle">
+                      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                      <p className="text-xs text-muted-foreground">
                         Approve access in the AnyRouter tab…
                       </p>
                       <button
                         onClick={() => connect.start()}
-                        className="text-sm text-kumo-brand hover:underline"
+                        className="text-sm text-primary hover:underline"
                       >
                         Reopen the AnyRouter tab
                       </button>
@@ -297,24 +297,24 @@ export default function OnboardingWizard({
                   ) : (
                     <>
                       {keyState.phase === 'error' && (
-                        <p className="mt-3 text-sm text-kumo-danger">{keyState.message}</p>
+                        <p className="mt-3 text-sm text-destructive">{keyState.message}</p>
                       )}
                       <button
                         onClick={() => connect.start()}
-                        className="mt-5 self-center flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg text-kumo-inverse bg-kumo-brand hover:bg-kumo-brand-hover transition-all duration-150"
+                        className="mt-5 self-center flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg text-primary-foreground bg-primary hover:bg-primary/80 transition-all duration-150"
                       >
                         Connect with AnyRouter
                         <ArrowRight size={14} weight="bold" />
                       </button>
                     </>
                   )}
-                  <p className="mt-5 text-xs text-kumo-subtle">
+                  <p className="mt-5 text-xs text-muted-foreground">
                     Needs an{' '}
                     <a
                       href={ANYROUTER_PRICING_URL}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-kumo-brand hover:underline"
+                      className="text-primary hover:underline"
                     >
                       AnyRouter Go plan
                     </a>{' '}
@@ -324,10 +324,10 @@ export default function OnboardingWizard({
               </div>
             ) : (
               <>
-                <h2 className="text-lg font-medium text-kumo-default mb-1">
+                <h2 className="text-lg font-medium text-foreground mb-1">
                   {existingMode ? 'Choose your default model' : 'Choose your models'}
                 </h2>
-                <p className="text-sm text-kumo-subtle mb-6">
+                <p className="text-sm text-muted-foreground mb-6">
                   {existingMode
                     ? 'Pick the model to use by default — you can change it any time'
                     : 'Pick one or more — the first pick becomes your default'}
@@ -344,8 +344,8 @@ export default function OnboardingWizard({
                           w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left
                           transition-all duration-150
                           ${selected
-                            ? 'border-kumo-brand bg-kumo-brand/5 ring-1 ring-kumo-brand/20'
-                            : 'border-kumo-line hover:border-kumo-fill hover:bg-kumo-tint'
+                            ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                            : 'border-border hover:border-border hover:bg-muted'
                           }
                         `}
                       >
@@ -354,18 +354,18 @@ export default function OnboardingWizard({
                             w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold
                             transition-colors duration-150
                             ${selected
-                              ? 'bg-kumo-brand text-kumo-inverse'
-                              : 'bg-kumo-tint text-kumo-subtle'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-muted-foreground'
                             }
                           `}
                         >
                           {model.name[0]?.toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-kumo-default truncate">
+                          <p className="text-sm font-medium text-foreground truncate">
                             {model.name}
                           </p>
-                          <p className="text-xs text-kumo-subtle truncate">
+                          <p className="text-xs text-muted-foreground truncate">
                             {model.subtitle}
                           </p>
                         </div>
@@ -373,7 +373,7 @@ export default function OnboardingWizard({
                           <Check
                             size={18}
                             weight="bold"
-                            className="text-kumo-brand flex-shrink-0"
+                            className="text-primary flex-shrink-0"
                           />
                         )}
                       </button>
@@ -382,7 +382,7 @@ export default function OnboardingWizard({
 
                   {modelRows.length === 0 && (
                     <div className="text-center py-8">
-                      <p className="text-sm text-kumo-subtle">No models available right now</p>
+                      <p className="text-sm text-muted-foreground">No models available right now</p>
                     </div>
                   )}
                 </div>
@@ -392,7 +392,7 @@ export default function OnboardingWizard({
 
           {/* Footer */}
           {pickReady && (
-            <div className="flex items-center justify-end gap-3 px-8 py-5 border-t border-kumo-line bg-kumo-elevated">
+            <div className="flex items-center justify-end gap-3 px-8 py-5 border-t border-border bg-card">
               <button
                 onClick={handleFinish}
                 disabled={finishing || selectedIds.length === 0}
@@ -400,14 +400,14 @@ export default function OnboardingWizard({
                   flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg
                   transition-all duration-150
                   ${!finishing && selectedIds.length > 0
-                    ? 'text-kumo-inverse bg-kumo-brand hover:bg-kumo-brand-hover'
-                    : 'text-kumo-inactive bg-kumo-tint cursor-not-allowed'
+                    ? 'text-primary-foreground bg-primary hover:bg-primary/80'
+                    : 'text-muted-foreground bg-muted cursor-not-allowed'
                   }
                 `}
               >
                 {finishing ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-kumo-inverse/30 border-t-kumo-inverse rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                     Setting up...
                   </>
                 ) : (

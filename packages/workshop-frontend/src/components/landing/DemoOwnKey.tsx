@@ -27,12 +27,12 @@ export default function DemoOwnKey() {
       <DemoFrame>
         <div ref={containerRef} aria-hidden="true" className="flex flex-col gap-5 sm:flex-row sm:items-center">
           <div className="flex shrink-0 items-center gap-3 sm:w-40">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-kumo-tint text-kumo-brand">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-muted text-primary">
               <Key size={18} weight="duotone" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-[13px] font-medium text-kumo-default">Your AnyRouter key</p>
-              <p className="text-[11px] text-kumo-subtle">Billed to you</p>
+              <p className="truncate text-[13px] font-medium text-foreground">Your AnyRouter key</p>
+              <p className="text-[11px] text-muted-foreground">Billed to you</p>
             </div>
           </div>
 
@@ -43,11 +43,11 @@ export default function DemoOwnKey() {
                 <div
                   key={model.id}
                   className={`flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2 transition-colors duration-300 ${
-                    active ? 'border-kumo-brand bg-kumo-brand/5' : 'border-kumo-line bg-kumo-base'
+                    active ? 'border-primary bg-primary/5' : 'border-border bg-background'
                   }`}
                 >
-                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${active ? 'bg-kumo-brand' : 'bg-kumo-line'}`} />
-                  <span className="truncate text-[12px] font-medium text-kumo-default">{model.name}</span>
+                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${active ? 'bg-primary' : 'bg-border'}`} />
+                  <span className="truncate text-[12px] font-medium text-foreground">{model.name}</span>
                 </div>
               )
             })}

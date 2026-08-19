@@ -1,4 +1,4 @@
-import { Text, Loader } from '@cloudflare/kumo'
+import { Text, Loader } from '@/components/ui'
 import { LinkSimple } from '@phosphor-icons/react'
 import { VendorDescription } from '@gadgets/workshop-shared/gatekeeper'
 import Avatar from './components/Avatar'
@@ -21,8 +21,8 @@ export default function VendorCard({
   return (
     <div
       onClick={disabled ? undefined : onClick}
-      className={`flex items-center gap-4 p-4 border border-kumo-line rounded-lg transition-all ${
-        disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:border-kumo-brand hover:bg-kumo-tint'
+      className={`flex items-center gap-4 p-4 border border-border rounded-lg transition-all ${
+        disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:border-primary hover:bg-muted'
       } ${disabled && !loading ? 'opacity-50' : ''}`}
     >
       <Avatar

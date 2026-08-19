@@ -23,7 +23,11 @@ afterAll(() => {
   else testGlobal.IS_REACT_ACT_ENVIRONMENT = previousActEnvironment
 })
 
-vi.mock('@cloudflare/kumo', () => {
+vi.mock('@/components/ui/toast', () => ({
+  useKumoToastManager: () => ({ add: vi.fn<(toast: unknown) => void>() }),
+}))
+
+vi.mock('@/components/ui', () => {
   const Dialog = Object.assign(
     ({ children }: { children: ReactNode }) => <div>{children}</div>,
     {
@@ -48,7 +52,6 @@ vi.mock('@cloudflare/kumo', () => {
     Checkbox: ({ label }: { label: ReactNode }) => <label>{label}</label>,
     Dialog,
     DropdownMenu,
-    useKumoToastManager: () => ({ add: vi.fn<(toast: unknown) => void>() }),
   }
 })
 

@@ -15,7 +15,11 @@ import type { AccountDescription, SupportedResource, VendorDescription } from '@
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
-vi.mock('@cloudflare/kumo', () => {
+vi.mock('@/components/ui/toast', () => ({
+  useKumoToastManager: () => ({ add: vi.fn<(toast: unknown) => void>() }),
+}))
+
+vi.mock('@/components/ui', () => {
   const Dialog = Object.assign(
     ({ children }: { children: ReactNode }) => <div>{children}</div>,
     {
@@ -32,7 +36,6 @@ vi.mock('@cloudflare/kumo', () => {
     Loader: () => <span>Loading</span>,
     Select,
     Text: ({ children }: { children: ReactNode }) => <p>{children}</p>,
-    useKumoToastManager: () => ({ add: vi.fn<(toast: unknown) => void>() }),
   }
 })
 

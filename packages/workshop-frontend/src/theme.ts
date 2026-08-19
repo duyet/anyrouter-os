@@ -1,15 +1,9 @@
 // Runtime color theming.
 //
-// The base light/dark palettes are defined statically in styles.css via Tailwind `@theme` CSS
-// variables and `[data-mode="dark"]` overrides. Theme mode is applied on <html> so Kumo's semantic
-// tokens and native controls resolve consistently. We also let a deployment override the *accent*
-// family at runtime by setting those CSS variables on :root from an admin-chosen seed color.
-// Hover/lighter/selection shades are derived from the seed with CSS relative-color syntax
-// (`oklch(from <seed> ...)`), so the admin only picks one color.
-//
-// Only the accent-related variables are overridden at runtime; backgrounds, lines, and neutral text
-// follow the light/dark palettes selected by `data-mode` in styles.css. The shared applicator
-// validates the seed before interpolating it into CSS values.
+// Light/dark palettes live in styles.css (`:root` / `.dark` / `[data-mode="dark"]`).
+// Theme mode is stamped on <html> as both `data-mode` and `.dark` / `.light`
+// (shadcn) before paint. Accent can be overridden at runtime from an
+// admin-chosen seed; hover/ring shades are derived with CSS relative color.
 
 import { applyAccentColor as applyAccentColorToStyle } from '@gadgets/workshop-shared/theme'
 
@@ -57,7 +51,11 @@ export function applyThemeMode(mode: ThemeMode): ResolvedThemeMode {
   const resolved = resolveThemeMode(mode)
   const root = document.documentElement
 
+  // Stamp both `data-mode` and shadcn's `.dark` / `.light` so semantic tokens
+  // resolve the same palette before paint.
   root.setAttribute('data-mode', resolved)
+  root.classList.toggle('dark', resolved === 'dark')
+  root.classList.toggle('light', resolved === 'light')
   root.style.colorScheme = resolved
 
   let meta = document.querySelector('meta[name="color-scheme"]')

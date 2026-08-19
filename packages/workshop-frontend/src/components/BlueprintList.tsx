@@ -10,7 +10,8 @@ import {
   UploadSimple,
 } from '@phosphor-icons/react'
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react'
-import { DropdownMenu, useKumoToastManager } from '@cloudflare/kumo'
+import { useKumoToastManager } from '@/components/ui/toast'
+import { DropdownMenu } from '@/components/ui'
 import { useAuthenticatedApi } from '../AuthContext'
 import { MENU_CONTENT, MENU_ITEM, MENU_ITEM_DANGER } from './menuStyles'
 
@@ -30,7 +31,7 @@ type BlueprintItem = {
 // Chrome shared by the page's secondary actions. `w-full` + `justify-center` are what let a pair of
 // these sit in a 2-column grid and come out the same width whatever their labels say.
 const ACTION_BUTTON =
-  'press inline-flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-kumo-line bg-kumo-base px-3.5 text-[13px] font-medium tracking-[-0.25px] text-kumo-default transition-colors hover:bg-kumo-tint disabled:cursor-default disabled:opacity-50'
+  'press inline-flex h-9 w-full cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3.5 text-[13px] font-medium tracking-[-0.25px] text-foreground transition-colors hover:bg-muted disabled:cursor-default disabled:opacity-50'
 
 function formatRelativeTime(date: Date): string {
   const diff = Date.now() - date.getTime()
@@ -64,26 +65,26 @@ function BlueprintRow({
     <Link
       to="/blueprint/$id"
       params={{ id: item.id }}
-      className="group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-150 ease-out hover:bg-kumo-tint"
+      className="group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-150 ease-out hover:bg-muted"
     >
       {/* Neutral monogram */}
-      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-kumo-fill text-kumo-subtle">
+      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
         <BlueprintIcon size={16} weight="regular" />
       </div>
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          {item.pinned && <Star size={12} weight="fill" className="flex-shrink-0 text-kumo-brand" />}
-          <h3 className="truncate text-sm font-medium text-kumo-default">
+          {item.pinned && <Star size={12} weight="fill" className="flex-shrink-0 text-primary" />}
+          <h3 className="truncate text-sm font-medium text-foreground">
             {item.title || 'Untitled blueprint'}
           </h3>
         </div>
         {item.description && (
-          <p className="mt-0.5 truncate text-xs text-kumo-subtle">{item.description}</p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">{item.description}</p>
         )}
       </div>
 
-      <span className="hidden flex-shrink-0 items-center gap-1 text-xs text-kumo-inactive lg:flex">
+      <span className="hidden flex-shrink-0 items-center gap-1 text-xs text-muted-foreground lg:flex">
         <Clock size={10} />
         {formatRelativeTime(new Date(item.recency))}
       </span>
@@ -96,7 +97,7 @@ function BlueprintRow({
             render={
               <button
                 type="button"
-                className="rounded-md p-1.5 text-kumo-subtle transition-colors hover:bg-kumo-fill hover:text-kumo-default focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
               >
                 <DotsThreeVertical size={16} />
               </button>
@@ -261,13 +262,13 @@ export default function BlueprintList() {
       {!loading && items.length > 0 && (
         <div className="mb-4 flex items-center gap-2 px-3">
           <div className="relative flex-1">
-            <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-kumo-inactive" />
+            <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search blueprints…"
-              className="h-9 w-full rounded-lg border border-kumo-line bg-kumo-base pl-9 pr-4 text-[13px] tracking-[-0.25px] text-kumo-default placeholder:text-kumo-inactive transition-[border-color,box-shadow] duration-150 ease-out focus:border-kumo-ring focus:outline-none focus:ring-[3px] focus:ring-kumo-ring/15"
+              className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-4 text-[13px] tracking-[-0.25px] text-foreground placeholder:text-muted-foreground transition-[border-color,box-shadow] duration-150 ease-out focus:border-ring focus:outline-none focus:ring-[3px] focus:ring-ring/15"
             />
           </div>
           {/* Grid, not flex: 1fr columns give the two buttons a matching width, where flex would
@@ -297,25 +298,25 @@ export default function BlueprintList() {
         {loading ? (
           <div className="flex flex-col gap-0.5 px-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-[56px] rounded-xl bg-kumo-elevated animate-pulse" />
+              <div key={i} className="h-[56px] rounded-xl bg-card animate-pulse" />
             ))}
           </div>
         ) : loadError ? (
           <div className="py-12 text-center text-sm">
-            <p className="text-kumo-danger">Something went wrong loading your blueprints.</p>
-            <button type="button" onClick={load} className="mt-1 text-kumo-brand underline">Try again</button>
+            <p className="text-destructive">Something went wrong loading your blueprints.</p>
+            <button type="button" onClick={load} className="mt-1 text-primary underline">Try again</button>
           </div>
         ) : filtered.length === 0 ? (
           search ? (
-            <div className="py-12 text-center text-sm text-kumo-inactive">No blueprints found</div>
+            <div className="py-12 text-center text-sm text-muted-foreground">No blueprints found</div>
           ) : (
             <div className="flex flex-col items-center gap-3 px-3 py-16 text-center">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-kumo-fill text-kumo-subtle">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
                 <BlueprintIcon size={18} />
               </div>
               <div>
-                <p className="text-sm font-medium text-kumo-default">No blueprints yet</p>
-                <p className="mt-1 text-[13px] leading-[18px] text-kumo-subtle">
+                <p className="text-sm font-medium text-foreground">No blueprints yet</p>
+                <p className="mt-1 text-[13px] leading-[18px] text-muted-foreground">
                   Publish a workspace as a blueprint, or add one from Explore.
                 </p>
               </div>

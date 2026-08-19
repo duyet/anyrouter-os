@@ -1,7 +1,7 @@
 import { classifyRpcError, logRpcFailure } from "../rpcErrors";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useKumoToastManager } from "@cloudflare/kumo";
+import { useKumoToastManager } from '@/components/ui/toast';
 import { ChatInput } from "../ChatInterface";
 import MeshBackground from "../components/MeshBackground";
 import HomeTaskSuggestions from "../components/AppShell/HomeTaskSuggestions";
@@ -172,10 +172,10 @@ export function HomePageContent({ prompt }: HomeSearch) {
       <div className="flex w-full max-w-2xl flex-col items-stretch gap-8">
         {/* Hero */}
         <header className="text-center">
-          <h1 className="text-3xl font-semibold tracking-tight leading-tight text-kumo-default sm:text-4xl">
+          <h1 className="text-3xl font-semibold tracking-tight leading-tight text-foreground sm:text-4xl">
             What are we working on?
           </h1>
-          <p className="mx-auto mt-3 max-w-md text-[14px] leading-5 tracking-[-0.25px] text-kumo-subtle">
+          <p className="mx-auto mt-3 max-w-md text-[14px] leading-5 tracking-[-0.25px] text-muted-foreground">
             Ask a question, create an output, or create an app that works with your tools and data.
           </p>
         </header>

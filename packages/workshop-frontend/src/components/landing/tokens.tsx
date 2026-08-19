@@ -9,7 +9,7 @@ import type { ReactNode } from 'react'
  * style (see `HomeTaskSuggestions`'s "Get started" label and `profile/controls.tsx`'s SectionLabel). */
 export function Eyebrow({ children }: { children: ReactNode }) {
   return (
-    <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-kumo-brand">
+    <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-primary">
       {children}
     </p>
   )
@@ -31,10 +31,10 @@ export function LandingSection({
   return (
     <section className="mx-auto w-full max-w-4xl px-6 py-14 sm:px-8">
       <Eyebrow>{eyebrow}</Eyebrow>
-      <h2 className="mt-2 text-2xl font-semibold tracking-tight text-kumo-default sm:text-3xl">
+      <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
         {title}
       </h2>
-      <p className="mt-2 max-w-xl text-[15px] leading-6 text-kumo-subtle">{body}</p>
+      <p className="mt-2 max-w-xl text-[15px] leading-6 text-muted-foreground">{body}</p>
       <div className="mt-8">{children}</div>
     </section>
   )
@@ -48,18 +48,18 @@ export function LandingSection({
 
 /** Compact primary button for controls inside a `DemoFrame` (h-7, vs. the app-wide h-9 button). */
 export const DEMO_BTN_PRIMARY =
-  'press inline-flex h-7 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-kumo-brand px-3 text-[12px] font-medium tracking-[-0.25px] text-white transition-colors hover:bg-kumo-brand-hover disabled:cursor-not-allowed disabled:opacity-60'
+  'press inline-flex h-7 cursor-pointer items-center justify-center gap-1.5 rounded-lg bg-primary px-3 text-[12px] font-medium tracking-[-0.25px] text-white transition-colors hover:bg-primary/80 disabled:cursor-not-allowed disabled:opacity-60'
 
 /** Compact secondary button for controls inside a `DemoFrame` (h-7, vs. the app-wide h-9 button). */
 export const DEMO_BTN_SECONDARY =
-  'press inline-flex h-7 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-kumo-line bg-kumo-base px-3 text-[12px] font-medium tracking-[-0.25px] text-kumo-default transition-colors hover:bg-kumo-tint disabled:cursor-not-allowed disabled:opacity-60'
+  'press inline-flex h-7 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 text-[12px] font-medium tracking-[-0.25px] text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60'
 
 /** The bordered card chrome every demo renders inside, so the four animations look like one
  * component family instead of four independent widgets. Fixed min-height avoids layout shift as a
  * demo's step count changes what it's showing. */
 export function DemoFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="relative isolate min-h-[220px] overflow-hidden rounded-2xl border border-kumo-line bg-kumo-elevated p-6 sm:p-8">
+    <div className="relative isolate min-h-[220px] overflow-hidden rounded-2xl border border-border bg-card p-6 sm:p-8">
       {children}
     </div>
   )

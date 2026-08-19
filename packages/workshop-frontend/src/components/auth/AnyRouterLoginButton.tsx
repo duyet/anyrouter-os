@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button, Banner } from '@cloudflare/kumo'
+import { Button } from '@/components/ui/button'
+import { Banner } from '@/components/ui/alert'
 import { ANYROUTER_OAUTH_CHANNEL, beginAnyRouterOAuth } from '../../anyrouterOAuth'
 
 interface AnyRouterLoginButtonProps {

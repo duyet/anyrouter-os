@@ -34,16 +34,16 @@ export default function DemoGatekeeperApproval() {
       <DemoFrame>
         <div ref={containerRef} className="flex flex-col gap-3">
           {/* Read action */}
-          <div className="flex items-center gap-3 rounded-xl border border-kumo-line bg-kumo-base px-4 py-3">
-            <ShieldCheck size={18} weight="duotone" aria-hidden="true" className="shrink-0 text-kumo-brand" />
-            <span className="min-w-0 flex-1 truncate text-[14px] text-kumo-default">
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3">
+            <ShieldCheck size={18} weight="duotone" aria-hidden="true" className="shrink-0 text-primary" />
+            <span className="min-w-0 flex-1 truncate text-[14px] text-foreground">
               Read: check this week's report
             </span>
             <span
               aria-hidden="true"
-              className="flex shrink-0 items-center gap-1.5 text-[12px] font-medium text-kumo-subtle"
+              className="flex shrink-0 items-center gap-1.5 text-[12px] font-medium text-muted-foreground"
             >
-              {step === 0 && <span className="text-kumo-inactive">Queued</span>}
+              {step === 0 && <span className="text-muted-foreground">Queued</span>}
               {readPending && (
                 <>
                   <CircleNotch size={12} className="animate-spin" aria-hidden="true" />
@@ -52,7 +52,7 @@ export default function DemoGatekeeperApproval() {
               )}
               {readDone && (
                 <>
-                  <Check size={14} weight="bold" aria-hidden="true" className="text-kumo-success" />
+                  <Check size={14} weight="bold" aria-hidden="true" className="text-success" />
                   Done
                 </>
               )}
@@ -60,22 +60,22 @@ export default function DemoGatekeeperApproval() {
           </div>
 
           {/* Write action */}
-          <div className="rounded-xl border border-kumo-line bg-kumo-base px-4 py-3">
+          <div className="rounded-xl border border-border bg-background px-4 py-3">
             <div className="flex items-center gap-3">
-              <ShieldCheck size={18} weight="duotone" aria-hidden="true" className="shrink-0 text-kumo-brand" />
-              <span className="min-w-0 flex-1 truncate text-[14px] text-kumo-default">
+              <ShieldCheck size={18} weight="duotone" aria-hidden="true" className="shrink-0 text-primary" />
+              <span className="min-w-0 flex-1 truncate text-[14px] text-foreground">
                 Write: share it with the team
               </span>
               <span aria-hidden="true" className="flex shrink-0 items-center gap-1.5 text-[12px] font-medium">
-                {step < 3 && <span className="text-kumo-inactive">Queued</span>}
+                {step < 3 && <span className="text-muted-foreground">Queued</span>}
                 {writePending && (
-                  <span className="flex items-center gap-1.5 text-kumo-warning">
+                  <span className="flex items-center gap-1.5 text-warning">
                     <HourglassSimple size={12} />
                     Waiting for your approval
                   </span>
                 )}
                 {writeApproved && (
-                  <span className="flex items-center gap-1.5 text-kumo-success">
+                  <span className="flex items-center gap-1.5 text-success">
                     <Check size={14} weight="bold" />
                     Approved
                   </span>

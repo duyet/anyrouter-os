@@ -79,7 +79,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, [])
 
   return (
-    <div className="flex h-screen min-h-screen w-screen overflow-hidden bg-kumo-base">
+    <div className="flex h-screen min-h-screen w-screen overflow-hidden bg-background">
       {/* Desktop sidebar — hidden on mobile in favor of the drawer. */}
       <div className="hidden md:flex">
         <Sidebar collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
@@ -89,7 +89,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {mobileOpen && (
         <>
           <div
-            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px] md:hidden"
+            className="fixed inset-0 z-40 bg-black/30 md:hidden"
             onClick={() => setMobileOpen(false)}
             aria-hidden="true"
           />
@@ -104,12 +104,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {/* Top bar. Same height as the sidebar's brand row (h-14) so they read as one continuous
             chrome strip across the top. Mostly empty — carries the mobile hamburger on the left,
             any admin TopBarNotice centered, and the reconnecting chip on the right. */}
-        <div className="relative flex h-14 shrink-0 items-center justify-between border-b border-kumo-line bg-kumo-base px-3">
+        <div className="relative flex h-14 shrink-0 items-center justify-between border-b border-border bg-background px-3">
           <button
             type="button"
             onClick={() => setMobileOpen((o) => !o)}
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-kumo-default transition-colors hover:bg-kumo-tint md:hidden"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-foreground transition-colors hover:bg-muted md:hidden"
           >
             {mobileOpen ? <X size={16} /> : <List size={16} />}
           </button>
