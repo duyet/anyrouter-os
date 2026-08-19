@@ -37,6 +37,11 @@ export default function SiteLogo({
     )
   }
 
+  // In the lockup the marks sit side by side, so match them by HEIGHT and let each keep its own
+  // width. Forcing a square box instead letterboxes a wide wordmark (e.g. the AnyRouter mark),
+  // making it render shorter than the square OS mark beside it. An explicit inline height also
+  // beats the framework's `img { height: auto }` reset, which would otherwise ignore the attribute.
+  const markStyle = { height: size, width: 'auto' as const }
   return (
     <span className={`flex items-center gap-1.5 ${className ?? ''}`}>
       {/* The configured mark leads the lockup; the deployment's own mark follows it. */}
@@ -44,8 +49,7 @@ export default function SiteLogo({
         <img
           src={secondarySrc}
           alt=""
-          width={size}
-          height={size}
+          style={markStyle}
           className="object-contain"
           onError={() => setSecondaryFailed(true)}
         />
@@ -54,8 +58,7 @@ export default function SiteLogo({
         <img
           src={src}
           alt=""
-          width={size}
-          height={size}
+          style={markStyle}
           className="object-contain"
           onError={() => setFailed(true)}
         />
