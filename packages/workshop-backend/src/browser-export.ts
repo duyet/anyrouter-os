@@ -133,30 +133,7 @@ function scriptUrl(source: string): string {
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(source)}`;
 }
 
-function isFullHtmlDocument(html: string): boolean {
-  return /^\s*(<!doctype\b|<html\b)/i.test(html);
-}
-
-/** Inject export scripts into a full document, or wrap a body fragment. */
-function injectExportScripts(html: string, scripts: string): string {
-  if (!isFullHtmlDocument(html)) {
-    return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-</head>
-<body>
-${html}
-${scripts}
-</body>
-</html>`;
-  }
-  if (/<\/body>/i.test(html)) return html.replace(/<\/body>/i, () => scripts + "</body>");
-  if (/<\/html>/i.test(html)) return html.replace(/<\/html>/i, () => scripts + "</html>");
-  return html + scripts;
-}
-
-/** Build the HTML document rendered by the remote export browser. */
+/** Always emit a platform-owned document; gadget HTML is a body fragment, never spliced. */
 export function makeExportHtml(bundle: UiBundle): string {
   let clientPrefix = String.raw`//# sourceURL=client.js
 const { gadget, RpcStub, RpcTarget } = globalThis.__workshopExportRuntime;
@@ -166,21 +143,17 @@ delete globalThis.__workshopExportRuntime;
   let runtimeUrl = scriptUrl(
       `globalThis.__workshopExportClientUrl = ${JSON.stringify(clientUrl)};\n` +
       BROWSER_EXPORT_RUNTIME);
-  let scripts = `<script src="${runtimeUrl}"></script>`;
 
-  if (bundle.html === undefined) {
-    return `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
 </head>
 <body>
-  ${scripts}
+${bundle.html ?? ""}
+<script src="${runtimeUrl}"></script>
 </body>
 </html>`;
-  }
-
-  return injectExportScripts(bundle.html, scripts);
 }
 
 /** Limits the size of the exported file streamed back to the client. */
@@ -268,9 +241,8 @@ async function waitForDomSettled(page: Page): Promise<void> {
 /**
  * Renders a Gadget's UI as PDF in a remote browser and streams the bytes back.
  *
- * If `bundle.html` is set, that document is rendered (with client.js injected
- * when present) so static HTML paints without client.js. Otherwise the
- * JavaScript-only wrapper is used.
+ * Static `index.html` is placed in the body as a fragment so it paints without
+ * client.js. The export runtime (and client.js, when present) is appended last.
  *
  * Takes ownership of `gadget` and disposes it once the export settles. The
  * returned stream must be consumed or cancelled: the browser session stays open

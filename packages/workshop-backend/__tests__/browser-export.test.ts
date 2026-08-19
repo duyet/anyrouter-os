@@ -224,6 +224,7 @@ describe("makeExportHtml", () => {
     let html = makeExportHtml({ jsCode: "", html: "<h1>Invoice</h1>" });
     expect(html).toContain("<h1>Invoice</h1>");
     expect(html).toContain("<!DOCTYPE html>");
+    expect(html).toContain('<script src="data:text/javascript');
   });
 
   it("keeps the JavaScript-only wrapper when index.html is absent", () => {

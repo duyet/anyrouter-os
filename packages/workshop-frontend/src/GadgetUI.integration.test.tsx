@@ -186,6 +186,8 @@ describe('GadgetUI RPC recovery', () => {
     const iframe = container.querySelector('iframe')!
     expect(iframe.getAttribute('src')).toBeNull()
     expect(iframe.srcdoc).toContain("frame-src 'none'")
+    expect(iframe.srcdoc).toContain("script-src data:")
+    expect(iframe.srcdoc).not.toContain("script-src data: 'unsafe-inline'")
     expect(iframe.getAttribute('sandbox')).toBe(
       'allow-scripts allow-popups allow-popups-to-escape-sandbox',
     )
@@ -201,6 +203,7 @@ describe('GadgetUI RPC recovery', () => {
     const srcdoc = container.querySelector('iframe')!.srcdoc
     expect(srcdoc).toContain('<h1 id="title">Invoice</h1>')
     expect(srcdoc).toContain("connect-src 'none'")
+    expect(srcdoc).toContain('window.open')
     expect(srcdoc).not.toContain('<script type="module"')
   })
 
@@ -213,6 +216,7 @@ describe('GadgetUI RPC recovery', () => {
     const srcdoc = container.querySelector('iframe')!.srcdoc
     expect(srcdoc).toContain(encodeURIComponent('document.body.textContent = "js-only"'))
     expect(srcdoc).toContain('<script type="module"')
+    expect(srcdoc).toContain('window.open')
     expect(srcdoc).toContain("connect-src 'none'")
   })
 
@@ -229,6 +233,7 @@ describe('GadgetUI RPC recovery', () => {
     expect(srcdoc).toContain('<h1>Deck</h1>')
     expect(srcdoc).toContain('gadget.ping()')
     expect(srcdoc).toContain('<script type="module"')
+    expect(srcdoc).toContain('window.open')
     expect(srcdoc).toContain("connect-src 'none'")
   })
 
