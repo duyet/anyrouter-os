@@ -13,8 +13,8 @@ import { useConnectionLost } from './RpcContext'
 import OAuthButtons from './components/auth/OAuthButtons'
 import ClerkLogin from './components/auth/ClerkLogin'
 import AnyRouterLoginButton from './components/auth/AnyRouterLoginButton'
-import ThemeModeButton from './components/ThemeModeButton'
 import Hero from './components/landing/Hero'
+import LandingHeader from './components/landing/LandingHeader'
 import FeatureGrid from './components/landing/FeatureGrid'
 import LogoStrip from './components/landing/LogoStrip'
 import DemoPromptToApp from './components/landing/DemoPromptToApp'
@@ -22,7 +22,6 @@ import DemoGatekeeperApproval from './components/landing/DemoGatekeeperApproval'
 import DemoOwnKey from './components/landing/DemoOwnKey'
 import DemoBlueprintShare from './components/landing/DemoBlueprintShare'
 import LandingFooter from './components/landing/LandingFooter'
-import { LANDING_SHELL } from './components/landing/tokens'
 
 interface LoginPageProps {
   rpcStub: RpcStub<PublicApi>
@@ -181,10 +180,8 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-background">
-      <header className={`${LANDING_SHELL} flex items-center justify-end py-3`}>
-        <ThemeModeButton size="lg" />
-      </header>
-      <Hero siteName={siteName} signIn={signIn} />
+      <LandingHeader />
+      <Hero signIn={signIn} />
 
       <div className="flex flex-col">
         <div className="pb-2">

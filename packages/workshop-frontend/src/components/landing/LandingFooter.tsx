@@ -2,35 +2,8 @@ import { Hexagon } from '@phosphor-icons/react'
 import { ANYROUTER_MARK_WHITE_CDN } from '../../anyrouterMark'
 import ThemeModeButton from '../ThemeModeButton'
 import { PRIMARY_BTN, SECONDARY_BTN } from '../profile/controls'
+import { LANDING_FOOTER_COLUMNS, LANDING_URLS } from './landing-links'
 import { LANDING_SHELL } from './tokens'
-
-const FOOTER_COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
-  {
-    title: 'Product',
-    links: [
-      { label: 'Sign in', href: '#sign-in' },
-      { label: 'GitHub', href: 'https://github.com/duyet/anyrouter-os' },
-    ],
-  },
-  {
-    title: 'AnyRouter',
-    links: [
-      { label: 'Gateway', href: 'https://anyrouter.dev' },
-      { label: 'Models', href: 'https://anyrouter.dev/models' },
-      { label: 'Docs', href: 'https://docs.anyrouter.dev' },
-      { label: 'MCP', href: 'https://anyrouter.dev/mcp' },
-    ],
-  },
-  {
-    title: 'Company',
-    links: [
-      { label: 'About', href: 'https://anyrouter.dev/about' },
-      { label: 'Blog', href: 'https://blog.anyrouter.dev' },
-      { label: 'Privacy', href: 'https://anyrouter.dev/privacy' },
-      { label: 'Terms', href: 'https://anyrouter.dev/terms' },
-    ],
-  },
-]
 
 /**
  * Signed-out landing footer. Same shape as anyrouter.dev: conversion band, brand +
@@ -52,10 +25,10 @@ export default function LandingFooter() {
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center gap-3">
-          <a href="#sign-in" className={PRIMARY_BTN}>
+          <a href={LANDING_URLS.signIn} className={PRIMARY_BTN}>
             Sign in
           </a>
-          <a href="https://anyrouter.dev" className={SECONDARY_BTN}>
+          <a href={LANDING_URLS.gateway} className={SECONDARY_BTN}>
             AnyRouter
           </a>
         </div>
@@ -63,7 +36,7 @@ export default function LandingFooter() {
 
       <div className={`${LANDING_SHELL} grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_repeat(3,minmax(0,1fr))]`}>
         <div className="min-w-0">
-          <a href="#sign-in" className="inline-flex items-center gap-1.5">
+          <a href={LANDING_URLS.signIn} className="inline-flex items-center gap-1.5">
             <img
               src={ANYROUTER_MARK_WHITE_CDN}
               alt=""
@@ -82,7 +55,7 @@ export default function LandingFooter() {
         </div>
 
         <div className="grid grid-cols-2 gap-x-8 gap-y-8 sm:grid-cols-3 lg:col-span-3 lg:grid-cols-subgrid">
-          {FOOTER_COLUMNS.map((column) => (
+          {LANDING_FOOTER_COLUMNS.map((column) => (
             <nav key={column.title} aria-label={column.title} className="min-w-0">
               <p className="font-mono text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
                 {column.title}
@@ -122,7 +95,7 @@ export default function LandingFooter() {
         <div className="flex items-center gap-3">
           <ThemeModeButton size="lg" />
           <a
-            href="https://github.com/duyet/anyrouter-os"
+            href={LANDING_URLS.github}
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             Source
