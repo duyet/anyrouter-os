@@ -1,6 +1,7 @@
 import { launch, type Page } from "@cloudflare/puppeteer";
 import { RpcSession, type RpcStub, type RpcTransport } from "capnweb";
 import { createLogger } from "@gadgets/backend-utils/logger";
+import type { UiBundle } from "@gadgets/workshop-shared/api";
 import BROWSER_EXPORT_RUNTIME from "./generated/browser-export-runtime.txt";
 
 type BrowserExportLogFields = {
@@ -132,12 +133,13 @@ function scriptUrl(source: string): string {
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(source)}`;
 }
 
-function makeExportHtml(clientCode: string): string {
+/** Always emit a platform-owned document; gadget HTML is a body fragment, never spliced. */
+export function makeExportHtml(bundle: UiBundle): string {
   let clientPrefix = String.raw`//# sourceURL=client.js
 const { gadget, RpcStub, RpcTarget } = globalThis.__workshopExportRuntime;
 delete globalThis.__workshopExportRuntime;
 `;
-  let clientUrl = scriptUrl(clientPrefix + clientCode);
+  let clientUrl = scriptUrl(clientPrefix + bundle.jsCode);
   let runtimeUrl = scriptUrl(
       `globalThis.__workshopExportClientUrl = ${JSON.stringify(clientUrl)};\n` +
       BROWSER_EXPORT_RUNTIME);
@@ -148,7 +150,8 @@ delete globalThis.__workshopExportRuntime;
   <meta charset="utf-8">
 </head>
 <body>
-  <script src="${runtimeUrl}"></script>
+${bundle.html ?? ""}
+<script src="${runtimeUrl}"></script>
 </body>
 </html>`;
 }
@@ -238,13 +241,16 @@ async function waitForDomSettled(page: Page): Promise<void> {
 /**
  * Renders a Gadget's UI as PDF in a remote browser and streams the bytes back.
  *
+ * Static `index.html` is placed in the body as a fragment so it paints without
+ * client.js. The export runtime (and client.js, when present) is appended last.
+ *
  * Takes ownership of `gadget` and disposes it once the export settles. The
  * returned stream must be consumed or cancelled: the browser session stays open
  * until it settles or times out.
  */
 export async function renderGadgetPdf(
   browserBinding: BrowserRun,
-  clientCode: string,
+  bundle: UiBundle,
   documentTitle: string,
   gadget: RpcStub<any>,
 ): Promise<ReadableStream<Uint8Array>> {
@@ -298,7 +304,7 @@ export async function renderGadgetPdf(
             status: 200,
             contentType: "text/html",
             headers: {"Content-Security-Policy": EXPORT_DOCUMENT_CSP},
-            body: makeExportHtml(clientCode),
+            body: makeExportHtml(bundle),
           });
         } else if (url === "about:blank" || url.startsWith("data:") || url.startsWith("blob:")) {
           void request.continue();

@@ -459,7 +459,7 @@ Tools refer to Gadgets by their binding name in your env: the file tools (\`read
 
 Gadgets execute on a restricted and heavily-sandboxed variant of Cloudflare Workers.
 
-Each Gadget has two main files: client.js and server.js
+Each Gadget has three main files: index.html, client.js, and server.js.
 
 server.js defines the Gadget's server-side logic, in the form of a Cloudflare Durable Object class. The class must be exported under the name \`Gadget\`. Unlike with normal Durable Objects on Cloudflare, there is no need to export a separate fetch handler; the Gadgets platform automatically takes care of routing requests to the Gadget. The Gadget has access to private storage via the regular Durable Objects KV and SQLite storage APIs. A simple server.js might look like:
 
@@ -473,14 +473,18 @@ export class Gadget extends DurableObject {
 }
 \`\`\`
 
-client.js is JavaScript that runs inside the browser to render a client-side user interface. This script runs inside a sandboxed iframe. It can display UI by manipulating the DOM. The client context is initialized with a special global variable called \`gadget\`, which is an RPC stub pointing at the gadget's Durable Object server. This RPC stub is implemented using Cap'n Web, an RPC system from Cloudflare that works similarly to Cloudflare Workers' built-in RPC system, but is able to be used in a browser. In short, methods invoked on the \`gadget\` stub will invoke the same-named method on the Durable Object class. A simple client.js might look like:
+index.html is a fragment of semantic markup for first paint and PDF. Do not include a doctype, \`<html>\`, or \`<head>\`, and do not put \`<script>\` in the HTML — the platform wraps the fragment in its own document. A simple index.html might look like:
+
+\`\`\`
+<h1 id="greeting">Hello</h1>
+\`\`\`
+
+client.js is JavaScript that runs inside the browser for behavior. This script runs inside a sandboxed iframe. The client context is initialized with a special global variable called \`gadget\`, which is an RPC stub pointing at the gadget's Durable Object server. This RPC stub is implemented using Cap'n Web, an RPC system from Cloudflare that works similarly to Cloudflare Workers' built-in RPC system, but is able to be used in a browser. In short, methods invoked on the \`gadget\` stub will invoke the same-named method on the Durable Object class. Put behavior and \`gadget\` usage only in client.js. The iframe still gets a \`gadget\` Cap'n Web stub when client.js exists. A simple client.js might look like:
 
 \`\`\`
 let greeting = await gadget.greet("World");
-document.body.appendChild(document.createTextNode(greeting));
+document.getElementById("greeting").textContent = greeting;
 \`\`\`
-
-Note that there is no index.html. Instead, client.js must build the entire UI using JavaScript code.
 
 Make Gadget UIs responsive and usable on both desktop and phones by default.
 
@@ -637,7 +641,7 @@ Edit content of a file. If you need to edit multiple places in a file or across 
 let WEBFETCH_TOOL_DESCRIPTION = `
 Fetch the contents of a public web URL via HTTPS GET. Use this to look up documentation, fetch API references, or read pages the user has linked, when doing so would help you answer accurately. Prefer it over guessing when you're unsure about an API or library.
 
-The Gadget's own code (server.js / client.js) still cannot make network requests at runtime; \`webFetch\` is a tool for *you*, not something you can call from gadget code.
+The Gadget's own code (index.html / client.js / server.js) still cannot make network requests at runtime; \`webFetch\` is a tool for *you*, not something you can call from gadget code.
 
 Only https:// URLs to public hosts are allowed; credentials in the URL are not permitted, and the request is sent with no cookies and no authorization headers. Responses are capped at ~1 MiB; if the cap is hit, the result will note that the body was truncated.
 

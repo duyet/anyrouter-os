@@ -961,7 +961,8 @@ export default function GadgetEditor() {
         turnOutputRef.current = output
       }
       output.wroteFile = true
-      if (file.filename === 'client.js' || file.filename === 'server.js') {
+      if (file.filename === 'client.js' || file.filename === 'server.js' ||
+          file.filename === 'index.html') {
         output.wroteGadgetCode = true
       }
       if (!output.userSelectedTab) setActiveTab('code')

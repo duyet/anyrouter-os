@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Text, Loader, Banner } from '@cloudflare/kumo'
 import { Sparkle } from '@phosphor-icons/react'
 import { RpcStub, RpcTarget, newMessagePortRpcSession } from 'capnweb'
-import { GadgetClient, ConsoleLogEvent } from '@gadgets/workshop-shared/api'
+import { GadgetClient, ConsoleLogEvent, UiBundle } from '@gadgets/workshop-shared/api'
 
 // We want to inject Cap'n Web into the Gadget. Luckily it has no dependencies, so we can just take
 // the whole module and embed it. We can import the module using ?raw to get a string of the
@@ -20,18 +20,10 @@ let CAPNWEB_BUNDLE_ANNOTATED = `//# sourceURL=jsrpc.js\n${CAPNWEB_BUNDLE}`
 // a data: URL, so we have a doubly-nested data: URL. We'll use base64 encoding for the inner
 // data: and URL encoding for the outer, as this largely avoids double-escaping.
 //
-// In any case, we'll prefix the gadget code with this prefix which imports the Cap'n Web library
-// (from a massive data URL) and sets up the RPC connection to the parent.
-let INJECTED_CODE_PREFIX = encodeURIComponent(String.raw`//# sourceURL=client.js
-import { RpcTarget, RpcStub, newMessagePortRpcSession } from "data:text/javascript;charset=utf-8;base64,${btoa(CAPNWEB_BUNDLE_ANNOTATED)}";
-
-let gadget;  // RPC stub to the gadget's server-side Durable Object.
-{
-  let {port1, port2} = new MessageChannel();
-  window.parent.postMessage("handshake", "*", [port2]);
-  gadget = newMessagePortRpcSession(port1);
-}
-
+// Platform helpers run as a classic blocking data: script so HTML-only gadgets still get them
+// without a user module. Cap'n Web handshake stays on the user module and is omitted when
+// client.js is empty.
+let PLATFORM_SCRIPT = encodeURIComponent(String.raw`//# sourceURL=gadget-platform.js
 // Monkey-patch console to forward logs to the parent frame.
 for (let level of ['debug', 'info', 'log', 'warn', 'error']) {
   let original = console[level];
@@ -99,19 +91,46 @@ window.addEventListener('unhandledrejection', (event) => {
     message: ['Unhandled promise rejection:', reason?.stack || String(reason)],
   }, '*');
 });
+`)
 
-`);
+let INJECTED_CODE_PREFIX = encodeURIComponent(String.raw`//# sourceURL=client.js
+import { RpcTarget, RpcStub, newMessagePortRpcSession } from "data:text/javascript;charset=utf-8;base64,${btoa(CAPNWEB_BUNDLE_ANNOTATED)}";
 
-const createSandboxedHtml = (jsCode: string): string => {
+let gadget;  // RPC stub to the gadget's server-side Durable Object.
+{
+  let {port1, port2} = new MessageChannel();
+  window.parent.postMessage("handshake", "*", [port2]);
+  gadget = newMessagePortRpcSession(port1);
+}
+`)
+
+// Match EXPORT_DOCUMENT_CSP's script-src (data: only). Style still needs 'unsafe-inline' for
+// gadget markup; scripts are always injected as data: URLs.
+const GADGET_UI_CSP = "default-src 'none'; frame-src 'none'; script-src data:; style-src data: 'unsafe-inline'; img-src data:; media-src data:; object-src 'none'; base-uri 'none'; form-action 'none'; connect-src 'none';"
+
+function platformScriptTag(): string {
+  return `<script src="data:text/javascript;charset=utf-8,${PLATFORM_SCRIPT}"></script>`
+}
+
+function clientModuleTag(jsCode: string): string {
+  return `<script type="module" src="data:text/javascript;charset=utf-8,${INJECTED_CODE_PREFIX}${encodeURIComponent(jsCode)}"></script>`
+}
+
+/** Always emit a platform-owned document; gadget HTML is a body fragment, never spliced. */
+const createSandboxedHtml = (bundle: UiBundle): string => {
+  const fragment = bundle.html ?? ''
+  const userModule = bundle.jsCode ? clientModuleTag(bundle.jsCode) : ''
   return `<!DOCTYPE html>
 <html>
 <head>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src 'none'; script-src data: 'unsafe-inline'; style-src data: 'unsafe-inline'; img-src data:; media-src data:; object-src 'none'; base-uri 'none'; form-action 'none'; connect-src 'none';">
+  <meta http-equiv="Content-Security-Policy" content="${GADGET_UI_CSP}">
+  ${platformScriptTag()}
 </head>
 <body>
-    <script type="module" src="data:text/javascript;charset=utf-8,${INJECTED_CODE_PREFIX}${encodeURIComponent(jsCode)}"></script>
+${fragment}
+${userModule}
 </body>
-</html>`.trim()
+</html>`
 }
 
 interface GadgetUIProps {
@@ -293,7 +312,7 @@ function GadgetUISession({ gadget, height, reloadTrigger, isVisible = true, chat
         const bundle = await gadget.getUiBundle(chatId)
         if (!isCurrent()) return
         if (bundle) {
-          const html = createSandboxedHtml(bundle.jsCode)
+          const html = createSandboxedHtml(bundle)
           setSandboxedHtml(html)
         } else {
           setSandboxedHtml(null)

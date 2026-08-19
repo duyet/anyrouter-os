@@ -37,6 +37,7 @@ import {
   validateChatAttachmentUpload,
 } from "./chat-attachment-validation";
 import { renderGadgetPdf } from "./browser-export";
+import { uiBundleFromFiles } from "./ui-bundle";
 
 const logger = createWorkshopLogger("workshop.overseer");
 export const AGENT_RUNNING_ERROR_MESSAGE = "Agent is running, wait for it to finish.";
@@ -9130,7 +9131,6 @@ class GadgetClientImpl extends RpcTarget implements GadgetClient {
   }
 
   async getUiBundle(chatId?: number): Promise<UiBundle | null> {
-    // TODO: Bundle the UI? For now we just return client.js.
     if (chatId !== undefined) {
       let meta = this.impl.getChatMetaOrThrow(chatId);
       if (!meta.activeAgent) {
@@ -9148,12 +9148,8 @@ class GadgetClientImpl extends RpcTarget implements GadgetClient {
       });
     }
 
-    let file = ydoc.getMap<Y.Text>(this.impl.gadgetRootName(this.id)).get("client.js");
-    if (file) {
-      return { jsCode: file.toString() };
-    } else {
-      return null;
-    }
+    let files = ydoc.getMap<Y.Text>(this.impl.gadgetRootName(this.id));
+    return uiBundleFromFiles(files.get("client.js")?.toString(), files.get("index.html")?.toString());
   }
 
   async connectToGadget(chatId?: number): Promise<RpcStub<any>> {
@@ -9174,7 +9170,7 @@ class GadgetClientImpl extends RpcTarget implements GadgetClient {
     if (!bundle) throw new Error("This Gadget does not have a UI to export.");
     let gadget = await this.impl.getGadgetFacet(this.id, chatId);
     let title = this.impl.getGadgetRecord(this.id).title;
-    return renderGadgetPdf(browser, bundle.jsCode, title, gadget);
+    return renderGadgetPdf(browser, bundle, title, gadget);
   }
 
   async listBindings(chatId?: number): Promise<GadgetBindingInfo[]> {
@@ -9404,8 +9400,8 @@ class UseGadgetClientInterface extends RpcTarget implements GadgetClient {
     }
 
     let {ydoc} = this.impl.buildYDoc("current");
-    let file = ydoc.getMap<Y.Text>(this.impl.gadgetRootName(this.id)).get("client.js");
-    return file ? { jsCode: file.toString() } : null;
+    let files = ydoc.getMap<Y.Text>(this.impl.gadgetRootName(this.id));
+    return uiBundleFromFiles(files.get("client.js")?.toString(), files.get("index.html")?.toString());
   }
 
   async connectToGadget(chatId?: number): Promise<RpcStub<any>> {
@@ -9430,7 +9426,7 @@ class UseGadgetClientInterface extends RpcTarget implements GadgetClient {
     if (!bundle) throw new Error("This Gadget does not have a UI to export.");
     let gadget = await this.impl.getGadgetFacet(this.id);
     let title = this.impl.getGadgetRecord(this.id).title;
-    return renderGadgetPdf(browser, bundle.jsCode, title, gadget);
+    return renderGadgetPdf(browser, bundle, title, gadget);
   }
 
   // --- Denied methods (build-only) ---
