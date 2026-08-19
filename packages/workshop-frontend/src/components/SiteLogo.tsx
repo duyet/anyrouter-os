@@ -7,6 +7,7 @@ import {
   type ReactElement,
   type ReactNode,
 } from 'react'
+import { ANYROUTER_MARK_CDN } from '../anyrouterMark'
 import { useServerConfig } from '../ServerConfigContext'
 
 export default function SiteLogo({
@@ -23,8 +24,11 @@ export default function SiteLogo({
   const serverConfig = useServerConfig()
   const configuredUrl = serverConfig?.siteLogo?.url
   const src = srcOverride === undefined ? configuredUrl : srcOverride ?? undefined
-  // The secondary mark only applies to the live config, never to the Admin upload/reset preview.
-  const secondarySrc = srcOverride === undefined ? serverConfig?.siteLogo?.secondary?.url : undefined
+  // Paint the AnyRouter mark before RPC returns. Once config loads, honor whatever the
+  // deployment set (including "no secondary"). Admin preview never uses the secondary.
+  const secondarySrc = srcOverride === undefined
+    ? (serverConfig ? serverConfig.siteLogo?.secondary?.url : ANYROUTER_MARK_CDN)
+    : undefined
   const [failed, setFailed] = useState(false)
   const [secondaryFailed, setSecondaryFailed] = useState(false)
 
@@ -68,6 +72,8 @@ export default function SiteLogo({
           alt=""
           style={markStyle}
           className="object-contain"
+          fetchPriority="high"
+          decoding="async"
           onError={() => setSecondaryFailed(true)}
         />
       )}

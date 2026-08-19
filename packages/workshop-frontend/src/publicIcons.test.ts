@@ -23,6 +23,12 @@ describe('public icons', () => {
     expect(html).toContain('type="image/svg+xml"')
   })
 
+  it('preloads the AnyRouter mark from the brand CDN', () => {
+    const html = readFileSync(join(frontendRoot, 'index.html'), 'utf8')
+    expect(html).toContain('rel="preload"')
+    expect(html).toContain('https://anyrouter.dev/brand/anyrouter-logo.svg')
+  })
+
   it('ships a real ICO so /favicon.ico is not the SPA document', () => {
     const ico = new Uint8Array(readFileSync(join(publicDir, 'favicon.ico')))
     // ICONDIR: reserved 0, type 1 (icon)

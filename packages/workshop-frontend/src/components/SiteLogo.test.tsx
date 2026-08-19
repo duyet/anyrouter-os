@@ -6,6 +6,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { ServerConfig } from '@gadgets/workshop-shared/api'
 import { ServerConfigContext } from '../ServerConfigContext'
+import { ANYROUTER_MARK_CDN } from '../anyrouterMark'
 import SiteLogo from './SiteLogo'
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -106,6 +107,22 @@ describe('SiteLogo', () => {
     act(() => images[0].dispatchEvent(new Event('error')))
     expect(container!.querySelectorAll('img')).toHaveLength(1)
     expect(container!.querySelector('[data-fallback]')).toBeNull()
+  })
+
+  it('paints the AnyRouter CDN mark before server config arrives', () => {
+    container = document.createElement('div')
+    document.body.append(container)
+    root = createRoot(container)
+    act(() => root!.render(
+      <ServerConfigContext.Provider value={null}>
+        <SiteLogo size={20}><span data-fallback>fallback</span></SiteLogo>
+      </ServerConfigContext.Provider>,
+    ))
+
+    const image = container!.querySelector('img')!
+    expect(image.getAttribute('src')).toBe(ANYROUTER_MARK_CDN)
+    expect(image.getAttribute('fetchpriority') ?? image.getAttribute('fetchPriority')).toBe('high')
+    expect(container!.querySelector('[data-fallback]')).not.toBeNull()
   })
 
   it('pairs the secondary mark with the fallback when no logo is uploaded', () => {
