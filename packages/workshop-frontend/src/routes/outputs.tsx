@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Dialog, DropdownMenu, useKumoToastManager } from '@cloudflare/kumo'
+import { useKumoToastManager } from '@/components/ui/toast'
+import { Dialog, DropdownMenu } from '@/components/ui'
 import {
   MagnifyingGlass,
   DotsThreeVertical,
@@ -88,7 +89,7 @@ function OutputMenu({
             <button
               type="button"
               aria-label="Output actions"
-              className="cursor-pointer rounded-md p-1.5 text-kumo-subtle transition-colors hover:bg-kumo-fill hover:text-kumo-default focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+              className="cursor-pointer rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
             >
               <DotsThreeVertical size={16} />
             </button>
@@ -107,7 +108,7 @@ function OutputMenu({
             </DropdownMenu.Item>
           )}
           {onRemove && (
-            <DropdownMenu.Item onClick={onRemove} className={`${MENU_ITEM} text-kumo-danger`}>
+            <DropdownMenu.Item onClick={onRemove} className={`${MENU_ITEM} text-destructive`}>
               <Trash size={13} className="mr-2" /> Remove
             </DropdownMenu.Item>
           )}
@@ -154,18 +155,18 @@ function OutputCard({
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen() } }}
-      className="themed-card-hover-shadow press group flex cursor-pointer flex-col overflow-hidden rounded-xl border border-kumo-line bg-kumo-base text-left transition-[border-color,box-shadow] duration-150 ease-out hover:border-kumo-fill"
+      className="press group flex cursor-pointer flex-col overflow-hidden rounded-xl border border-border bg-background text-left transition-[border-color,box-shadow] duration-150 ease-out hover:border-border"
     >
-      <div className="relative aspect-[4/3] w-full border-b border-kumo-line">
+      <div className="relative aspect-[4/3] w-full border-b border-border">
         <FormatThumbnail output={output.output} />
       </div>
       <div className="flex items-center gap-2.5 px-3 py-2.5">
         <FormatTile output={output.output} size="sm" />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] font-medium leading-[18px] tracking-[-0.25px] text-kumo-default">
+          <p className="truncate text-[13px] font-medium leading-[18px] tracking-[-0.25px] text-foreground">
             {output.title || 'Untitled'}
           </p>
-          <p className="mt-0.5 truncate text-[12px] leading-4 tracking-[-0.2px] text-kumo-subtle">
+          <p className="mt-0.5 truncate text-[12px] leading-4 tracking-[-0.2px] text-muted-foreground">
             {subtitle(output)}
           </p>
         </div>
@@ -185,19 +186,19 @@ function OutputRow({
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen() } }}
-      className="group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-150 ease-out hover:bg-kumo-tint"
+      className="group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-150 ease-out hover:bg-muted"
     >
       <FormatTile output={output.output} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium tracking-[-0.25px] text-kumo-default">
+        <p className="truncate text-sm font-medium tracking-[-0.25px] text-foreground">
           {output.title || 'Untitled'}
         </p>
-        <p className="mt-0.5 truncate text-[12px] leading-4 tracking-[-0.2px] text-kumo-subtle">
+        <p className="mt-0.5 truncate text-[12px] leading-4 tracking-[-0.2px] text-muted-foreground">
           {formatOf(output.output).noun} · {output.workspaceTitle || 'Untitled workspace'}
         </p>
       </div>
       {/* Fixed-width meta columns so rows line up like a table. */}
-      <div className="hidden shrink-0 items-center gap-6 text-xs text-kumo-inactive lg:flex">
+      <div className="hidden shrink-0 items-center gap-6 text-xs text-muted-foreground lg:flex">
         <OutputProvenance owner={output.owner} />
         <span className="flex w-40 items-center justify-end gap-1 whitespace-nowrap">
           <Clock size={10} />
@@ -229,12 +230,12 @@ function FilterChip({
       onClick={onClick}
       className={`inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium tracking-[-0.25px] transition-colors ${
         active
-          ? 'bg-kumo-fill text-kumo-strong'
-          : 'text-kumo-subtle hover:bg-kumo-tint hover:text-kumo-default'
+          ? 'bg-muted text-foreground'
+          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
       }`}
     >
       {label}
-      <span className={active ? 'text-kumo-subtle' : 'text-kumo-inactive'}>{count}</span>
+      <span className={active ? 'text-muted-foreground' : 'text-muted-foreground'}>{count}</span>
     </button>
   )
 }
@@ -276,13 +277,13 @@ function ScopeSelect({
             type="button"
             className={`inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border px-3 text-[13px] font-medium tracking-[-0.25px] transition-colors ${
               value === 'all'
-                ? 'border-kumo-line text-kumo-subtle hover:text-kumo-default'
-                : 'border-kumo-line bg-kumo-fill text-kumo-strong'
+                ? 'border-border text-muted-foreground hover:text-foreground'
+                : 'border-border bg-muted text-foreground'
             }`}
           >
             <CurrentIcon size={14} className="shrink-0" />
             {current.label}
-            <CaretDown size={11} className="shrink-0 text-kumo-inactive" />
+            <CaretDown size={11} className="shrink-0 text-muted-foreground" />
           </button>
         }
       />
@@ -300,16 +301,16 @@ function ScopeSelect({
               className={MENU_ITEM}
               onClick={() => onChange(option.value)}
             >
-              <Icon size={13} className="mr-2 flex-shrink-0 text-kumo-subtle" />
+              <Icon size={13} className="mr-2 flex-shrink-0 text-muted-foreground" />
               <span className="min-w-0 flex-1 truncate">{option.label}</span>
-              <span className="ml-3 flex-shrink-0 tabular-nums text-kumo-inactive">
+              <span className="ml-3 flex-shrink-0 tabular-nums text-muted-foreground">
                 {counts[option.value]}
               </span>
               <Check
                 size={12}
                 weight="bold"
                 className={`ml-2 flex-shrink-0 ${
-                  option.value === value ? 'text-kumo-subtle' : 'invisible'
+                  option.value === value ? 'text-muted-foreground' : 'invisible'
                 }`}
               />
             </DropdownMenu.Item>
@@ -338,18 +339,18 @@ function RenameOutputDialog({
   return (
     <Dialog.Root open={output !== null} onOpenChange={(open) => { if (!open && !busy) onClose() }}>
       <Dialog
-        className="!z-[1000] !w-[min(420px,calc(100vw-32px))] overflow-hidden bg-kumo-base p-0 !top-[20%] !-translate-y-0"
+        className="!z-[1000] !w-[min(420px,calc(100vw-32px))] overflow-hidden bg-background p-0 !top-[20%] !-translate-y-0"
         size="sm"
       >
         <form onSubmit={(event) => { event.preventDefault(); onSave() }}>
-          <div className="flex items-start justify-between gap-4 border-b border-kumo-line px-5 py-4">
+          <div className="flex items-start justify-between gap-4 border-b border-border px-5 py-4">
             <div className="min-w-0">
-              <Dialog.Title className="text-[15px] font-medium leading-5 tracking-[-0.3px] text-kumo-default">
+              <Dialog.Title className="text-[15px] font-medium leading-5 tracking-[-0.3px] text-foreground">
                 Rename output
               </Dialog.Title>
               {/* Renames the output itself, unlike the sidebar's workspace rename, which relabels
                   only your own copy. */}
-              <Dialog.Description className="mt-1 text-[12px] leading-4 text-kumo-subtle">
+              <Dialog.Description className="mt-1 text-[12px] leading-4 text-muted-foreground">
                 Renames the output for everyone with access to “{output?.workspaceTitle}”.
               </Dialog.Description>
             </div>
@@ -358,7 +359,7 @@ function RenameOutputDialog({
             </WorkshopIconButton>
           </div>
           <div className="px-5 py-4">
-            <label className="block text-[12px] font-medium text-kumo-subtle" htmlFor="rename-output-title">
+            <label className="block text-[12px] font-medium text-muted-foreground" htmlFor="rename-output-title">
               Name
             </label>
             <input
@@ -367,10 +368,10 @@ function RenameOutputDialog({
               value={value}
               disabled={busy}
               onChange={(event) => onValueChange(event.target.value)}
-              className="mt-1.5 h-9 w-full rounded-lg border border-kumo-line bg-kumo-base px-3 text-[13px] text-kumo-default focus:border-kumo-ring focus:outline-none focus:ring-[3px] focus:ring-kumo-ring/15"
+              className="mt-1.5 h-9 w-full rounded-lg border border-border bg-background px-3 text-[13px] text-foreground focus:border-ring focus:outline-none focus:ring-[3px] focus:ring-ring/15"
             />
           </div>
-          <div className="flex items-center justify-end gap-2 border-t border-kumo-line px-5 py-3">
+          <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-3">
             <WorkshopButton type="button" disabled={busy} onClick={onClose}>Cancel</WorkshopButton>
             <WorkshopButton tone="primary" type="submit" disabled={busy || !value.trim()}>
               {busy ? 'Saving…' : 'Save'}
@@ -576,8 +577,8 @@ function OutputsPage() {
     <div className="mx-auto flex h-full w-full max-w-5xl flex-col px-6 sm:px-10">
       <header className="flex items-end justify-between gap-4 px-3 pb-4 pt-10">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight text-kumo-default">Outputs</h1>
-          <p className="mt-1 text-[13px] leading-[18px] tracking-[-0.25px] text-kumo-subtle">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Outputs</h1>
+          <p className="mt-1 text-[13px] leading-[18px] tracking-[-0.25px] text-muted-foreground">
             Everything your workspaces have produced, in one place.
           </p>
         </div>
@@ -618,13 +619,13 @@ function OutputsPage() {
             />
           )}
           <div className="relative sm:w-56">
-            <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-kumo-inactive" />
+            <MagnifyingGlass size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search outputs…"
-              className="h-9 w-full rounded-lg border border-kumo-line bg-kumo-base pl-9 pr-4 text-[13px] tracking-[-0.25px] text-kumo-default placeholder:text-kumo-inactive transition-[border-color,box-shadow] duration-150 ease-out focus:border-kumo-ring focus:outline-none focus:ring-[3px] focus:ring-kumo-ring/15"
+              className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-4 text-[13px] tracking-[-0.25px] text-foreground placeholder:text-muted-foreground transition-[border-color,box-shadow] duration-150 ease-out focus:border-ring focus:outline-none focus:ring-[3px] focus:ring-ring/15"
             />
           </div>
         </div>
@@ -634,26 +635,26 @@ function OutputsPage() {
         {loading ? (
           <div className="grid grid-cols-2 gap-4 px-3 sm:grid-cols-3 lg:grid-cols-4">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="aspect-[4/3] animate-pulse rounded-xl bg-kumo-elevated" />
+              <div key={i} className="aspect-[4/3] animate-pulse rounded-xl bg-card" />
             ))}
           </div>
         ) : loadError ? (
           <div className="py-12 text-center text-sm">
-            <p className="text-kumo-danger">Something went wrong loading your outputs.</p>
-            <button onClick={() => setReloadToken((n) => n + 1)} className="mt-1 text-kumo-brand underline">
+            <p className="text-destructive">Something went wrong loading your outputs.</p>
+            <button onClick={() => setReloadToken((n) => n + 1)} className="mt-1 text-primary underline">
               Try again
             </button>
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center gap-3 px-3 py-20 text-center">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-kumo-fill text-kumo-subtle">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
               <Stack size={18} />
             </div>
             <div>
-              <p className="text-sm font-medium text-kumo-default">
+              <p className="text-sm font-medium text-foreground">
                 {isFiltered ? 'No outputs match' : 'No outputs yet'}
               </p>
-              <p className="mt-1 text-[13px] leading-[18px] text-kumo-subtle">
+              <p className="mt-1 text-[13px] leading-[18px] text-muted-foreground">
                 {isFiltered
                   ? 'Try a different filter or search term.'
                   : 'Anything your workspaces build will show up here.'}

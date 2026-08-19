@@ -1,7 +1,8 @@
 import { Link } from '@tanstack/react-router'
 import { Clock, MagnifyingGlass, Hexagon, DotsThreeVertical, ShareNetwork, Trash, Info, Star, Pencil, ArrowRight } from '@phosphor-icons/react'
 import { useState, useEffect, useRef } from 'react'
-import { DropdownMenu, Dialog, Button, useKumoToastManager } from '@cloudflare/kumo'
+import { useKumoToastManager } from '@/components/ui/toast'
+import { DropdownMenu, Dialog, Button } from '@/components/ui'
 import { RpcStub } from 'capnweb'
 import { useAuthenticatedApi } from '../AuthContext'
 import { GadgetMetadataWithTimestamps, BlueprintPublicInfo, Overseer, AiChatAuthorInfo } from '@gadgets/workshop-shared/api'
@@ -74,21 +75,21 @@ function AppRow({
     <Link
       to="/workspace/$id"
       params={{ id: gadget.id }}
-      className="group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-150 ease-out hover:bg-kumo-tint"
+      className="group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors duration-150 ease-out hover:bg-muted"
       onClick={(e) => {
         // Prevent navigation when renaming or clicking the menu
         if (isRenaming) e.preventDefault()
       }}
     >
       {/* Neutral monogram */}
-      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-kumo-fill text-[12px] font-medium text-kumo-subtle">
+      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-muted text-[12px] font-medium text-muted-foreground">
         {initials(gadget.title)}
       </div>
 
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          {gadget.pinned && <Star size={12} weight="fill" className="text-kumo-brand flex-shrink-0" />}
+          {gadget.pinned && <Star size={12} weight="fill" className="text-primary flex-shrink-0" />}
           {isRenaming ? (
             <input
               ref={renameInputRef}
@@ -99,24 +100,24 @@ function AppRow({
                 if (e.key === 'Enter') commitRename()
                 if (e.key === 'Escape') setIsRenaming(false)
               }}
-              className="text-sm font-medium text-kumo-default bg-transparent border-b border-kumo-brand outline-none w-full min-w-0"
+              className="text-sm font-medium text-foreground bg-transparent border-b border-primary outline-none w-full min-w-0"
               onClick={(e) => e.preventDefault()}
             />
           ) : (
-            <h3 className="text-sm font-medium text-kumo-default truncate">
+            <h3 className="text-sm font-medium text-foreground truncate">
               {gadget.title || 'Untitled Workspace'}
             </h3>
           )}
         </div>
         {gadget.owner && (
-          <p className="text-xs text-kumo-subtle truncate mt-0.5">
+          <p className="text-xs text-muted-foreground truncate mt-0.5">
             Shared by {gadget.owner.name}
           </p>
         )}
       </div>
 
       {/* Time */}
-      <span className="hidden lg:flex items-center gap-1 text-xs text-kumo-inactive flex-shrink-0">
+      <span className="hidden lg:flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0">
         <Clock size={10} />
         {formatRelativeTime(gadget.lastActive)}
       </span>
@@ -127,7 +128,7 @@ function AppRow({
         <DropdownMenu.Trigger
           render={
             <button
-              className="p-1.5 text-kumo-subtle hover:text-kumo-default rounded-md hover:bg-kumo-fill transition-colors sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
+              className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted transition-colors sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
             >
               <DotsThreeVertical size={16} />
             </button>
@@ -333,11 +334,11 @@ export default function GadgetList({ showHeader = true }: { showHeader?: boolean
       {/* Header */}
       {showHeader && (
         <div className="px-6 sm:px-10 lg:px-10 pt-10 lg:pt-10 mb-4">
-          <h2 className="text-lg font-semibold text-kumo-default">
+          <h2 className="text-lg font-semibold text-foreground">
             Your workspaces
           </h2>
           {!loading && gadgets.length === 0 && !loadError && (
-            <p className="mt-1 text-sm text-kumo-inactive">
+            <p className="mt-1 text-sm text-muted-foreground">
               You haven&apos;t created any workspaces yet
             </p>
           )}
@@ -350,14 +351,14 @@ export default function GadgetList({ showHeader = true }: { showHeader?: boolean
           <div className="relative">
             <MagnifyingGlass
               size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-kumo-inactive"
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
             />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search workspaces…"
-              className="h-9 w-full rounded-lg border border-kumo-line bg-kumo-base pl-9 pr-4 text-[13px] tracking-[-0.25px] text-kumo-default placeholder:text-kumo-inactive transition-[border-color,box-shadow] duration-150 ease-out focus:border-kumo-ring focus:outline-none focus:ring-[3px] focus:ring-kumo-ring/15"
+              className="h-9 w-full rounded-lg border border-border bg-background pl-9 pr-4 text-[13px] tracking-[-0.25px] text-foreground placeholder:text-muted-foreground transition-[border-color,box-shadow] duration-150 ease-out focus:border-ring focus:outline-none focus:ring-[3px] focus:ring-ring/15"
             />
           </div>
         </div>
@@ -370,17 +371,17 @@ export default function GadgetList({ showHeader = true }: { showHeader?: boolean
         {loading ? (
           <>
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-[56px] rounded-xl bg-kumo-elevated animate-pulse" />
+              <div key={i} className="h-[56px] rounded-xl bg-card animate-pulse" />
             ))}
           </>
         ) : loadError ? (
           <div className="text-center py-12 text-sm">
-            <p className="text-kumo-danger">Something went wrong loading your workspaces.</p>
-            <button onClick={loadGadgets} className="text-kumo-brand mt-1 underline">Try again</button>
+            <p className="text-destructive">Something went wrong loading your workspaces.</p>
+            <button onClick={loadGadgets} className="text-primary mt-1 underline">Try again</button>
           </div>
         ) : filtered.length === 0 ? (
           search ? (
-            <div className="text-center py-12 text-kumo-inactive text-sm">
+            <div className="text-center py-12 text-muted-foreground text-sm">
               No workspaces found
             </div>
           ) : (
@@ -428,24 +429,24 @@ export default function GadgetList({ showHeader = true }: { showHeader?: boolean
           </Dialog.Title>
           <div className="mt-4 flex flex-col gap-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-kumo-subtle">Author</span>
-              <span className="text-kumo-default">{infoTarget?.owner ? infoTarget.owner.name : 'You'}</span>
+              <span className="text-muted-foreground">Author</span>
+              <span className="text-foreground">{infoTarget?.owner ? infoTarget.owner.name : 'You'}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-kumo-subtle">Total cost</span>
-              <span className="text-kumo-default">
+              <span className="text-muted-foreground">Total cost</span>
+              <span className="text-foreground">
                 {formatCost(infoTarget?.totalCost ?? 0)}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-kumo-subtle">Created</span>
-              <span className="text-kumo-default">
+              <span className="text-muted-foreground">Created</span>
+              <span className="text-foreground">
                 {infoTarget?.created?.toLocaleString()}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-kumo-subtle">Last active</span>
-              <span className="text-kumo-default">
+              <span className="text-muted-foreground">Last active</span>
+              <span className="text-foreground">
                 {infoTarget?.lastActive?.toLocaleString()}
               </span>
             </div>
@@ -489,12 +490,12 @@ function HomeFeaturedBlueprintCard({
   const badges = uniqueBindingBadges(blueprint.metadata.bindings).slice(0, 1)
 
   return (
-    <div className="themed-card-hover-shadow group relative isolate flex min-h-[190px] flex-col overflow-hidden rounded-2xl border border-kumo-line bg-kumo-base text-left transition-[border-color,box-shadow,transform] duration-150 ease-out hover:-translate-y-px hover:border-kumo-fill active:scale-[0.995]">
+    <div className="group relative isolate flex min-h-[190px] flex-col overflow-hidden rounded-2xl border border-border bg-background text-left transition-[border-color,box-shadow,transform] duration-150 ease-out hover:-translate-y-px hover:border-border active:scale-[0.995]">
       <Link
         to="/blueprint/$id"
         params={{ id: blueprint.id }}
         aria-label={`Open blueprint ${blueprint.metadata.title}`}
-        className="absolute inset-0 z-10 rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-kumo-brand"
+        className="absolute inset-0 z-10 rounded-2xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
       />
       <div className="pointer-events-none relative z-20 flex flex-1 flex-col p-2.5">
         <BlueprintPreviewImage
@@ -508,10 +509,10 @@ function HomeFeaturedBlueprintCard({
             <Hexagon size={13} className="text-white/75" weight="bold" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="m-0 truncate text-[13px] leading-[18px] font-semibold tracking-[-0.25px] text-kumo-default">
+            <p className="m-0 truncate text-[13px] leading-[18px] font-semibold tracking-[-0.25px] text-foreground">
               {blueprint.metadata.title}
             </p>
-            <p className={`mt-0.5 line-clamp-2 min-h-8 text-[12px] leading-4 tracking-[-0.2px] ${blueprint.metadata.description ? 'text-kumo-subtle' : 'text-kumo-inactive italic'}`}>
+            <p className={`mt-0.5 line-clamp-2 min-h-8 text-[12px] leading-4 tracking-[-0.2px] ${blueprint.metadata.description ? 'text-muted-foreground' : 'text-muted-foreground italic'}`}>
               {blueprint.metadata.description || 'No description'}
             </p>
             {badges.length > 0 && (
@@ -554,7 +555,7 @@ function FeaturedBlueprintsGallery() {
       <div className="px-2 py-8">
         <div className="grid grid-cols-2 gap-3">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-[108px] rounded-xl bg-kumo-base animate-pulse" />
+            <div key={i} className="h-[108px] rounded-xl bg-background animate-pulse" />
           ))}
         </div>
       </div>
@@ -571,7 +572,7 @@ function FeaturedBlueprintsGallery() {
   return (
     <div className="py-4 pr-4 sm:pr-6">
       <div className="mb-5">
-        <h3 className="text-[13px] leading-[18px] font-medium tracking-[-0.25px] text-kumo-default">
+        <h3 className="text-[13px] leading-[18px] font-medium tracking-[-0.25px] text-foreground">
           Start from a featured blueprint.
         </h3>
       </div>
@@ -589,7 +590,7 @@ function FeaturedBlueprintsGallery() {
         <div className="mt-4 text-center">
           <Link
             to="/explore"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-kumo-brand hover:text-kumo-brand-hover transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary-hover transition-colors"
           >
             Browse all blueprints
             <ArrowRight size={12} weight="bold" />

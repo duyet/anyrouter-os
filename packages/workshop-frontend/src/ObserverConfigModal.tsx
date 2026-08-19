@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { Dialog, Select, Loader, Text, useKumoToastManager } from '@cloudflare/kumo'
-import { Warning, Plus, ArrowClockwise, CheckCircle } from '@phosphor-icons/react'
+import { useKumoToastManager } from '@/components/ui/toast'
+import { Dialog, Select, Loader, Text } from '@/components/ui'
+import { Warning, Plus, ArrowClockwise, CheckCircle, X } from '@phosphor-icons/react'
 import { RpcStub } from 'capnweb'
 import {
   AuthenticatedApi,
@@ -14,7 +15,7 @@ import {
   SupportedResource,
   resolveRequestedResource,
 } from '@gadgets/workshop-shared/gatekeeper'
-import { WorkshopButton } from './components/WorkshopControls'
+import { WorkshopButton, WorkshopIconButton } from './components/WorkshopControls'
 import Avatar from './components/Avatar'
 import { AccountsSubscriberAdapter } from './accountsSubscriber'
 
@@ -314,9 +315,18 @@ export default function ObserverConfigModal({
   return (
     <Dialog.Root open disablePointerDismissal onOpenChange={open => { if (!open) onCancel() }}>
       <Dialog className="p-6" size="lg">
-        <Dialog.Title className="mb-2 text-lg font-semibold">
-          {isRetry ? 'Verify your access again' : 'Verify your access'}
-        </Dialog.Title>
+        <div className="mb-2 flex items-start justify-between gap-4">
+          <Dialog.Title className="text-lg font-semibold">
+            {isRetry ? 'Verify your access again' : 'Verify your access'}
+          </Dialog.Title>
+          <Dialog.Close
+            render={(props) => (
+              <WorkshopIconButton {...props} className="!h-7 !w-7" aria-label="Close">
+                <X size={16} />
+              </WorkshopIconButton>
+            )}
+          />
+        </div>
         <Text variant="secondary" size="sm" as="p">
           {isRetry
             ? 'We couldn’t confirm your access to everything this workspace has read. Re-authenticate ' +
@@ -341,7 +351,7 @@ export default function ObserverConfigModal({
               const missing = chosen ? missingResourceUrlPatterns(chosen, required) : []
 
               return (
-                <div key={need.gatekeeperId} className="rounded-xl border border-kumo-line bg-kumo-base p-4">
+                <div key={need.gatekeeperId} className="rounded-xl border border-border bg-background p-4">
                   <div className={`flex items-center gap-3${matching.length === 0 && !need.failure ? '' : ' mb-3'}`}>
                     <Avatar
                       src={vendor?.logo?.url}
@@ -350,11 +360,11 @@ export default function ObserverConfigModal({
                       fallback={<Plus size={16} />}
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="text-[14px] font-medium text-kumo-default truncate">
+                      <div className="text-[14px] font-medium text-foreground truncate">
                         {need.resourceTitle}
                       </div>
                       {need.resourceUrl && (
-                        <div className="text-xs font-mono text-kumo-subtle truncate">
+                        <div className="text-xs font-mono text-muted-foreground truncate">
                           {need.resourceUrl.replace(/^https?:\/\//, '')}
                         </div>
                       )}
@@ -373,7 +383,7 @@ export default function ObserverConfigModal({
                   {/* Name the account that was refused and why. The reason is free text, either from
                       the gatekeeper or authored by the overseer, and must not be parsed. */}
                   {need.failure && (
-                    <div className={`flex items-start gap-2 px-3 py-2 rounded-md text-xs text-kumo-warning bg-kumo-warning-tint border border-kumo-warning/20${matching.length === 0 ? '' : ' mb-3'}`}>
+                    <div className={`flex items-start gap-2 px-3 py-2 rounded-md text-xs text-warning bg-muted border border-warning/20${matching.length === 0 ? '' : ' mb-3'}`}>
                       <Warning size={14} className="mt-0.5 shrink-0" />
                       <div className="min-w-0">
                         <span className="font-medium">
@@ -388,15 +398,15 @@ export default function ObserverConfigModal({
                   {matching.length > 0 && (
                     <div className="flex flex-col gap-2">
                       {matching.length === 1 ? (
-                        <div className="flex min-h-10 items-center gap-3 rounded-lg border border-kumo-line bg-kumo-elevated/50 px-3 py-2">
+                        <div className="flex min-h-10 items-center gap-3 rounded-lg border border-border bg-card/50 px-3 py-2">
                           <div className="min-w-0 flex-1">
-                            <div className="text-[11px] leading-4 text-kumo-subtle">Using your account</div>
-                            <div className="truncate text-sm font-medium text-kumo-default">
+                            <div className="text-[11px] leading-4 text-muted-foreground">Using your account</div>
+                            <div className="truncate text-sm font-medium text-foreground">
                               {accountLabel(matching[0], matching[0].id)}
                             </div>
                           </div>
                           {accountSatisfies(need, matching[0]) && (
-                            <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-kumo-success">
+                            <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-success">
                               <CheckCircle size={15} weight="fill" /> Ready
                             </span>
                           )}
@@ -431,7 +441,7 @@ export default function ObserverConfigModal({
                           type="button"
                           onClick={() => handleGrantResourceAccess(need, chosen)}
                           disabled={granting === chosen.id}
-                          className="flex items-center gap-1.5 text-xs text-kumo-warning hover:underline disabled:opacity-60"
+                          className="flex items-center gap-1.5 text-xs text-warning hover:underline disabled:opacity-60"
                         >
                           {granting === chosen.id ? (
                             <ArrowClockwise size={12} className="animate-spin" />
@@ -455,7 +465,7 @@ export default function ObserverConfigModal({
                           type="button"
                           onClick={() => handleReconnect(chosen.id)}
                           disabled={reconnecting === chosen.id}
-                          className="flex items-center gap-1.5 text-xs text-kumo-warning hover:underline disabled:opacity-60"
+                          className="flex items-center gap-1.5 text-xs text-warning hover:underline disabled:opacity-60"
                         >
                           {reconnecting === chosen.id ? (
                             <ArrowClockwise size={12} className="animate-spin" />
@@ -475,7 +485,7 @@ export default function ObserverConfigModal({
                           type="button"
                           onClick={() => handleConnect(need)}
                           disabled={connecting === need.vendorId}
-                          className="flex items-center gap-1 text-xs text-kumo-subtle hover:text-kumo-default disabled:opacity-60 self-start"
+                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-60 self-start"
                         >
                           <Plus size={11} />
                           {connecting === need.vendorId ? 'Waiting for connection…' : 'Connect a different account'}

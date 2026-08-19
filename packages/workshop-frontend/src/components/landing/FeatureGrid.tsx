@@ -15,11 +15,11 @@ const FACTS: { icon: Icon; label: string }[] = [
 export default function FeatureGrid() {
   return (
     <section aria-label="What it does, at a glance" className="mx-auto w-full max-w-4xl px-6 sm:px-8">
-      <ul className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-kumo-line bg-kumo-line sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="grid grid-cols-1 gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-4">
         {FACTS.map(({ icon: FactIcon, label }) => (
-          <li key={label} className="flex items-center gap-2.5 bg-kumo-elevated px-4 py-4">
-            <FactIcon size={16} weight="bold" aria-hidden="true" className="shrink-0 text-kumo-brand" />
-            <span className="text-[13px] font-medium tracking-[-0.15px] text-kumo-default">{label}</span>
+          <li key={label} className="flex items-center gap-2.5 bg-card px-4 py-4">
+            <FactIcon size={16} weight="bold" aria-hidden="true" className="shrink-0 text-primary" />
+            <span className="text-[13px] font-medium tracking-[-0.15px] text-foreground">{label}</span>
           </li>
         ))}
       </ul>

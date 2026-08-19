@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useKumoToastManager } from '@cloudflare/kumo'
+import { useKumoToastManager } from '@/components/ui/toast'
 import { ArrowsClockwise, ShieldCheck, User } from '@phosphor-icons/react'
 import { AnyRouterConnectionStatus } from '@gadgets/workshop-shared/api'
 import { useAuthenticatedApi } from '../../AuthContext'
@@ -95,22 +95,22 @@ export function AnyRouterSection({ onIdentityChanged }: { onIdentityChanged: () 
           AnyRouter account
         </span>
       </SectionLabel>
-      <div className="divide-y divide-kumo-line overflow-hidden rounded-xl border border-kumo-line bg-kumo-base">
+      <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
         <div className="flex items-center gap-4 px-5 py-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-kumo-fill">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">
             {profile?.avatarUrl ? (
               <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" />
             ) : (
-              <User size={28} className="text-kumo-subtle" />
+              <User size={28} className="text-muted-foreground" />
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-[15px] font-medium tracking-[-0.25px] text-kumo-default">
+            <p className="truncate text-[15px] font-medium tracking-[-0.25px] text-foreground">
               {connected
                 ? profile?.name || profile?.username || profile?.email || 'AnyRouter account'
                 : 'Not connected'}
             </p>
-            <p className="mt-0.5 truncate text-[12px] leading-4 tracking-[-0.2px] text-kumo-subtle">
+            <p className="mt-0.5 truncate text-[12px] leading-4 tracking-[-0.2px] text-muted-foreground">
               {subtitle}
             </p>
           </div>
@@ -127,7 +127,7 @@ export function AnyRouterSection({ onIdentityChanged }: { onIdentityChanged: () 
                   href={ANYROUTER_ACCOUNT_URL}
                   target="_blank"
                   rel="noreferrer"
-                  className="underline underline-offset-2 hover:text-kumo-default"
+                  className="underline underline-offset-2 hover:text-foreground"
                 >
                   Change them on AnyRouter
                 </a>
@@ -170,7 +170,7 @@ export function AnyRouterSection({ onIdentityChanged }: { onIdentityChanged: () 
         </div>
 
         {error && (
-          <p className="px-5 py-3 text-[12px] tracking-[-0.1px] text-kumo-danger">{error}</p>
+          <p className="px-5 py-3 text-[12px] tracking-[-0.1px] text-destructive">{error}</p>
         )}
       </div>
     </section>

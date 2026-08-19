@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Dialog, Tooltip, useKumoToastManager } from '@cloudflare/kumo'
+import { useKumoToastManager } from '@/components/ui/toast'
+import { Dialog, Tooltip } from '@/components/ui'
 import {
   Pencil,
   Trash,
@@ -202,15 +203,15 @@ export default function Connections({ overseer, gadget, chatId, authenticatedApi
   }
 
   return (
-    <div className="h-full overflow-auto bg-kumo-base">
+    <div className="h-full overflow-auto bg-background">
       <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-4 py-5 sm:px-6">
         <section>
           <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
-              <h2 className="m-0 text-[17px] leading-6 font-medium tracking-[-0.35px] text-kumo-default">
+              <h2 className="m-0 text-[17px] leading-6 font-medium tracking-[-0.35px] text-foreground">
                 Connections
               </h2>
-              <p className="mt-1 text-[13px] leading-[18px] font-normal tracking-[-0.25px] text-kumo-subtle">
+              <p className="mt-1 text-[13px] leading-[18px] font-normal tracking-[-0.25px] text-muted-foreground">
                 External resources this gadget can use.
               </p>
             </div>
@@ -224,7 +225,7 @@ export default function Connections({ overseer, gadget, chatId, authenticatedApi
           </div>
 
           {loading ? (
-            <div className="rounded-xl border border-kumo-line bg-kumo-base px-4 py-6 text-center text-[13px] leading-[18px] font-normal tracking-[-0.25px] text-kumo-subtle">
+            <div className="rounded-xl border border-border bg-background px-4 py-6 text-center text-[13px] leading-[18px] font-normal tracking-[-0.25px] text-muted-foreground">
               Loading connections...
             </div>
           ) : bindings.length === 0 ? (
@@ -235,7 +236,7 @@ export default function Connections({ overseer, gadget, chatId, authenticatedApi
               onAction={() => setIsNewConnectionModalVisible(true)}
             />
           ) : (
-            <div className="overflow-hidden rounded-xl border border-kumo-line bg-kumo-base">
+            <div className="overflow-hidden rounded-xl border border-border bg-background">
               {bindings.map((gk, index) => {
                 const isEditing = editingBinding === gk.name
                 const isDeleting = deleteTarget?.name === gk.name
@@ -246,15 +247,15 @@ export default function Connections({ overseer, gadget, chatId, authenticatedApi
                 return (
                   <div
                     key={gk.name}
-                    className={`px-3 py-3 ${index > 0 ? 'border-t border-kumo-line' : ''} ${isDeleting ? 'bg-kumo-danger-tint/40' : ''}`}
+                    className={`px-3 py-3 ${index > 0 ? 'border-t border-border' : ''} ${isDeleting ? 'bg-destructive/10/40' : ''}`}
                   >
                     {isDeleting ? (
                       <div className="flex flex-wrap items-center gap-3">
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[13px] leading-[18px] font-medium tracking-[-0.25px] text-kumo-danger">
+                          <p className="truncate text-[13px] leading-[18px] font-medium tracking-[-0.25px] text-destructive">
                             Delete {gk.resourceTitle}?
                           </p>
-                          <p className="truncate text-[12px] leading-4 font-normal tracking-[-0.2px] text-kumo-subtle">
+                          <p className="truncate text-[12px] leading-4 font-normal tracking-[-0.2px] text-muted-foreground">
                             The binding <span className="font-mono">{gk.name}</span> will be removed from this gadget.
                           </p>
                         </div>
@@ -307,18 +308,18 @@ export default function Connections({ overseer, gadget, chatId, authenticatedApi
                           {...(gk.vendorId ? vendorBranding.get(gk.vendorId) : undefined)}
                         />
                         <div className="min-w-0 flex-1">
-                          <p className="flex items-center gap-2 truncate text-[13px] leading-[18px] font-medium tracking-[-0.25px] text-kumo-default">
+                          <p className="flex items-center gap-2 truncate text-[13px] leading-[18px] font-medium tracking-[-0.25px] text-foreground">
                             <span className="min-w-0 truncate">{gk.resourceTitle}</span>
                             {isPending && (
                               <Tooltip content="Added in this chat; kept when you accept the chat's changes" asChild>
-                                <span className="flex-shrink-0 rounded-full bg-kumo-fill px-1.5 py-0.5 text-[10px] leading-none font-medium text-kumo-subtle">
+                                <span className="flex-shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] leading-none font-medium text-muted-foreground">
                                   Draft
                                 </span>
                               </Tooltip>
                             )}
                           </p>
-                          <p className="mt-0.5 truncate text-[11px] leading-4 tracking-[-0.1px] text-kumo-inactive">
-                            Referenced in code as: <span className="font-mono text-kumo-subtle">{gk.name}</span>
+                          <p className="mt-0.5 truncate text-[11px] leading-4 tracking-[-0.1px] text-muted-foreground">
+                            Referenced in code as: <span className="font-mono text-muted-foreground">{gk.name}</span>
                           </p>
                         </div>
                         <div className="ml-auto flex shrink-0 items-center gap-1">
@@ -362,15 +363,15 @@ export default function Connections({ overseer, gadget, chatId, authenticatedApi
         {!loading && hooks.length > 0 && (
           <section className="mt-8">
             <div className="mb-3">
-              <h2 className="m-0 text-[17px] leading-6 font-medium tracking-[-0.35px] text-kumo-default">
+              <h2 className="m-0 text-[17px] leading-6 font-medium tracking-[-0.35px] text-foreground">
                 Hooks
               </h2>
-              <p className="mt-1 text-[13px] leading-[18px] font-normal tracking-[-0.25px] text-kumo-subtle">
+              <p className="mt-1 text-[13px] leading-[18px] font-normal tracking-[-0.25px] text-muted-foreground">
                 Callbacks that let connected resources wake up this gadget when events happen.
               </p>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-kumo-line bg-kumo-base">
+            <div className="overflow-hidden rounded-xl border border-border bg-background">
               {hooks.map((hook, index) => {
                 const isDeleting = deleteHookTarget?.id === hook.id
                 const vendorId = bindings.find((b) => b.target === hook.gatekeeperId)?.vendorId
@@ -378,15 +379,15 @@ export default function Connections({ overseer, gadget, chatId, authenticatedApi
                 return (
                   <div
                     key={hook.id}
-                    className={`px-3 py-3 ${index > 0 ? 'border-t border-kumo-line' : ''} ${isDeleting ? 'bg-kumo-danger-tint/40' : ''}`}
+                    className={`px-3 py-3 ${index > 0 ? 'border-t border-border' : ''} ${isDeleting ? 'bg-destructive/10/40' : ''}`}
                   >
                     {isDeleting ? (
                       <div className="flex flex-wrap items-center gap-3">
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[13px] leading-[18px] font-medium tracking-[-0.25px] text-kumo-danger">
+                          <p className="truncate text-[13px] leading-[18px] font-medium tracking-[-0.25px] text-destructive">
                             Delete hook "{hook.description.title}"?
                           </p>
-                          <p className="truncate text-[12px] leading-4 font-normal tracking-[-0.2px] text-kumo-subtle">
+                          <p className="truncate text-[12px] leading-4 font-normal tracking-[-0.2px] text-muted-foreground">
                             This permanently removes the hook. Future events will stop being delivered.
                           </p>
                         </div>
@@ -411,16 +412,16 @@ export default function Connections({ overseer, gadget, chatId, authenticatedApi
                           {...(vendorId ? vendorBranding.get(vendorId) : undefined)}
                         />
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[13px] leading-[18px] font-medium tracking-[-0.25px] text-kumo-default">
+                          <p className="truncate text-[13px] leading-[18px] font-medium tracking-[-0.25px] text-foreground">
                             {hook.description.title}
                           </p>
                           {hook.description.description && (
-                            <p className="mt-0.5 truncate text-[12px] leading-4 font-normal tracking-[-0.2px] text-kumo-subtle">
+                            <p className="mt-0.5 truncate text-[12px] leading-4 font-normal tracking-[-0.2px] text-muted-foreground">
                               {hook.description.description}
                             </p>
                           )}
                           {hook.resourceTitle && (
-                            <p className="mt-0.5 truncate text-[11px] leading-4 tracking-[-0.1px] text-kumo-inactive">
+                            <p className="mt-0.5 truncate text-[11px] leading-4 tracking-[-0.1px] text-muted-foreground">
                               {hook.resourceTitle}
                             </p>
                           )}
@@ -555,13 +556,13 @@ function BlueprintAnnotationModal({
   return (
     <>
       <Dialog.Root open={open} onOpenChange={(o) => { if (!o) onClose() }}>
-        <Dialog className="!z-[1000] !w-[min(480px,calc(100vw-32px))] overflow-hidden bg-kumo-base p-0" size="lg">
-          <div className="flex items-start justify-between gap-4 border-b border-kumo-line px-4 py-4 sm:px-5">
+        <Dialog className="!z-[1000] !w-[min(480px,calc(100vw-32px))] overflow-hidden bg-background p-0" size="lg">
+          <div className="flex items-start justify-between gap-4 border-b border-border px-4 py-4 sm:px-5">
             <div className="min-w-0">
-              <Dialog.Title className="text-[15px] leading-5 font-medium tracking-[-0.3px] text-kumo-default">
+              <Dialog.Title className="text-[15px] leading-5 font-medium tracking-[-0.3px] text-foreground">
                 Blueprint settings
               </Dialog.Title>
-              <Dialog.Description className="mt-1 text-[12px] leading-4 font-normal tracking-[-0.2px] text-kumo-subtle">
+              <Dialog.Description className="mt-1 text-[12px] leading-4 font-normal tracking-[-0.2px] text-muted-foreground">
                 How this connection appears in blueprints.
               </Dialog.Description>
             </div>
@@ -576,9 +577,9 @@ function BlueprintAnnotationModal({
 
           <div className="space-y-4 px-4 py-4 sm:px-5">
             {loadError ? (
-              <div className="text-[13px] text-kumo-subtle">{loadError}</div>
+              <div className="text-[13px] text-muted-foreground">{loadError}</div>
             ) : !data ? (
-              <div className="py-2 text-center text-[13px] text-kumo-subtle">Loading...</div>
+              <div className="py-2 text-center text-[13px] text-muted-foreground">Loading...</div>
             ) : (
               <>
                 <BlueprintBindingCard
@@ -591,10 +592,10 @@ function BlueprintAnnotationModal({
             )}
           </div>
 
-          <div className="border-t border-kumo-line px-4 py-3 sm:px-5">
+          <div className="border-t border-border px-4 py-3 sm:px-5">
             {saveError && (
-              <div className="mb-3 flex items-start gap-2 rounded-lg border border-l-2 border-l-kumo-brand border-y-kumo-line border-r-kumo-line bg-kumo-base px-3 py-2 text-[12px] leading-[18px] font-normal tracking-[-0.2px] text-kumo-default">
-                <Warning size={14} weight="fill" className="mt-0.5 shrink-0 text-kumo-brand" />
+              <div className="mb-3 flex items-start gap-2 rounded-lg border border-l-2 border-l-primary border-y-border border-r-border bg-background px-3 py-2 text-[12px] leading-[18px] font-normal tracking-[-0.2px] text-foreground">
+                <Warning size={14} weight="fill" className="mt-0.5 shrink-0 text-primary" />
                 <span>{saveError}</span>
               </div>
             )}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useKumoToastManager } from '@cloudflare/kumo'
+import { useKumoToastManager } from '@/components/ui/toast'
 import { Lock } from '@phosphor-icons/react'
 import { useAuthenticatedApi } from '../../AuthContext'
 import { hashPassword } from '../../passwordHash'
@@ -48,7 +48,7 @@ export function PasswordSection({ userId }: { userId: string }) {
   return (
     <section className="flex flex-col gap-3">
       <SectionLabel>Security</SectionLabel>
-      <div className="rounded-xl border border-kumo-line bg-kumo-base p-5">
+      <div className="rounded-xl border border-border bg-card p-5">
         <div className="flex max-w-sm flex-col gap-4">
           <PasswordField
             label="Current password"

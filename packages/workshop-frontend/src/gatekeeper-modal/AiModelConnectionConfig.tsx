@@ -1,4 +1,4 @@
-import { Select, type PortalContainer } from '@cloudflare/kumo'
+import { Select, type PortalContainer } from '@/components/ui'
 import { AiChatAuthorInfo } from '@gadgets/workshop-shared/api'
 import { ConnectionConfigField } from './ConnectionConfigField'
 

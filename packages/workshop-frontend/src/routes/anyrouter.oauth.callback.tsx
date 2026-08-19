@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
-import { Banner, Loader } from '@cloudflare/kumo'
+import { Banner } from '@/components/ui/alert'
+import { Loader } from '@/components/ui/loader'
 import { Check } from '@phosphor-icons/react'
 import { WorkshopButton } from '../components/WorkshopControls'
 import { useOptionalAuthenticatedApi } from '../AuthContext'
@@ -122,18 +123,18 @@ function AnyRouterOAuthCallback() {
       {status === 'working' && (
         <>
           <Loader size="lg" />
-          <p className="text-sm text-kumo-subtle">Connecting your AnyRouter account…</p>
+          <p className="text-sm text-muted-foreground">Connecting your AnyRouter account…</p>
         </>
       )}
       {status === 'done' && (
         <>
-          <div className="w-10 h-10 rounded-full bg-kumo-brand flex items-center justify-center">
-            <Check size={20} weight="bold" className="text-kumo-inverse" />
+          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+            <Check size={20} weight="bold" className="text-primary-foreground" />
           </div>
-          <p className="text-base font-medium text-kumo-default">
+          <p className="text-base font-medium text-foreground">
             {signingIn ? 'Signed in with AnyRouter' : 'AnyRouter connected'}
           </p>
-          <p className="text-sm text-kumo-subtle">
+          <p className="text-sm text-muted-foreground">
             You can close this window and go back to AnyRouter OS.
           </p>
           <WorkshopButton onClick={() => window.close()}>Close window</WorkshopButton>

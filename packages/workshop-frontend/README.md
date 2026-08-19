@@ -1,6 +1,6 @@
 # AnyRouter OS frontend
 
-Single-page app for AnyRouter OS. Built with React, Kumo, and Vite. Speaks to the backend over Cap'n Web RPC.
+Single-page app for AnyRouter OS. Built with React, shadcn/Base UI, and Vite. Speaks to the backend over Cap'n Web RPC.
 
 ## Development
 

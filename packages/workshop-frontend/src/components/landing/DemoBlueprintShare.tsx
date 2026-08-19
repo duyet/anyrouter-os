@@ -28,20 +28,20 @@ export default function DemoBlueprintShare() {
       <DemoFrame>
         <div ref={containerRef} aria-hidden="true" className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <div
-            className={`w-full max-w-[170px] rounded-xl border bg-kumo-base p-4 transition-colors duration-300 ${
-              connecting || copying || done ? 'border-kumo-brand' : 'border-kumo-line'
+            className={`w-full max-w-[170px] rounded-xl border bg-background p-4 transition-colors duration-300 ${
+              connecting || copying || done ? 'border-primary' : 'border-border'
             }`}
           >
-            <Stack size={18} weight="duotone" className="text-kumo-brand" />
-            <p className="mt-2 truncate text-[13px] font-medium text-kumo-default">Weekly report</p>
-            <p className="text-[11px] text-kumo-subtle">Blueprint</p>
+            <Stack size={18} weight="duotone" className="text-primary" />
+            <p className="mt-2 truncate text-[13px] font-medium text-foreground">Weekly report</p>
+            <p className="text-[11px] text-muted-foreground">Blueprint</p>
           </div>
 
           <div className="hidden w-16 shrink-0 items-center justify-center sm:flex">
             <svg
               viewBox="0 0 64 2"
               preserveAspectRatio="none"
-              className="h-1 w-full text-kumo-line"
+              className="h-1 w-full text-border"
               fill="none"
             >
               <path
@@ -55,14 +55,14 @@ export default function DemoBlueprintShare() {
           </div>
 
           <div
-            className={`w-full max-w-[170px] rounded-xl border border-kumo-line bg-kumo-base p-4 transition-all duration-500 ${
+            className={`w-full max-w-[170px] rounded-xl border border-border bg-background p-4 transition-all duration-500 ${
               copying || done ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
             }`}
           >
-            <Copy size={18} weight="duotone" className="text-kumo-subtle" />
-            <p className="mt-2 truncate text-[13px] font-medium text-kumo-default">Weekly report</p>
-            <p className="text-[11px] text-kumo-subtle">Your copy</p>
-            {done && <p className="mt-2 text-[10px] text-kumo-subtle">Own storage · Own bindings</p>}
+            <Copy size={18} weight="duotone" className="text-muted-foreground" />
+            <p className="mt-2 truncate text-[13px] font-medium text-foreground">Weekly report</p>
+            <p className="text-[11px] text-muted-foreground">Your copy</p>
+            {done && <p className="mt-2 text-[10px] text-muted-foreground">Own storage · Own bindings</p>}
           </div>
         </div>
       </DemoFrame>

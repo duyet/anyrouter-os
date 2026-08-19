@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useKumoToastManager } from '@cloudflare/kumo'
+import { useKumoToastManager } from '@/components/ui/toast'
 import { AiChatAuthorInfo } from '@gadgets/workshop-shared/api'
 import { useAuthenticatedApi } from '../../AuthContext'
 import { invalidateAvatarCache } from '../../useAvatar'
@@ -47,7 +47,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="flex min-h-[60vh] flex-1 items-center justify-center">
-        <p className="text-[13px] tracking-[-0.25px] text-kumo-subtle">Loading profile…</p>
+        <p className="text-[13px] tracking-[-0.25px] text-muted-foreground">Loading profile…</p>
       </div>
     )
   }
@@ -55,8 +55,8 @@ export default function ProfilePage() {
   return (
     <div className="mx-auto flex h-full w-full max-w-2xl flex-col px-6 pb-16 sm:px-10">
       <header className="px-1 pb-2 pt-10">
-        <h1 className="text-2xl font-semibold tracking-tight text-kumo-default">Profile</h1>
-        <p className="mt-1 text-[13px] leading-[18px] tracking-[-0.25px] text-kumo-subtle">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Profile</h1>
+        <p className="mt-1 text-[13px] leading-[18px] tracking-[-0.25px] text-muted-foreground">
           Your AnyRouter account powers this workspace — keep it in sync here.
         </p>
       </header>

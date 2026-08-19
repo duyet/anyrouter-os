@@ -1,5 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from 'react'
-import { useKumoToastManager } from '@cloudflare/kumo'
+import { useKumoToastManager } from '@/components/ui/toast'
 import { DownloadSimple } from '@phosphor-icons/react'
 import { Overseer, CodeSubscriber, CodeUpdate } from '@gadgets/workshop-shared/api'
 import { RpcStub, RpcTarget } from 'capnweb'
@@ -839,7 +839,7 @@ export default function GadgetCodeInterface({ overseer, filesRoot, height = '100
   if (loading) {
     return (
       <div
-        className="flex justify-center items-center text-kumo-subtle"
+        className="flex justify-center items-center text-muted-foreground"
         style={{ height }}
       >
         Loading code files...
@@ -854,7 +854,7 @@ export default function GadgetCodeInterface({ overseer, filesRoot, height = '100
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height, width: '100%' }}>
       {hasUnsavedChanges && (
-        <div className="bg-kumo-tint border-b border-kumo-line px-4 py-2 flex items-center gap-2 text-sm text-kumo-warning">
+        <div className="bg-muted border-b border-border px-4 py-2 flex items-center gap-2 text-sm text-warning">
           <span className="text-base">&#9888;&#65039;</span>
           <span>Connection issue - changes will be saved when connection is restored</span>
         </div>
@@ -876,11 +876,11 @@ export default function GadgetCodeInterface({ overseer, filesRoot, height = '100
           onFileRename={handleFileRename}
           onFileDownload={handleFileDownload}
         />
-        <div className="flex flex-col bg-kumo-base" style={{ flex: 1, minWidth: 0 }}>
+        <div className="flex flex-col bg-background" style={{ flex: 1, minWidth: 0 }}>
           {activeFile && (
-            <div className="flex h-9 shrink-0 items-center justify-between gap-3 border-b border-kumo-line bg-kumo-base px-3">
-              <div className="min-w-0 text-[12px] leading-4 tracking-[-0.2px] text-kumo-subtle">
-                {activeFileModeLabel} <span className="font-mono font-medium text-kumo-default">{activeFile}</span>
+            <div className="flex h-9 shrink-0 items-center justify-between gap-3 border-b border-border bg-background px-3">
+              <div className="min-w-0 text-[12px] leading-4 tracking-[-0.2px] text-muted-foreground">
+                {activeFileModeLabel} <span className="font-mono font-medium text-foreground">{activeFile}</span>
               </div>
               <WorkshopIconButton
                 aria-label={`Download ${activeFile}`}
@@ -895,12 +895,12 @@ export default function GadgetCodeInterface({ overseer, filesRoot, height = '100
           )}
           <div className="min-h-0 flex-1">
             {isReady && !loading && displayedFiles.length === 0 ? (
-              <div className="flex h-full flex-col items-center justify-center bg-kumo-base px-6 text-center">
+              <div className="flex h-full flex-col items-center justify-center bg-background px-6 text-center">
                 <div className="max-w-[360px]">
-                  <p className="m-0 text-[15px] leading-[22px] font-semibold tracking-[-0.3px] text-kumo-default">
+                  <p className="m-0 text-[15px] leading-[22px] font-semibold tracking-[-0.3px] text-foreground">
                     No files yet
                   </p>
-                  <p className="mt-1.5 mb-0 text-[13px] leading-[19px] tracking-[-0.25px] text-kumo-subtle">
+                  <p className="mt-1.5 mb-0 text-[13px] leading-[19px] tracking-[-0.25px] text-muted-foreground">
                     Keep building with the agent in chat and files will appear here as it works, or create one yourself.
                   </p>
                   <div className="mt-4 flex justify-center">

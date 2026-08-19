@@ -8,7 +8,7 @@ export default function ReconnectingChip() {
   return (
     <span
       role="status"
-      className="text-xs text-kumo-warning px-2 py-0.5 rounded-full bg-kumo-warning-tint border border-kumo-warning/20"
+      className="text-xs text-warning px-2 py-0.5 rounded-full bg-muted border border-warning/20"
     >
       Reconnecting…
     </span>

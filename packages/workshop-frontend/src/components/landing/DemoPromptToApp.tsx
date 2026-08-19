@@ -37,38 +37,38 @@ export default function DemoPromptToApp() {
         <div ref={containerRef} aria-hidden="true" className="flex flex-col items-center gap-4 sm:flex-row">
           {/* Composer mock */}
           <div className="w-full min-w-0 flex-1">
-            <div className="flex items-center gap-2 rounded-xl border border-kumo-line bg-kumo-base px-4 py-3">
-              <ChatCircleText size={16} className="shrink-0 text-kumo-subtle" />
-              <p className="min-w-0 flex-1 truncate text-[14px] text-kumo-default">
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-3">
+              <ChatCircleText size={16} className="shrink-0 text-muted-foreground" />
+              <p className="min-w-0 flex-1 truncate text-[14px] text-foreground">
                 {PROMPT.slice(0, typedLen)}
                 {!ready && <span className="animate-pulse">▍</span>}
               </p>
             </div>
-            <p className="mt-2 text-[12px] text-kumo-subtle">
+            <p className="mt-2 text-[12px] text-muted-foreground">
               {typing ? 'Typing…' : building ? 'Writing the app…' : 'Sent'}
             </p>
           </div>
 
           <ArrowRight
             size={18}
-            className={`hidden shrink-0 sm:block ${building ? 'text-kumo-brand' : 'text-kumo-line'}`}
+            className={`hidden shrink-0 sm:block ${building ? 'text-primary' : 'text-border'}`}
           />
 
           {/* App preview mock */}
-          <div className="w-full max-w-[220px] shrink-0 overflow-hidden rounded-xl border border-kumo-line bg-kumo-base">
-            <div className="flex h-7 items-center gap-1.5 border-b border-kumo-line bg-kumo-tint px-3">
-              <span className="h-1.5 w-1.5 rounded-full bg-kumo-line" />
-              <span className="h-1.5 w-1.5 rounded-full bg-kumo-line" />
-              <span className="h-1.5 w-1.5 rounded-full bg-kumo-line" />
-              <span className="ml-1 truncate text-[10px] text-kumo-subtle">tic-tac-toe</span>
+          <div className="w-full max-w-[220px] shrink-0 overflow-hidden rounded-xl border border-border bg-background">
+            <div className="flex h-7 items-center gap-1.5 border-b border-border bg-muted px-3">
+              <span className="h-1.5 w-1.5 rounded-full bg-border" />
+              <span className="h-1.5 w-1.5 rounded-full bg-border" />
+              <span className="h-1.5 w-1.5 rounded-full bg-border" />
+              <span className="ml-1 truncate text-[10px] text-muted-foreground">tic-tac-toe</span>
               {building && (
-                <span className="ml-auto flex items-center gap-1 text-[10px] text-kumo-subtle">
+                <span className="ml-auto flex items-center gap-1 text-[10px] text-muted-foreground">
                   <CircleNotch size={11} className="animate-spin" />
                 </span>
               )}
               {ready && (
-                <span className="ml-auto flex items-center gap-1 text-[10px] text-kumo-success">
-                  <span className="h-1.5 w-1.5 rounded-full bg-kumo-success" />
+                <span className="ml-auto flex items-center gap-1 text-[10px] text-success">
+                  <span className="h-1.5 w-1.5 rounded-full bg-success" />
                   Live
                 </span>
               )}
@@ -77,20 +77,20 @@ export default function DemoPromptToApp() {
               {Array.from({ length: 9 }, (_, cell) => (
                 <div
                   key={cell}
-                  className="grid aspect-square place-items-center rounded-md border border-kumo-line/70"
+                  className="grid aspect-square place-items-center rounded-md border border-border/70"
                 >
                   {FILLED_CELLS[cell] === 'x' && (
                     <XIcon
                       size={12}
                       weight="bold"
-                      className={`text-kumo-brand transition-opacity duration-300 ${ready ? 'opacity-100' : 'opacity-0'}`}
+                      className={`text-primary transition-opacity duration-300 ${ready ? 'opacity-100' : 'opacity-0'}`}
                     />
                   )}
                   {FILLED_CELLS[cell] === 'o' && (
                     <Circle
                       size={10}
                       weight="bold"
-                      className={`text-kumo-subtle transition-opacity duration-300 ${ready ? 'opacity-100' : 'opacity-0'}`}
+                      className={`text-muted-foreground transition-opacity duration-300 ${ready ? 'opacity-100' : 'opacity-0'}`}
                     />
                   )}
                 </div>

@@ -83,7 +83,7 @@ export default function CapsuleOverlay({ url, onSelectAccount, onRefine, onDismi
   return (
     <div
       ref={overlayRef}
-      className={`themed-floating-shadow ${styles.capsuleOverlay} ${ready ? '' : 'invisible'}`}
+      className={`${styles.capsuleOverlay} ${ready ? '' : 'invisible'}`}
       style={lineOffset === undefined ? undefined : {bottom: lineOffset}}
     >
       <ResourcePicker
