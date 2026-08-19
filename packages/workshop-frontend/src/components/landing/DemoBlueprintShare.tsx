@@ -3,7 +3,7 @@ import { DemoFrame, LandingSection } from './tokens'
 import { useDemoStep } from './useDemoStep'
 
 const STEP_COUNT = 5
-const INTERVAL_MS = 1300
+const INTERVAL_MS = 650
 // "Copied, with its own storage" — the most informative static frame for reduced motion.
 const DONE_STEP = 3
 
@@ -28,7 +28,7 @@ export default function DemoBlueprintShare() {
       <DemoFrame>
         <div ref={containerRef} aria-hidden="true" className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <div
-            className={`w-full max-w-[170px] rounded-xl border bg-background p-4 transition-colors duration-300 ${
+            className={`w-full max-w-[170px] rounded-xl border bg-background p-4 transition-colors duration-150 ${
               connecting || copying || done ? 'border-primary' : 'border-border'
             }`}
           >
@@ -55,7 +55,7 @@ export default function DemoBlueprintShare() {
           </div>
 
           <div
-            className={`w-full max-w-[170px] rounded-xl border border-border bg-background p-4 transition-all duration-500 ${
+            className={`w-full max-w-[170px] rounded-xl border border-border bg-background p-4 transition-all duration-200 ${
               copying || done ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
             }`}
           >

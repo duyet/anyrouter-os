@@ -6,10 +6,10 @@ import { useDemoStep } from './useDemoStep'
 // of the repo's own suggested first prompts.
 const PROMPT = 'Make a tic tac toe game.'
 const TYPE_STEPS = PROMPT.length
-const BUILD_STEPS = 10
-const READY_STEPS = 16
+const BUILD_STEPS = 6
+const READY_STEPS = 8
 const STEP_COUNT = TYPE_STEPS + BUILD_STEPS + READY_STEPS
-const INTERVAL_MS = 80
+const INTERVAL_MS = 45
 
 // Diagonal so the finished board reads as "in progress", not "solved".
 const FILLED_CELLS: Record<number, 'x' | 'o'> = { 0: 'x', 4: 'o', 8: 'x' }
@@ -83,14 +83,14 @@ export default function DemoPromptToApp() {
                     <XIcon
                       size={12}
                       weight="bold"
-                      className={`text-primary transition-opacity duration-300 ${ready ? 'opacity-100' : 'opacity-0'}`}
+                      className={`text-primary transition-opacity duration-150 ${ready ? 'opacity-100' : 'opacity-0'}`}
                     />
                   )}
                   {FILLED_CELLS[cell] === 'o' && (
                     <Circle
                       size={10}
                       weight="bold"
-                      className={`text-muted-foreground transition-opacity duration-300 ${ready ? 'opacity-100' : 'opacity-0'}`}
+                      className={`text-muted-foreground transition-opacity duration-150 ${ready ? 'opacity-100' : 'opacity-0'}`}
                     />
                   )}
                 </div>

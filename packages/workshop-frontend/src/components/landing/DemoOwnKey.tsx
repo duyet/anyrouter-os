@@ -7,7 +7,7 @@ import { useDemoStep } from './useDemoStep'
 // never drifts from what the product actually suggests.
 const MODELS = Object.entries(SUGGESTED_MODELS.anyrouter).map(([id, model]) => ({ id, ...model }))
 
-const INTERVAL_MS = 1600
+const INTERVAL_MS = 750
 
 /**
  * Third demo: cycles the highlight across a few real AnyRouter catalog models to carry the
@@ -42,7 +42,7 @@ export default function DemoOwnKey() {
               return (
                 <div
                   key={model.id}
-                  className={`flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2 transition-colors duration-300 ${
+                  className={`flex min-w-0 items-center gap-2 rounded-lg border px-3 py-2 transition-colors duration-150 ${
                     active ? 'border-primary bg-primary/5' : 'border-border bg-background'
                   }`}
                 >

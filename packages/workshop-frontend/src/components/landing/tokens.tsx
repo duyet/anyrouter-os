@@ -29,7 +29,7 @@ export function LandingSection({
   children: ReactNode
 }) {
   return (
-    <section className="mx-auto w-full max-w-4xl px-6 py-14 sm:px-8">
+    <section className="mx-auto w-full max-w-5xl px-6 py-10 sm:px-8 sm:py-12">
       <Eyebrow>{eyebrow}</Eyebrow>
       <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
         {title}
@@ -59,7 +59,7 @@ export const DEMO_BTN_SECONDARY =
  * demo's step count changes what it's showing. */
 export function DemoFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="relative isolate min-h-[220px] overflow-hidden rounded-2xl border border-border bg-card p-6 sm:p-8">
+    <div className="relative isolate min-h-[180px] overflow-hidden rounded-2xl border border-border bg-card p-5 sm:p-6">
       {children}
     </div>
   )

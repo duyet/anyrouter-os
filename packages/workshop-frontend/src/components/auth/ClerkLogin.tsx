@@ -158,8 +158,24 @@ function ClerkSessionBridge({
   return (
     <div className="flex flex-col items-center gap-4">
       {error && <Banner variant="error" title={error} />}
-      {/* <SignIn> loads Clerk's hosted UI in an iframe; index.html frame-src must allow those origins. */}
-      <SignIn routing="hash" />
+      {/* Hosted <SignIn> iframe — keep it compact so it fits the landing card. */}
+      <SignIn
+        routing="hash"
+        appearance={{
+          variables: {
+            colorPrimary: '#ff4801',
+            borderRadius: '0.5rem',
+          },
+          elements: {
+            rootBox: 'w-full',
+            cardBox: 'w-full shadow-none',
+            card: 'w-full border-0 bg-transparent p-0 shadow-none',
+            headerTitle: 'hidden',
+            headerSubtitle: 'hidden',
+            footerAction: 'text-muted-foreground',
+          },
+        }}
+      />
     </div>
   )
 }

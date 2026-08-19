@@ -3,7 +3,7 @@ import { DEMO_BTN_PRIMARY, DEMO_BTN_SECONDARY, DemoFrame, LandingSection } from 
 import { useDemoStep } from './useDemoStep'
 
 const STEP_COUNT = 6
-const INTERVAL_MS = 1300
+const INTERVAL_MS = 700
 // Read pending -> done, then write pending -> approved: the most complete static frame for
 // prefers-reduced-motion, since it shows both halves of the rule at once.
 const READY_APPROVED_STEP = 4

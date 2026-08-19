@@ -64,52 +64,37 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
     }
   }
 
-  // Until the deployment config loads we don't know which auth methods are enabled, so don't guess:
-  // defaulting to the password form would show it even where it's disabled (and hide configured
-  // OAuth providers). This is especially important when the server is unreachable — serverConfig
-  // stays null — so render a loading / connection state instead of a misconfigured form. (A visitor
-  // on a slow config load sees only this gate, not the landing content below — deliberate: there's
-  // nothing accurate to show about auth methods yet.)
-  if (!serverConfig) {
-    if (serverConfigError && !connectionLost) {
-      return (
-        <div
-          role="alert"
-          className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background px-4"
-        >
+  // Don't hide the landing while config loads — only the sign-in slot waits, so the headline
+  // and demos paint immediately. Guessing the auth method would show a password form on Clerk
+  // deployments, so the card stays a spinner until we know.
+  const anyrouterOnly = !!serverConfig?.anyrouterAuthEnabled && !!serverConfig.anyrouterOauthClientId
+  const authVendors = anyrouterOnly ? [] : (serverConfig?.authVendors ?? [])
+  const clerkKey = anyrouterOnly ? undefined : serverConfig?.clerkPublishableKey
+  const passwordAuthEnabled = !!serverConfig && !anyrouterOnly && !clerkKey && serverConfig.passwordAuthEnabled
+
+  const signIn = !serverConfig ? (
+    <div className="flex flex-col items-center justify-center gap-3 py-10">
+      {serverConfigError && !connectionLost ? (
+        <div role="alert" className="flex flex-col items-center gap-3">
           <p className="text-sm text-destructive text-center">
             Couldn&apos;t load deployment settings.
           </p>
           <Button variant="secondary" onClick={() => window.location.reload()}>Reload</Button>
         </div>
-      )
-    }
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background px-4">
-        <Loader size="lg" />
-        <p className="text-sm text-muted-foreground text-center">
-          {connectionLost ? "Can't reach the server. Retrying…" : 'Loading…'}
-        </p>
-      </div>
-    )
-  }
-
-  // "Sign in with AnyRouter" (when enabled) is the sole method — it suppresses every other one,
-  // just as Clerk does. Both are mutually exclusive with password + gatekeeper sign-in.
-  const anyrouterOnly = serverConfig.anyrouterAuthEnabled && !!serverConfig.anyrouterOauthClientId
-  const authVendors = anyrouterOnly ? [] : (serverConfig.authVendors ?? [])
-  // Clerk replaces every other sign-in method when configured (see ServerConfig.clerkPublishableKey).
-  const clerkKey = anyrouterOnly ? undefined : serverConfig.clerkPublishableKey
-  const passwordAuthEnabled = !anyrouterOnly && !clerkKey && serverConfig.passwordAuthEnabled
-
-  // The sign-in card's content, unchanged from the original LoginPage other than its heading (the
-  // page headline in Hero is now the only <h1>). Passed into Hero as a slot rather than owned by
-  // it, so every auth path here keeps living in this file exactly as it did before.
-  const signIn = (
+      ) : (
+        <>
+          <Loader size="lg" />
+          <p className="text-sm text-muted-foreground text-center">
+            {connectionLost ? "Can't reach the server. Retrying…" : 'Loading…'}
+          </p>
+        </>
+      )}
+    </div>
+  ) : (
     <>
-      <div className="text-center mb-6">
-        <p className="text-base font-semibold text-foreground">Sign in to {siteName}</p>
-      </div>
+      <p className="mb-5 text-center text-[15px] font-semibold text-foreground">
+        Sign in to {siteName}
+      </p>
 
       {/* AnyRouter is the only way in when enabled: users sign in with their anyrouter.dev account. */}
       {anyrouterOnly && (
@@ -189,18 +174,18 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
         </div>
       )}
 
-      <div className="mt-8 flex justify-center">
-        <ThemeModeButton size="lg" />
-      </div>
     </>
   )
 
   return (
     <div className="min-h-screen bg-background">
+      <header className="flex items-center justify-end px-6 py-3 sm:px-8">
+        <ThemeModeButton size="lg" />
+      </header>
       <Hero siteName={siteName} signIn={signIn} />
 
-      <div className="flex flex-col divide-y divide-border">
-        <div className="pb-4 pt-4">
+      <div className="flex flex-col">
+        <div className="pb-2">
           <FeatureGrid />
         </div>
         <DemoPromptToApp />
@@ -209,8 +194,7 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
         <DemoBlueprintShare />
       </div>
 
-      {/* Closing CTA — repeats the sign-in action after a visitor has scrolled through the demos. */}
-      <div className="mx-auto max-w-4xl px-6 py-16 text-center sm:px-8">
+      <div className="mx-auto max-w-5xl px-6 py-14 text-center sm:px-8">
         <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
           See it for yourself
         </h2>
