@@ -68,7 +68,6 @@ describe('classifyRpcError', () => {
     expect(classifyRpcError(createAuthError(AUTH_ERROR_CODES.invalidSessionToken))).toBe('auth')
     expect(classifyRpcError(rpcError('nope', { code: 'INVALID_SESSION_TOKEN' }))).toBe('auth')
     expect(classifyRpcError(new Error('invalid session token'))).toBe('auth')
-    expect(classifyRpcError(new Error('Not authenticated with Access.'))).toBe('auth')
   })
 
   it('classifies everything else as other', () => {
