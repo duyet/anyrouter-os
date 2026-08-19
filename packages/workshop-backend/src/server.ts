@@ -886,10 +886,10 @@ export default {
       return handleClientErrorRequest(req, env, ctx);
     }
 
-    if (url.pathname.startsWith("/api/gadgets/")) {
+    if (url.pathname.startsWith("/api/workspaces/")) {
       // Same session token as PublicApi.authenticate(); bindings stay behind gadget methods.
-      return (await handleGadgetHttpRequest(req, new PublicApiImpl(ctx, env, () => {})))
-          ?? new Response("Not Found", {status: 404});
+      let gadgetHttp = await handleGadgetHttpRequest(req, new PublicApiImpl(ctx, env, () => {}));
+      if (gadgetHttp) return gadgetHttp;
     }
 
     if (url.pathname === "/api") {

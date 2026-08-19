@@ -7,21 +7,26 @@ import {
   OPEN_GADGET_ERROR_CODES,
   type AuthenticatedApi,
   type GadgetHttpCallResponse,
-  type GadgetMetadata,
   type PublicApi,
   type UiBundle,
+  type WorkpieceId,
 } from "@gadgets/workshop-shared/api";
-import { GADGET_HTTP_UI_CSP, handleGadgetHttpRequest } from "../src/gadget-http.js";
+import { handleGadgetHttpRequest } from "../src/gadget-http.js";
 
 const TOKEN = "alice:session-secret";
-const GADGET_ID = "workspace-gadget-1";
+const WORKSPACE_ID = "workspace-do-id";
+const GADGET_ID = 7;
 const ORIGIN = "https://workshop.example";
+const CALL_PATH = `/api/workspaces/${WORKSPACE_ID}/gadgets/${GADGET_ID}/call`;
+const UI_PATH = `/api/workspaces/${WORKSPACE_ID}/gadgets/${GADGET_ID}/ui`;
 
 type FakeGadget = {
   ping: (value?: unknown) => unknown;
   echo: (...args: unknown[]) => unknown;
   env: { secretBinding: { send: () => never } };
   capability?: () => unknown;
+  nested?: () => unknown;
+  list?: () => unknown;
 };
 
 function fixtureGadget(overrides: Partial<FakeGadget> = {}): FakeGadget {
@@ -39,38 +44,45 @@ function fixtureGadget(overrides: Partial<FakeGadget> = {}): FakeGadget {
 
 function fakePublicApi(options: {
   token?: string;
-  gadgetId?: string;
+  workspaceId?: string;
   ui?: UiBundle | null;
   gadget?: object;
   openError?: Error;
+  getGadgetError?: Error;
+  connectToGadget?: () => unknown;
+  getGadgetIds?: WorkpieceId[];
 } = {}): Pick<PublicApi, "authenticate"> {
   let expectedToken = options.token ?? TOKEN;
-  let expectedGadgetId = options.gadgetId ?? GADGET_ID;
+  let expectedWorkspaceId = options.workspaceId ?? WORKSPACE_ID;
   let gadget = options.gadget ?? fixtureGadget();
   let ui: UiBundle | null = options.ui === undefined ? { jsCode: "export const ready = true;\n" } : options.ui;
+  let getGadgetIds = options.getGadgetIds;
 
   return {
     async authenticate(token: string) {
       if (token !== expectedToken) throw createAuthError(AUTH_ERROR_CODES.invalidSessionToken);
-      return {
+      let session: Pick<AuthenticatedApi, "openGadget"> = {
         async openGadget(id: string) {
           if (options.openError) throw options.openError;
-          if (id !== expectedGadgetId) {
+          if (id !== expectedWorkspaceId) {
             throw createOpenGadgetError(OPEN_GADGET_ERROR_CODES.workspaceNotFound);
           }
           return {
-            async getMetadata(): Promise<Pick<GadgetMetadata, "id" | "title" | "defaultGadgetId">> {
-              return { id, title: "Fixture", defaultGadgetId: 1 };
-            },
-            async getGadget() {
+            async getGadget(gadgetId: WorkpieceId) {
+              getGadgetIds?.push(gadgetId);
+              if (options.getGadgetError) throw options.getGadgetError;
               return {
                 async getUiBundle() { return ui; },
-                async connectToGadget() { return gadget; },
+                connectToGadget() {
+                  if (options.connectToGadget) return options.connectToGadget();
+                  return gadget;
+                },
               };
             },
-          };
+          } as Awaited<ReturnType<AuthenticatedApi["openGadget"]>>;
         },
-      } as unknown as AuthenticatedApi;
+      };
+      return session as Awaited<ReturnType<PublicApi["authenticate"]>>;
     },
   };
 }
@@ -93,9 +105,9 @@ function callRequest(
     body: unknown,
     headers: Record<string, string> = {},
     init: RequestInit = {}): Request {
-  return request(`/api/gadgets/${GADGET_ID}/call`, {
+  return request(CALL_PATH, {
     method: "POST",
-    body: JSON.stringify(body),
+    body: typeof body === "string" || body instanceof Uint8Array ? body : JSON.stringify(body),
     ...init,
   }, {
     "content-type": "application/json",
@@ -119,8 +131,8 @@ async function callJson(req: Request, publicApi?: Pick<PublicApi, "authenticate"
 
 describe("gadget HTTP API", () => {
   it("returns 401 without a session token because the session is the authority", async () => {
-    // Bindings and gadget methods are not ambient: knowing the gadget id is not enough.
-    let response = await handle(request(`/api/gadgets/${GADGET_ID}/call`, {
+    // Bindings and gadget methods are not ambient: knowing the ids is not enough.
+    let response = await handle(request(CALL_PATH, {
       method: "POST",
       body: JSON.stringify({ method: "ping" }),
     }, { authorization: "", "content-type": "application/json" }));
@@ -136,9 +148,16 @@ describe("gadget HTTP API", () => {
     expect(response.status).toBe(401);
   });
 
-  it("returns 403 when Origin is not the request origin so CSRF cannot drive gadget methods", async () => {
-    // A third-party page that has the user's cookie or stolen Bearer must still fail the
-    // same-origin check before authenticate() or connectToGadget() run.
+  it("does not accept a session cookie; Bearer is the only authority", async () => {
+    let response = await handle(callRequest({ method: "ping" }, {
+      authorization: "",
+      cookie: "authToken=" + encodeURIComponent(TOKEN),
+    }));
+    expect(response.status).toBe(401);
+  });
+
+  it("returns 403 when Origin is present and not the request origin", async () => {
+    // A page that can set Authorization still must not CSRF from another origin.
     let opened = false;
     let publicApi = fakePublicApi();
     let wrapped: Pick<PublicApi, "authenticate"> = {
@@ -157,13 +176,30 @@ describe("gadget HTTP API", () => {
     expect(opened).toBe(false);
   });
 
+  it("allows a missing Origin on Bearer POST because cookies are not used", async () => {
+    let { status, body } = await callJson(callRequest({ method: "ping" }, { origin: "" }));
+    expect(status).toBe(200);
+    expect(body).toEqual({ ok: true, result: "pong" });
+  });
+
   it("returns 405 for the wrong method on each route", async () => {
-    expect((await handle(request(`/api/gadgets/${GADGET_ID}/ui`, { method: "POST" }))).status)
-        .toBe(405);
-    expect((await handle(request(`/api/gadgets/${GADGET_ID}/call`, { method: "GET" }))).status)
-        .toBe(405);
+    expect((await handle(request(UI_PATH, { method: "POST" }))).status).toBe(405);
+    expect((await handle(request(CALL_PATH, { method: "GET" }))).status).toBe(405);
     expect((await handle(callRequest({ method: "ping" }, {}, { method: "PUT" }))).status)
         .toBe(405);
+  });
+
+  it("returns 400 when the gadget id is not a workpiece id or the URI is malformed", async () => {
+    expect((await handle(request(
+        `/api/workspaces/${WORKSPACE_ID}/gadgets/not-a-number/call`, {
+          method: "POST",
+          body: JSON.stringify({ method: "ping" }),
+        }, { "content-type": "application/json" }))).status).toBe(400);
+    expect((await handle(request(
+        `/api/workspaces/%E0%A4%A/gadgets/${GADGET_ID}/call`, {
+          method: "POST",
+          body: JSON.stringify({ method: "ping" }),
+        }, { "content-type": "application/json" }))).status).toBe(400);
   });
 
   it("returns 404 for a workspace the session is not allowed to open", async () => {
@@ -171,6 +207,15 @@ describe("gadget HTTP API", () => {
       openError: createOpenGadgetError(OPEN_GADGET_ERROR_CODES.workspaceAccessDenied),
     }));
     expect(response.status).toBe(404);
+  });
+
+  it("calls getGadget with the path workpiece id, not defaultGadgetId", async () => {
+    let getGadgetIds: WorkpieceId[] = [];
+    let { status, body } = await callJson(callRequest({ method: "ping" }),
+        fakePublicApi({ getGadgetIds }));
+    expect(status).toBe(200);
+    expect(body).toEqual({ ok: true, result: "pong" });
+    expect(getGadgetIds).toEqual([GADGET_ID]);
   });
 
   it("invokes only gadget methods, never this.env bindings, so HITL stays in front of connectors",
@@ -191,55 +236,71 @@ describe("gadget HTTP API", () => {
     expect(bindingCall.status).toBe(404);
   });
 
-  it("returns method-not-found rather than reflecting into constructor or Object.prototype",
+  it("returns method-not-found rather than reflecting into stub or Object.prototype names",
       async () => {
     let gadget = fixtureGadget();
-    for (let method of ["missing", "constructor", "__proto__", "toString", "then"]) {
+    for (let method of ["missing", "constructor", "__proto__", "toString", "then",
+        "dup", "fetch", "connect", "onRpcBroken"]) {
       let { status, body } = await callJson(callRequest({ method }), fakePublicApi({ gadget }));
       expect(status).toBe(404);
       expect(body.ok).toBe(false);
     }
   });
 
-  it("returns 501 when a method would return a capability because HTTP cannot carry stubs",
+  it("returns 501 when a method would return a capability, including nested stubs",
       async () => {
     class Binding extends RpcTarget {
       send() { return "leaked"; }
     }
     let gadget = fixtureGadget({
       capability() { return new Binding(); },
+      nested() { return { env: { dup() { return this; } } }; },
+      list() { return [{ dup() { return this; } }]; },
     });
 
-    let { status, body } = await callJson(callRequest({ method: "capability" }),
-        fakePublicApi({ gadget }));
-    expect(status).toBe(501);
-    expect(body).toEqual({ ok: false, error: "HTTP cannot return capabilities." });
+    for (let method of ["capability", "nested", "list"]) {
+      let { status, body } = await callJson(callRequest({ method }), fakePublicApi({ gadget }));
+      expect(status).toBe(501);
+      expect(body).toEqual({ ok: false, error: "HTTP cannot return capabilities." });
+    }
   });
 
-  it("serves GET ui as HTML wrapping jsCode, and prefers html when the sibling field is present",
-      async () => {
-    let wrapped = await handle(request(`/api/gadgets/${GADGET_ID}/ui`), fakePublicApi({
+  it("returns GET ui as JSON jsCode, not a first-party HTML document", async () => {
+    let getGadgetIds: WorkpieceId[] = [];
+    let wrapped = await handle(request(UI_PATH), fakePublicApi({
       ui: { jsCode: "window.__gadget = 1;\n" },
+      getGadgetIds,
     }));
     expect(wrapped.status).toBe(200);
-    expect(wrapped.headers.get("content-type")).toMatch(/text\/html/);
-    expect(wrapped.headers.get("content-security-policy")).toBe(GADGET_HTTP_UI_CSP);
-    let html = await wrapped.text();
-    expect(html).toContain(encodeURIComponent("//# sourceURL=client.js\nwindow.__gadget = 1;\n"));
-    expect(html).toContain("Authorization: Bearer");
+    expect(wrapped.headers.get("content-type")).toMatch(/application\/json/);
+    expect(await wrapped.json()).toEqual({ jsCode: "window.__gadget = 1;\n" });
+    expect(getGadgetIds).toEqual([GADGET_ID]);
 
-    let staticHtml = await handle(request(`/api/gadgets/${GADGET_ID}/ui`), fakePublicApi({
-      ui: { jsCode: "ignored()", html: "<html><body>static</body></html>" } as UiBundle,
+    // JSON UI does not need POST CSRF: missing Origin is allowed with Bearer.
+    let noOrigin = await handle(request(UI_PATH, {}, { origin: "" }), fakePublicApi({
+      ui: { jsCode: "ok" },
     }));
-    expect(await staticHtml.text()).toBe("<html><body>static</body></html>");
+    expect(noOrigin.status).toBe(200);
   });
 
-  it("accepts the session from an authToken cookie, matching the SPA storage key", async () => {
-    let { status, body } = await callJson(callRequest({ method: "ping" }, {
-      authorization: "",
-      cookie: "authToken=" + encodeURIComponent(TOKEN),
+  it("keeps the original connectToGadget failure after dispose", async () => {
+    let thrown = await callJson(callRequest({ method: "ping" }), fakePublicApi({
+      connectToGadget: () => { throw new Error("facet down"); },
     }));
-    expect(status).toBe(200);
-    expect(body).toEqual({ ok: true, result: "pong" });
+    expect(thrown.status).toBe(500);
+    expect(thrown.body).toEqual({ ok: false, error: "facet down" });
+
+    let nullable = await callJson(callRequest({ method: "ping" }), fakePublicApi({
+      connectToGadget: () => null,
+    }));
+    expect(nullable.status).toBe(500);
+    expect(nullable.body).toEqual({ ok: false, error: "Gadget server is not callable." });
+  });
+
+  it("caps the POST body even when Content-Length is missing", async () => {
+    let oversized = callRequest("x".repeat(65 * 1024), { "content-length": "" });
+    let { status, body } = await callJson(oversized);
+    expect(status).toBe(413);
+    expect(body).toEqual({ ok: false, error: "Payload Too Large" });
   });
 });

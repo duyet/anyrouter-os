@@ -1459,10 +1459,19 @@ export type UiBundle = {
 };
 
 /**
- * JSON body for `POST /api/gadgets/:gadgetId/call`.
+ * JSON body for `GET /api/workspaces/:workspaceId/gadgets/:gadgetId/ui`.
+ *
+ * This is not a first-party HTML document: the client already sandboxes gadget UI in srcdoc.
+ * `gadgetId` is a `WorkpieceId` (per-workspace); `workspaceId` is the `openGadget()` id.
+ */
+export type GadgetHttpUiResponse = Pick<UiBundle, "jsCode">;
+
+/**
+ * JSON body for `POST /api/workspaces/:workspaceId/gadgets/:gadgetId/call`.
  *
  * HTTP is not a capability channel: only gadget server methods may be invoked. Bindings
  * (`this.env`) stay behind those methods so gadget code and HITL remain on the path.
+ * `gadgetId` is a `WorkpieceId`; it is not a workspace id and is not `defaultGadgetId`.
  */
 export type GadgetHttpCallRequest = {
   /** Name of a method on the gadget server class. */
@@ -1471,19 +1480,19 @@ export type GadgetHttpCallRequest = {
   args?: unknown[];
 };
 
-/** Successful JSON body for `POST /api/gadgets/:gadgetId/call`. */
+/** Successful JSON body for `POST /api/workspaces/:workspaceId/gadgets/:gadgetId/call`. */
 export type GadgetHttpCallSuccess = {
   ok: true;
   result: unknown;
 };
 
-/** Failed JSON body for `POST /api/gadgets/:gadgetId/call`. */
+/** Failed JSON body for `POST /api/workspaces/:workspaceId/gadgets/:gadgetId/call`. */
 export type GadgetHttpCallFailure = {
   ok: false;
   error: string;
 };
 
-/** Result envelope for `POST /api/gadgets/:gadgetId/call`. */
+/** Result envelope for `POST /api/workspaces/:workspaceId/gadgets/:gadgetId/call`. */
 export type GadgetHttpCallResponse = GadgetHttpCallSuccess | GadgetHttpCallFailure;
 
 /** Represents an incremental update to the code. */
