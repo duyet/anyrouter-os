@@ -2,7 +2,10 @@ import { useState, FormEvent } from 'react'
 import { Link } from '@tanstack/react-router'
 import { RpcStub } from 'capnweb'
 import { PublicApi } from '@gadgets/workshop-shared/api'
-import { Input, Button, Banner, Loader } from '@cloudflare/kumo'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Banner } from '@/components/ui/alert'
+import { Loader } from '@/components/ui/loader'
 import { hashPassword } from './passwordHash'
 import { useServerConfig, useServerConfigError, useSiteName } from './ServerConfigContext'
 import { useDocumentTitle } from './useDocumentTitle'
@@ -72,9 +75,9 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
       return (
         <div
           role="alert"
-          className="min-h-screen flex flex-col items-center justify-center gap-4 bg-kumo-base px-4"
+          className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background px-4"
         >
-          <p className="text-sm text-kumo-danger text-center">
+          <p className="text-sm text-destructive text-center">
             Couldn&apos;t load deployment settings.
           </p>
           <Button variant="secondary" onClick={() => window.location.reload()}>Reload</Button>
@@ -82,9 +85,9 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
       )
     }
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-kumo-base px-4">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background px-4">
         <Loader size="lg" />
-        <p className="text-sm text-kumo-subtle text-center">
+        <p className="text-sm text-muted-foreground text-center">
           {connectionLost ? "Can't reach the server. Retrying…" : 'Loading…'}
         </p>
       </div>
@@ -105,7 +108,7 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
   const signIn = (
     <>
       <div className="text-center mb-6">
-        <p className="text-base font-semibold text-kumo-default">Sign in to {siteName}</p>
+        <p className="text-base font-semibold text-foreground">Sign in to {siteName}</p>
       </div>
 
       {/* AnyRouter is the only way in when enabled: users sign in with their anyrouter.dev account. */}
@@ -160,9 +163,9 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-kumo-subtle mt-6">
+          <p className="text-center text-sm text-muted-foreground mt-6">
             Don't have an account?{' '}
-            <Link to="/signup" className="text-kumo-brand hover:underline font-medium">
+            <Link to="/signup" className="text-primary hover:underline font-medium">
               Create one
             </Link>
           </p>
@@ -174,9 +177,9 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
         <div className={passwordAuthEnabled ? 'mt-6' : ''}>
           {passwordAuthEnabled && (
             <div className="flex items-center gap-3 mb-4">
-              <div className="h-px flex-1 bg-kumo-line" />
-              <span className="text-xs text-kumo-subtle">or</span>
-              <div className="h-px flex-1 bg-kumo-line" />
+              <div className="h-px flex-1 bg-border" />
+              <span className="text-xs text-muted-foreground">or</span>
+              <div className="h-px flex-1 bg-border" />
             </div>
           )}
           {!passwordAuthEnabled && error && (
@@ -193,10 +196,10 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
   )
 
   return (
-    <div className="min-h-screen bg-kumo-base">
+    <div className="min-h-screen bg-background">
       <Hero siteName={siteName} signIn={signIn} />
 
-      <div className="flex flex-col divide-y divide-kumo-line">
+      <div className="flex flex-col divide-y divide-border">
         <div className="pb-4 pt-4">
           <FeatureGrid />
         </div>
@@ -208,10 +211,10 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
 
       {/* Closing CTA — repeats the sign-in action after a visitor has scrolled through the demos. */}
       <div className="mx-auto max-w-4xl px-6 py-16 text-center sm:px-8">
-        <h2 className="text-2xl font-semibold tracking-tight text-kumo-default sm:text-3xl">
+        <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
           See it for yourself
         </h2>
-        <p className="mx-auto mt-2 max-w-md text-[15px] text-kumo-subtle">
+        <p className="mx-auto mt-2 max-w-md text-[15px] text-muted-foreground">
           Sign in and describe the first thing you want built.
         </p>
         <a href="#sign-in" className={`${PRIMARY_BTN} mt-6`}>

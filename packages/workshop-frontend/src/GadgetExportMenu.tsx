@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Tooltip, useKumoToastManager } from '@cloudflare/kumo'
+import { useKumoToastManager } from '@/components/ui/toast'
+import { Tooltip } from '@cloudflare/kumo'
 import { DownloadSimple } from '@phosphor-icons/react'
 import type { RpcStub } from 'capnweb'
 import type { GadgetClient } from '@gadgets/workshop-shared/api'
@@ -50,8 +51,8 @@ export default function GadgetExportMenu({ gadget, gadgetTitle, chatId, disabled
           <DownloadSimple size={17} />
         </WorkshopIconButton>
         {exporting && (
-          <span className="pointer-events-none absolute bottom-0 left-1 right-1 h-0.5 overflow-hidden rounded-full bg-kumo-fill">
-            <span className="absolute inset-y-0 w-1/3 bg-kumo-brand animate-[thinking_1.5s_ease-in-out_infinite]" />
+          <span className="pointer-events-none absolute bottom-0 left-1 right-1 h-0.5 overflow-hidden rounded-full bg-muted">
+            <span className="absolute inset-y-0 w-1/3 bg-primary animate-[thinking_1.5s_ease-in-out_infinite]" />
           </span>
         )}
       </span>

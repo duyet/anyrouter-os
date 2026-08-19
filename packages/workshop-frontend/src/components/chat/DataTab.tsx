@@ -27,14 +27,14 @@ export default function DataTab() {
   return (
     <div className="flex flex-col h-full">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-kumo-fill bg-kumo-elevated">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-card">
         <div className="flex items-center gap-3">
-          <span className="font-mono text-sm text-kumo-default">channels</span>
+          <span className="font-mono text-sm text-foreground">channels</span>
           <Badge variant="secondary">{sampleDataRows.length} rows</Badge>
         </div>
         <div className="flex items-center gap-2">
           {selectedIds.size > 0 && (
-            <span className="text-xs text-kumo-subtle">
+            <span className="text-xs text-muted-foreground">
               {selectedIds.size} selected
             </span>
           )}
@@ -69,15 +69,15 @@ export default function DataTab() {
                   aria-label={`Select ${row.channel}`}
                 />
                 <Table.Cell>
-                  <span className="font-mono text-sm text-kumo-default">{row.channel}</span>
+                  <span className="font-mono text-sm text-foreground">{row.channel}</span>
                 </Table.Cell>
                 <Table.Cell>
-                  <span className="text-sm text-kumo-subtle tabular-nums">
+                  <span className="text-sm text-muted-foreground tabular-nums">
                     {row.messages.toLocaleString()}
                   </span>
                 </Table.Cell>
                 <Table.Cell>
-                  <span className="text-xs text-kumo-subtle">{row.lastActive}</span>
+                  <span className="text-xs text-muted-foreground">{row.lastActive}</span>
                 </Table.Cell>
                 <Table.Cell>
                   {row.unread ? (
@@ -93,11 +93,11 @@ export default function DataTab() {
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-2 border-t border-kumo-fill bg-kumo-elevated flex items-center justify-between">
-        <span className="font-mono text-xs text-kumo-subtle">
+      <div className="px-4 py-2 border-t border-border bg-card flex items-center justify-between">
+        <span className="font-mono text-xs text-muted-foreground">
           {sampleDataRows.length} rows in channels
         </span>
-        <span className="font-mono text-xs text-kumo-subtle">
+        <span className="font-mono text-xs text-muted-foreground">
           {sampleDataRows.reduce((sum, r) => sum + r.messages, 0).toLocaleString()} total messages
         </span>
       </div>

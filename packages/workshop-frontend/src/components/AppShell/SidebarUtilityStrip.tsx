@@ -1,6 +1,6 @@
 import { Link, useRouterState } from '@tanstack/react-router'
 import { Plug } from '@phosphor-icons/react'
-import { Tooltip } from '@cloudflare/kumo'
+import { Tooltip } from '@/components/ui/tooltip'
 import UserMenu from '../UserMenu'
 import ThemeModeButton from '../ThemeModeButton'
 
@@ -26,8 +26,8 @@ function StripLink({
         className={[
           'flex h-8 w-8 items-center justify-center rounded-md transition-colors',
           active
-            ? 'bg-kumo-fill text-kumo-brand'
-            : 'text-kumo-inactive hover:bg-kumo-tint hover:text-kumo-default',
+            ? 'bg-sidebar-accent text-sidebar-primary'
+            : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground',
         ].join(' ')}
       >
         {children}
@@ -42,7 +42,7 @@ export default function SidebarUtilityStrip({ collapsed = false }: { collapsed?:
       className={[
         // shrink-0 + solid base so the strip is visually pinned above the scrolling rail body
         // and content can't bleed through it. Flat treatment — no top shadow.
-        'shrink-0 flex items-center gap-1 border-t border-kumo-line bg-kumo-elevated px-3 py-2',
+        'shrink-0 flex items-center gap-1 border-t border-sidebar-border bg-sidebar px-3 py-2',
         collapsed ? 'flex-col justify-center gap-2 px-1.5' : '',
       ].join(' ')}
     >

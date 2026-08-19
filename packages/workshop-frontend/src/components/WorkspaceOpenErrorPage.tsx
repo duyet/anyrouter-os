@@ -57,28 +57,28 @@ export default function WorkspaceOpenErrorPage({ kind, onRetry, onGoToWorkspaces
   }, [])
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-kumo-base px-6 py-12">
+    <div className="flex min-h-screen items-center justify-center bg-background px-6 py-12">
       <section
         aria-atomic="true"
         aria-describedby={descriptionId}
         aria-labelledby={titleId}
         aria-live="polite"
-        className="themed-compact-shadow w-full max-w-md rounded-2xl border border-kumo-line bg-kumo-base px-6 py-8 text-center"
+        className="themed-compact-shadow w-full max-w-md rounded-2xl border border-border bg-background px-6 py-8 text-center"
       >
-        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg border border-kumo-line bg-kumo-tint text-kumo-subtle">
+        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground">
           <Icon aria-hidden="true" size={20} weight="bold" />
         </div>
         <h1
           id={titleId}
           ref={titleRef}
           tabIndex={-1}
-          className="mt-5 text-[20px] leading-7 font-semibold tracking-[-0.35px] text-kumo-default outline-none"
+          className="mt-5 text-[20px] leading-7 font-semibold tracking-[-0.35px] text-foreground outline-none"
         >
           {title}
         </h1>
         <p
           id={descriptionId}
-          className="mt-2 text-[13px] leading-[18px] tracking-[-0.25px] text-kumo-subtle"
+          className="mt-2 text-[13px] leading-[18px] tracking-[-0.25px] text-muted-foreground"
         >
           {message}
         </p>

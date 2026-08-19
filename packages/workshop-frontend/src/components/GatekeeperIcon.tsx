@@ -39,7 +39,7 @@ export function GatekeeperIcon({
       className={`flex shrink-0 items-center justify-center ${className}`}
       style={{ backgroundColor: 'var(--color-kumo-tint)' }}
     >
-      <span className="font-medium text-kumo-strong" style={{ fontSize: Math.max(11, Math.round(size * 0.7)) }}>
+      <span className="font-medium text-foreground" style={{ fontSize: Math.max(11, Math.round(size * 0.7)) }}>
         {fallback[0].toUpperCase()}
       </span>
     </div>

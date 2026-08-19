@@ -34,21 +34,21 @@ export function PasswordField({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           autoComplete={autoComplete}
-          className={`${INPUT} pr-10 ${error ? 'border-kumo-danger focus:border-kumo-danger' : ''}`}
+          className={`${INPUT} pr-10 ${error ? 'border-destructive focus:border-destructive' : ''}`}
         />
         <button
           type="button"
           onClick={() => setShow((s) => !s)}
           aria-label={show ? 'Hide password' : 'Show password'}
-          className="absolute right-1.5 top-1/2 grid h-7 w-7 -translate-y-1/2 cursor-pointer place-items-center rounded-md text-kumo-inactive transition-colors hover:text-kumo-default"
+          className="absolute right-1.5 top-1/2 grid h-7 w-7 -translate-y-1/2 cursor-pointer place-items-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
         >
           {show ? <EyeSlash size={15} /> : <Eye size={15} />}
         </button>
       </div>
       {error ? (
-        <p className="mt-1 text-[12px] tracking-[-0.1px] text-kumo-danger">{error}</p>
+        <p className="mt-1 text-[12px] tracking-[-0.1px] text-destructive">{error}</p>
       ) : description ? (
-        <p className="mt-1 text-[12px] tracking-[-0.1px] text-kumo-subtle">{description}</p>
+        <p className="mt-1 text-[12px] tracking-[-0.1px] text-muted-foreground">{description}</p>
       ) : null}
     </div>
   )

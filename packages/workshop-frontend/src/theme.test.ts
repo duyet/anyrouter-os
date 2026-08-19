@@ -41,16 +41,24 @@ describe('theme', () => {
   afterEach(() => {
     localStorage.clear()
     document.documentElement.removeAttribute('data-mode')
+    document.documentElement.classList.remove('dark', 'light')
     document.documentElement.style.colorScheme = ''
     colorSchemeMeta()?.remove()
   })
 
-  it('applyThemeMode sets data-mode, color-scheme style, and the color-scheme meta', () => {
+  it('applyThemeMode sets data-mode, .dark/.light, color-scheme style, and the color-scheme meta', () => {
     stubMatchMedia(false)
     applyThemeMode('dark')
     expect(document.documentElement.getAttribute('data-mode')).toBe('dark')
+    expect(document.documentElement.classList.contains('dark')).toBe(true)
+    expect(document.documentElement.classList.contains('light')).toBe(false)
     expect(document.documentElement.style.colorScheme).toBe('dark')
     expect(colorSchemeMeta()?.getAttribute('content')).toBe('dark')
+
+    applyThemeMode('light')
+    expect(document.documentElement.getAttribute('data-mode')).toBe('light')
+    expect(document.documentElement.classList.contains('dark')).toBe(false)
+    expect(document.documentElement.classList.contains('light')).toBe(true)
   })
 
   it('applyStoredThemeMode follows gadgets:theme-mode, else the OS preference', () => {
@@ -69,8 +77,13 @@ describe('index.html theme boot script', () => {
     expect(INDEX_HTML).toContain(`localStorage.getItem('${THEME_MODE_STORAGE_KEY}')`)
     expect(INDEX_HTML).toMatch(/<script>\s*\(function \(\) \{/)
     expect(INDEX_HTML).toContain("root.setAttribute('data-mode', mode)")
+    expect(INDEX_HTML).toContain("root.classList.toggle('dark', dark)")
+    expect(INDEX_HTML).toContain("root.classList.toggle('light', !dark)")
     expect(INDEX_HTML).toContain('root.style.colorScheme = mode')
     expect(INDEX_HTML).toContain("meta.setAttribute('name', 'color-scheme')")
+    expect(INDEX_HTML).toContain('name="theme-color"')
+    expect(INDEX_HTML).toContain('#ffffff')
+    expect(INDEX_HTML).toContain('#0a0a0a')
     // Must not be a module: type=module is deferred and would paint CSS first.
     const boot = INDEX_HTML.match(/<script>([\s\S]*?)<\/script>/)
     expect(boot).not.toBeNull()

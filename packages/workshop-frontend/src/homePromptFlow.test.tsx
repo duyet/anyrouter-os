@@ -25,7 +25,7 @@ vi.mock("@tanstack/react-router", async (importOriginal) => ({
   useNavigate: () => testState.navigate,
 }));
 
-vi.mock("@cloudflare/kumo", () => ({
+vi.mock("@/components/ui/toast", () => ({
   useKumoToastManager: () => ({ add: testState.addToast }),
 }));
 

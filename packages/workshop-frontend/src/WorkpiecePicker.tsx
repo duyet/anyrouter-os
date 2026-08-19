@@ -54,7 +54,7 @@ export default function WorkpiecePicker({
 
   return (
     <div
-      className="flex flex-shrink-0 flex-col overflow-hidden border-l border-kumo-line bg-kumo-elevated transition-[width] duration-200 ease-out"
+      className="flex flex-shrink-0 flex-col overflow-hidden border-l border-border bg-card transition-[width] duration-200 ease-out"
       style={{ width: expanded ? WORKPIECE_RAIL_EXPANDED_WIDTH : WORKPIECE_RAIL_COLLAPSED_WIDTH }}
     >
       <button
@@ -63,7 +63,7 @@ export default function WorkpiecePicker({
         title={expanded ? 'Collapse outputs' : 'Expand outputs'}
         aria-label={expanded ? 'Collapse outputs' : 'Expand outputs'}
         aria-expanded={expanded}
-        className={`flex h-12 flex-shrink-0 cursor-pointer items-center text-kumo-inactive transition-colors hover:text-kumo-subtle ${
+        className={`flex h-12 flex-shrink-0 cursor-pointer items-center text-muted-foreground transition-colors hover:text-muted-foreground ${
           expanded ? 'justify-between px-3' : 'justify-center'
         }`}
       >
@@ -92,7 +92,7 @@ export default function WorkpiecePicker({
                     if (e.key === 'Escape') setEditing(null)
                   }}
                   autoFocus
-                  className="!h-7 min-w-0 flex-1 bg-kumo-tint text-[13px]"
+                  className="!h-7 min-w-0 flex-1 bg-muted text-[13px]"
                 />
                 <WorkshopIconButton
                   onClick={commitRename}
@@ -120,8 +120,8 @@ export default function WorkpiecePicker({
                 expanded ? 'h-8 gap-1 pl-2 pr-1' : 'h-9 w-9 justify-center self-center'
               } ${
                 isSelected
-                  ? 'bg-kumo-fill font-medium text-kumo-strong'
-                  : 'text-kumo-default hover:bg-kumo-tint'
+                  ? 'bg-muted font-medium text-foreground'
+                  : 'text-foreground hover:bg-muted'
               }`}
             >
               <Tooltip content={`${gadget.title}${!expanded && isPending ? ' (Draft)' : ''}${hasHook ? ' · Hooks enabled' : ''}`} asChild>
@@ -138,22 +138,22 @@ export default function WorkpiecePicker({
                   <FormatGlyph
                     output={gadget.output}
                     size={expanded ? 'md' : 'lg'}
-                    className={`flex-shrink-0 ${isSelected ? 'text-kumo-strong' : 'text-kumo-inactive'}`}
+                    className={`flex-shrink-0 ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}
                     weight={isSelected ? 'fill' : 'regular'}
                   />
                   {expanded && (
                     <span className="min-w-0 flex-1 truncate">{gadget.title}</span>
                   )}
                   {isAgentEditing && (
-                    <span className={`${expanded ? '' : 'absolute right-1 top-1'} h-1.5 w-1.5 flex-shrink-0 animate-pulse rounded-full bg-kumo-brand`} />
+                    <span className={`${expanded ? '' : 'absolute right-1 top-1'} h-1.5 w-1.5 flex-shrink-0 animate-pulse rounded-full bg-primary`} />
                   )}
                   {isPending && (
                     expanded ? (
-                      <span className="flex-shrink-0 rounded-full bg-kumo-base px-1.5 py-0.5 text-[10px] leading-none font-medium text-kumo-subtle">
+                      <span className="flex-shrink-0 rounded-full bg-background px-1.5 py-0.5 text-[10px] leading-none font-medium text-muted-foreground">
                         Draft
                       </span>
                     ) : (
-                      <span className="absolute bottom-1 right-1 h-1.5 w-1.5 rounded-full border border-kumo-base bg-kumo-brand" />
+                      <span className="absolute bottom-1 right-1 h-1.5 w-1.5 rounded-full border border-background bg-primary" />
                     )
                   )}
                   {hasHook && (
@@ -161,8 +161,8 @@ export default function WorkpiecePicker({
                       role="img"
                       aria-label="Hooks enabled"
                       className={expanded
-                        ? 'flex-shrink-0 text-kumo-inactive'
-                        : 'absolute bottom-0.5 left-0.5 rounded-full border border-kumo-base bg-kumo-base text-kumo-inactive'}
+                        ? 'flex-shrink-0 text-muted-foreground'
+                        : 'absolute bottom-0.5 left-0.5 rounded-full border border-background bg-background text-muted-foreground'}
                     >
                       <Lightning size={expanded ? 14 : 10} weight="fill" />
                     </span>
@@ -187,16 +187,16 @@ export default function WorkpiecePicker({
           <button
             type="button"
             onClick={onOpenActivity}
-            className={`relative mt-3 flex cursor-pointer items-center rounded-lg text-[13px] leading-[18px] tracking-[-0.25px] text-kumo-subtle transition-colors hover:bg-kumo-tint hover:text-kumo-default ${
+            className={`relative mt-3 flex cursor-pointer items-center rounded-lg text-[13px] leading-[18px] tracking-[-0.25px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground ${
               expanded ? 'h-8 gap-2 px-2 text-left' : 'h-9 w-9 justify-center self-center'
             }`}
           >
-            <Pulse size={expanded ? 15 : 17} className="flex-shrink-0 text-kumo-inactive" />
+            <Pulse size={expanded ? 15 : 17} className="flex-shrink-0 text-muted-foreground" />
             {expanded && <span className="min-w-0 flex-1 truncate">View activity</span>}
             {expanded ? (
               <CountBadge count={pendingActivityCount} />
             ) : pendingActivityCount > 0 && (
-              <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-kumo-brand" />
+              <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-primary" />
             )}
           </button>
         </Tooltip>

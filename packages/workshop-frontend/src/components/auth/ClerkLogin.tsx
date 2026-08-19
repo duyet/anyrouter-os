@@ -4,7 +4,9 @@ import { PublicApi } from '@gadgets/workshop-shared/api'
 import {
   ClerkProvider, SignIn, useAuth as useClerkAuth, useClerk, useUser,
 } from '@clerk/clerk-react'
-import { Banner, Button, Loader } from '@cloudflare/kumo'
+import { Banner } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
+import { Loader } from '@/components/ui/loader'
 import {
   allowClerkAutoSignIn, isClerkAutoSignInSuppressed, suppressClerkAutoSignIn,
 } from '../../clerkAutoSignIn'
@@ -106,7 +108,7 @@ function ClerkSessionBridge({
     return (
       <div className="flex flex-col items-center gap-4 py-6">
         {error && <Banner variant="error" title={error} />}
-        <p className="text-sm text-kumo-subtle text-center">
+        <p className="text-sm text-muted-foreground text-center">
           {label ? `You're signed out. Continue as ${label}?` : "You're signed out."}
         </p>
         <Button
@@ -146,7 +148,7 @@ function ClerkSessionBridge({
         ) : (
           <>
             <Loader size="lg" />
-            <p className="text-sm text-kumo-subtle">Signing you in…</p>
+            <p className="text-sm text-muted-foreground">Signing you in…</p>
           </>
         )}
       </div>

@@ -10,9 +10,11 @@ import ResourcePicker from './ResourcePicker'
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
+vi.mock('@/components/ui/toast', () => ({
+  useKumoToastManager: () => ({ add: vi.fn<(toast: unknown) => void>() }),
+}))
 vi.mock('@cloudflare/kumo', () => ({
   Tooltip: ({ children }: { children: ReactNode }) => children,
-  useKumoToastManager: () => ({ add: vi.fn<(toast: unknown) => void>() }),
 }))
 
 function deferred<T>() {

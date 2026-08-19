@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Switch, useKumoToastManager } from '@cloudflare/kumo'
+import { useKumoToastManager } from '@/components/ui/toast'
+import { Switch } from '@cloudflare/kumo'
 import { CaretRight, Check, Eye, Lightning, ShieldCheck } from '@phosphor-icons/react'
 import { RpcStub } from 'capnweb'
 import { ActionLogEntry, Overseer } from '@gadgets/workshop-shared/api'
@@ -22,7 +23,7 @@ export type ActivityView = 'review' | 'history' | 'auto'
 
 type HistoryFilter = 'all' | ActionLogEntry['type']
 
-const PANE_BAR = 'flex h-9 flex-shrink-0 items-center border-b border-kumo-line'
+const PANE_BAR = 'flex h-9 flex-shrink-0 items-center border-b border-border'
 
 interface ActivityProps {
   overseer: RpcStub<Overseer>
@@ -83,23 +84,23 @@ function activityStatus(
   record: ActionLogEntry,
 ): { label: string; dotClass: string; textClass: string } {
   if (record.type === 'observation') {
-    return { label: 'Observed', dotClass: 'bg-kumo-inactive', textClass: 'text-kumo-subtle' }
+    return { label: 'Observed', dotClass: 'bg-muted-foreground', textClass: 'text-muted-foreground' }
   }
   if (record.type === 'bindHook') {
     if (record.hookId === undefined) {
-      return { label: 'Deleted', dotClass: 'bg-kumo-inactive', textClass: 'text-kumo-subtle' }
+      return { label: 'Deleted', dotClass: 'bg-muted-foreground', textClass: 'text-muted-foreground' }
     }
     return record.enabled
-      ? { label: 'Enabled', dotClass: 'bg-kumo-success', textClass: 'text-kumo-subtle' }
-      : { label: 'Disabled', dotClass: 'bg-kumo-inactive', textClass: 'text-kumo-subtle' }
+      ? { label: 'Enabled', dotClass: 'bg-success', textClass: 'text-muted-foreground' }
+      : { label: 'Disabled', dotClass: 'bg-muted-foreground', textClass: 'text-muted-foreground' }
   }
   if (record.state === 'pending') {
-    return { label: 'Waiting', dotClass: 'bg-kumo-brand', textClass: 'text-kumo-strong' }
+    return { label: 'Waiting', dotClass: 'bg-primary', textClass: 'text-foreground' }
   }
   if (record.state === 'rejected') {
-    return { label: 'Denied', dotClass: 'bg-kumo-danger', textClass: 'text-kumo-danger' }
+    return { label: 'Denied', dotClass: 'bg-destructive', textClass: 'text-destructive' }
   }
-  return { label: 'Approved', dotClass: 'bg-kumo-success', textClass: 'text-kumo-subtle' }
+  return { label: 'Approved', dotClass: 'bg-success', textClass: 'text-muted-foreground' }
 }
 
 function TypeIcon({ record, className }: { record: ActionLogEntry; className?: string }) {
@@ -183,24 +184,24 @@ export default function Activity({
 
   if (!isReady) {
     return (
-      <div className="flex h-full items-center justify-center text-[13px] text-kumo-subtle">
+      <div className="flex h-full items-center justify-center text-[13px] text-muted-foreground">
         Loading activity…
       </div>
     )
   }
 
   return (
-    <div className="flex h-full flex-col bg-kumo-base">
+    <div className="flex h-full flex-col bg-background">
       {view === 'review' ? (
         pendingActions.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-kumo-tint text-kumo-subtle">
+            <span className="grid h-9 w-9 place-items-center rounded-full bg-muted text-muted-foreground">
               <Check size={17} weight="bold" />
             </span>
-            <p className="mt-3 text-[13px] font-medium leading-[18px] tracking-[-0.25px] text-kumo-default">
+            <p className="mt-3 text-[13px] font-medium leading-[18px] tracking-[-0.25px] text-foreground">
               Nothing to review
             </p>
-            <p className="mt-1 max-w-xs text-[13px] leading-[18px] tracking-[-0.25px] text-kumo-subtle">
+            <p className="mt-1 max-w-xs text-[13px] leading-[18px] tracking-[-0.25px] text-muted-foreground">
               Requests that need your approval show up here and in the workspace header.
             </p>
             <WorkshopButton className="mt-4" onClick={() => onViewChange('history')}>
@@ -210,10 +211,10 @@ export default function Activity({
         ) : (
           <>
             <div className={`${PANE_BAR} gap-2 px-5`}>
-              <span className="text-[12.5px] font-medium leading-[17px] tracking-[-0.15px] text-kumo-default">
+              <span className="text-[12.5px] font-medium leading-[17px] tracking-[-0.15px] text-foreground">
                 {pendingActions.length} {pendingActions.length === 1 ? 'request' : 'requests'} waiting
               </span>
-              <span className="ml-auto text-[11.5px] leading-[17px] text-kumo-inactive">Oldest first</span>
+              <span className="ml-auto text-[11.5px] leading-[17px] text-muted-foreground">Oldest first</span>
             </div>
             <div className="min-h-0 flex-1 overflow-auto">
               {pendingActions.map(record => {
@@ -260,14 +261,14 @@ export default function Activity({
                 onClick={() => setHistoryFilter(filter.value)}
                 className={`flex h-6 cursor-pointer items-center rounded-md px-2 text-[12.5px] font-medium tracking-[-0.15px] transition-colors ${
                   historyFilter === filter.value
-                    ? 'bg-kumo-tint text-kumo-default'
-                    : 'text-kumo-subtle hover:text-kumo-default'
+                    ? 'bg-muted text-foreground'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {filter.label}
               </button>
             ))}
-            <span className="ml-auto pr-2 text-[11.5px] leading-[17px] tabular-nums text-kumo-inactive">
+            <span className="ml-auto pr-2 text-[11.5px] leading-[17px] tabular-nums text-muted-foreground">
               {historyShown} {historyShown === 1 ? 'event' : 'events'}
             </span>
 
@@ -275,27 +276,27 @@ export default function Activity({
 
           {historyTotal === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-              <p className="m-0 text-[13px] font-medium leading-[18px] tracking-[-0.25px] text-kumo-default">
+              <p className="m-0 text-[13px] font-medium leading-[18px] tracking-[-0.25px] text-foreground">
                 No activity yet
               </p>
-              <p className="mt-1 max-w-xs text-[13px] leading-[18px] tracking-[-0.25px] text-kumo-subtle">
+              <p className="mt-1 max-w-xs text-[13px] leading-[18px] tracking-[-0.25px] text-muted-foreground">
                 Every resource an agent reads or changes is recorded here.
               </p>
             </div>
           ) : historyShown === 0 ? (
             <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-              <p className="m-0 text-[13px] font-medium text-kumo-default">No matching events</p>
+              <p className="m-0 text-[13px] font-medium text-foreground">No matching events</p>
               <button
                 type="button"
                 onClick={() => setHistoryFilter('all')}
-                className="mt-1.5 cursor-pointer text-[12px] font-medium text-kumo-subtle hover:text-kumo-default"
+                className="mt-1.5 cursor-pointer text-[12px] font-medium text-muted-foreground hover:text-foreground"
               >
                 Show all activity
               </button>
             </div>
           ) : (
             <div className="min-h-0 flex-1 overflow-auto">
-              <div className="grid grid-cols-[54px_minmax(0,1fr)_auto_16px] items-center gap-3 border-b border-kumo-line bg-kumo-elevated/50 px-5 py-1.5 text-[11px] font-medium uppercase tracking-[0.06em] text-kumo-inactive">
+              <div className="grid grid-cols-[54px_minmax(0,1fr)_auto_16px] items-center gap-3 border-b border-border bg-card/50 px-5 py-1.5 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                 <span>Time</span>
                 <span>Event</span>
                 <span>Status</span>
@@ -303,7 +304,7 @@ export default function Activity({
               </div>
               {historyGroups.map(group => (
                 <section key={group.label}>
-                  <h3 className="sticky top-0 m-0 border-b border-kumo-line bg-kumo-base/90 px-5 py-1 text-[11px] font-medium uppercase tracking-[0.06em] text-kumo-inactive backdrop-blur-sm">
+                  <h3 className="sticky top-0 m-0 border-b border-border bg-background/90 px-5 py-1 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground backdrop-blur-sm">
                     {group.label}
                   </h3>
                   {group.records.map(record => (
@@ -391,7 +392,7 @@ function AutoApprovalPanel({
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center text-[13px] text-kumo-subtle">
+      <div className="flex h-full items-center justify-center text-[13px] text-muted-foreground">
         Loading auto-approval…
       </div>
     )
@@ -400,10 +401,10 @@ function AutoApprovalPanel({
   if (entries.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-        <p className="m-0 text-[13px] font-medium leading-[18px] tracking-[-0.25px] text-kumo-default">
+        <p className="m-0 text-[13px] font-medium leading-[18px] tracking-[-0.25px] text-foreground">
           {loadError ? 'Could not load auto-approval' : 'Nothing can run automatically'}
         </p>
-        <p className="mt-1 max-w-xs text-[13px] leading-[18px] tracking-[-0.25px] text-kumo-subtle">
+        <p className="mt-1 max-w-xs text-[13px] leading-[18px] tracking-[-0.25px] text-muted-foreground">
           {loadError
             ? 'The current rules may be incomplete. Try loading them again.'
             : 'Action types appear here once a connected resource offers one its author marked safe to apply without review.'}
@@ -420,7 +421,7 @@ function AutoApprovalPanel({
   return (
     <>
       <div className={`${PANE_BAR} gap-3 px-5`}>
-        <p className="m-0 min-w-0 flex-1 truncate text-[12.5px] leading-[17px] tracking-[-0.2px] text-kumo-subtle">
+        <p className="m-0 min-w-0 flex-1 truncate text-[12.5px] leading-[17px] tracking-[-0.2px] text-muted-foreground">
           {loadError
             ? 'Some auto-approval options could not be loaded.'
             : 'Actions agents may take without asking. Everything else waits for your review.'}
@@ -429,7 +430,7 @@ function AutoApprovalPanel({
           <button
             type="button"
             onClick={() => void refresh()}
-            className="cursor-pointer text-[12px] font-medium text-kumo-default hover:text-kumo-default-hover"
+            className="cursor-pointer text-[12px] font-medium text-foreground hover:text-foreground"
           >
             Retry
           </button>
@@ -438,7 +439,7 @@ function AutoApprovalPanel({
       <div className="min-h-0 flex-1 overflow-auto">
         {groups.map(group => (
           <section key={group.gatekeeperId}>
-            <div className="sticky top-0 flex items-center gap-2 border-b border-kumo-line bg-kumo-base/90 px-5 py-1.5 backdrop-blur-sm">
+            <div className="sticky top-0 flex items-center gap-2 border-b border-border bg-background/90 px-5 py-1.5 backdrop-blur-sm">
               <GatekeeperIcon
                 vendorId={group.vendorId}
                 {...(group.vendorId ? vendorBranding.get(group.vendorId) : undefined)}
@@ -446,7 +447,7 @@ function AutoApprovalPanel({
                 size={12}
                 className="h-5 w-5 rounded-md [&>img]:p-px"
               />
-              <h3 className="m-0 min-w-0 truncate text-[12px] font-medium leading-4 tracking-[-0.2px] text-kumo-subtle">
+              <h3 className="m-0 min-w-0 truncate text-[12px] font-medium leading-4 tracking-[-0.2px] text-muted-foreground">
                 {group.title}
               </h3>
             </div>
@@ -456,13 +457,13 @@ function AutoApprovalPanel({
               return (
                 <div
                   key={key}
-                  className="flex w-full items-center gap-3 border-b border-kumo-line/60 px-5 py-2.5 text-left"
+                  className="flex w-full items-center gap-3 border-b border-border/60 px-5 py-2.5 text-left"
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] leading-[18px] font-medium tracking-[-0.25px] text-kumo-default">
+                    <span className="block truncate text-[13px] leading-[18px] font-medium tracking-[-0.25px] text-foreground">
                       {entry.actionKind.label}
                     </span>
-                    <span className="mt-0.5 block text-[12px] leading-4 tracking-[-0.2px] text-kumo-inactive">
+                    <span className="mt-0.5 block text-[12px] leading-4 tracking-[-0.2px] text-muted-foreground">
                       {entry.orphaned
                         ? 'This connection no longer offers this action; the rule still applies.'
                         : entry.enabled
@@ -506,30 +507,30 @@ function ReviewRequest({
 }) {
   const resourceUrl = safeExternalUrl(record.resourceUrl)
   return (
-    <article className="border-b border-kumo-line px-5 py-3 transition-colors hover:bg-kumo-elevated/50">
+    <article className="border-b border-border px-5 py-3 transition-colors hover:bg-card/50">
       <div className="flex flex-wrap items-start gap-x-3 gap-y-1.5">
         <div className="min-w-[8rem] flex-1">
           <button
             type="button"
             onClick={onToggle}
             aria-expanded={expanded}
-            className="flex max-w-full cursor-pointer items-center gap-1.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kumo-ring"
+            className="flex max-w-full cursor-pointer items-center gap-1.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <h3 className="m-0 truncate text-[13px] font-medium leading-[18px] tracking-[-0.25px] text-kumo-default">
+            <h3 className="m-0 truncate text-[13px] font-medium leading-[18px] tracking-[-0.25px] text-foreground">
               {record.description.title}
             </h3>
             <CaretRight
               size={12}
-              className={`flex-shrink-0 text-kumo-inactive transition-transform duration-150 ${expanded ? 'rotate-90' : ''}`}
+              className={`flex-shrink-0 text-muted-foreground transition-transform duration-150 ${expanded ? 'rotate-90' : ''}`}
             />
           </button>
-          <p className="mt-0.5 truncate text-[11.5px] leading-4 tracking-[-0.1px] text-kumo-inactive">
+          <p className="mt-0.5 truncate text-[11.5px] leading-4 tracking-[-0.1px] text-muted-foreground">
             {resourceUrl ? (
               <a
                 href={resourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-kumo-default hover:underline"
+                className="hover:text-foreground hover:underline"
               >
                 {record.resourceTitle}
               </a>
@@ -548,7 +549,7 @@ function ReviewRequest({
       </div>
 
       {record.description.description && (
-        <p className={`mt-1.5 max-w-2xl whitespace-pre-wrap text-[13px] leading-[18px] tracking-[-0.25px] text-kumo-subtle ${expanded ? '' : 'line-clamp-2'}`}>
+        <p className={`mt-1.5 max-w-2xl whitespace-pre-wrap text-[13px] leading-[18px] tracking-[-0.25px] text-muted-foreground ${expanded ? '' : 'line-clamp-2'}`}>
           {record.description.description}
         </p>
       )}
@@ -576,22 +577,22 @@ function HistoryRow({
   const status = activityStatus(record)
 
   return (
-    <div className={expanded ? 'bg-kumo-elevated/30' : ''}>
+    <div className={expanded ? 'bg-card/30' : ''}>
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={expanded}
-        className="group grid w-full cursor-pointer grid-cols-[54px_minmax(0,1fr)_auto_16px] items-center gap-3 border-b border-kumo-line/70 px-5 py-[7px] text-left transition-colors hover:bg-kumo-elevated/50"
+        className="group grid w-full cursor-pointer grid-cols-[54px_minmax(0,1fr)_auto_16px] items-center gap-3 border-b border-border/70 px-5 py-[7px] text-left transition-colors hover:bg-card/50"
       >
-        <time className="text-[11.5px] tabular-nums leading-4 text-kumo-inactive">
+        <time className="text-[11.5px] tabular-nums leading-4 text-muted-foreground">
           {formatClockTime(at)}
         </time>
         <span className="flex min-w-0 items-center gap-2">
-          <TypeIcon record={record} className="flex-shrink-0 text-kumo-inactive" />
-          <span className="truncate text-[13px] leading-[18px] tracking-[-0.25px] text-kumo-default">
+          <TypeIcon record={record} className="flex-shrink-0 text-muted-foreground" />
+          <span className="truncate text-[13px] leading-[18px] tracking-[-0.25px] text-foreground">
             {record.description.title}
           </span>
-          <span className="hidden flex-shrink-0 truncate text-[12px] leading-4 tracking-[-0.1px] text-kumo-inactive sm:inline">
+          <span className="hidden flex-shrink-0 truncate text-[12px] leading-4 tracking-[-0.1px] text-muted-foreground sm:inline">
             {record.resourceTitle}
           </span>
         </span>
@@ -601,20 +602,20 @@ function HistoryRow({
         </span>
         <CaretRight
           size={12}
-          className={`text-kumo-inactive transition-transform duration-150 ${expanded ? 'rotate-90' : ''}`}
+          className={`text-muted-foreground transition-transform duration-150 ${expanded ? 'rotate-90' : ''}`}
         />
       </button>
 
       {expanded && (
-        <div className="border-b border-kumo-line/70 px-5 pb-3 pl-[86px] pt-1">
+        <div className="border-b border-border/70 px-5 pb-3 pl-[86px] pt-1">
           {record.description.description && (
-            <p className="m-0 whitespace-pre-wrap text-[13px] leading-[18px] tracking-[-0.25px] text-kumo-subtle">
+            <p className="m-0 whitespace-pre-wrap text-[13px] leading-[18px] tracking-[-0.25px] text-muted-foreground">
               {record.description.description}
             </p>
           )}
-          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11.5px] text-kumo-inactive">
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11.5px] text-muted-foreground">
             <span>{formatFullDate(at)}</span>
-            <span className="text-kumo-subtle">{record.resourceTitle}</span>
+            <span className="text-muted-foreground">{record.resourceTitle}</span>
             {resolvedBy && (
               <ResolverBadge profileId={resolvedBy.id}>
                 {autoApproved ? `Auto-approved (${resolvedBy.name}'s rule)` : `By ${resolvedBy.name}`}
@@ -625,7 +626,7 @@ function HistoryRow({
                 href={resourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-kumo-subtle hover:text-kumo-default hover:underline"
+                className="text-muted-foreground hover:text-foreground hover:underline"
               >
                 Open resource
               </a>
@@ -648,7 +649,7 @@ function ResolverBadge({ profileId, children }: { profileId: string; children: R
   const { authenticatedApi } = useAuthenticatedApi()
   const avatarUrl = useAvatar(authenticatedApi, profileId)
   return (
-    <span className="flex min-w-0 items-center gap-1 text-kumo-subtle">
+    <span className="flex min-w-0 items-center gap-1 text-muted-foreground">
       {avatarUrl && (
         <img src={avatarUrl} alt="" className="h-3.5 w-3.5 flex-shrink-0 rounded-full object-cover" />
       )}

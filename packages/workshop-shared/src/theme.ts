@@ -20,15 +20,20 @@ interface StylePropertyTarget {
 }
 
 function accentVariables(seed: string): Record<string, string> {
+  // Dark L=0.70 matches anyrouter.dev `--primary` (WCAG on near-black).
+  const darkPrimary = `oklch(from ${seed} 0.70 c h)`
   return {
-    "--color-kumo-brand": `light-dark(${seed}, oklch(from ${seed} 0.45 c h))`,
-    "--color-kumo-brand-hover": `light-dark(oklch(from ${seed} calc(l - 0.06) c h), oklch(from ${seed} 0.38 c h))`,
-    "--color-accent-100": `light-dark(${seed}, oklch(from ${seed} 0.45 c h))`,
+    "--color-kumo-brand": `light-dark(${seed}, ${darkPrimary})`,
+    "--color-kumo-brand-hover": `light-dark(oklch(from ${seed} calc(l - 0.06) c h), oklch(from ${seed} 0.62 c h))`,
+    "--primary": `light-dark(${seed}, ${darkPrimary})`,
+    "--ring": `light-dark(${seed}, ${darkPrimary})`,
+    "--sidebar-primary": `light-dark(${seed}, oklch(from ${seed} 0.76 c h))`,
+    "--color-accent-100": `light-dark(${seed}, ${darkPrimary})`,
     "--color-accent-200": `light-dark(oklch(from ${seed} calc(l + 0.08) c h), oklch(from ${seed} 0.76 c h))`,
     "--text-color-kumo-brand": `light-dark(${seed}, oklch(from ${seed} 0.76 c h))`,
     "--text-color-kumo-link": `light-dark(${seed}, oklch(from ${seed} 0.76 c h))`,
     "--color-selection-bg": `light-dark(oklch(from ${seed} 0.94 calc(c * 0.35) h), oklch(from ${seed} 0.28 calc(c * 0.45) h))`,
-    "--color-selection-text": `light-dark(oklch(from ${seed} calc(l - 0.06) c h), oklch(0.97 0.006 285))`,
+    "--color-selection-text": `light-dark(oklch(from ${seed} calc(l - 0.06) c h), oklch(0.985 0 0))`,
   };
 }
 
