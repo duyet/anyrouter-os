@@ -480,7 +480,7 @@ let greeting = await gadget.greet("World");
 document.body.appendChild(document.createTextNode(greeting));
 \`\`\`
 
-Note that there is no index.html. Instead, client.js must build the entire UI using JavaScript code.
+Prefer semantic HTML in \`index.html\` for first paint and PDF; put behavior in \`client.js\`. The iframe still gets a \`gadget\` Cap'n Web stub when client.js exists.
 
 Make Gadget UIs responsive and usable on both desktop and phones by default.
 

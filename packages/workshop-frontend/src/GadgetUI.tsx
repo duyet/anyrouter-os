@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Text, Loader, Banner } from '@cloudflare/kumo'
 import { Sparkle } from '@phosphor-icons/react'
 import { RpcStub, RpcTarget, newMessagePortRpcSession } from 'capnweb'
-import { GadgetClient, ConsoleLogEvent } from '@gadgets/workshop-shared/api'
+import { GadgetClient, ConsoleLogEvent, UiBundle } from '@gadgets/workshop-shared/api'
 
 // We want to inject Cap'n Web into the Gadget. Luckily it has no dependencies, so we can just take
 // the whole module and embed it. We can import the module using ?raw to get a string of the
@@ -102,16 +102,66 @@ window.addEventListener('unhandledrejection', (event) => {
 
 `);
 
-const createSandboxedHtml = (jsCode: string): string => {
-  return `<!DOCTYPE html>
+const GADGET_UI_CSP = "default-src 'none'; frame-src 'none'; script-src data: 'unsafe-inline'; style-src data: 'unsafe-inline'; img-src data:; media-src data:; object-src 'none'; base-uri 'none'; form-action 'none'; connect-src 'none';"
+
+function clientModuleTag(jsCode: string): string {
+  return `<script type="module" src="data:text/javascript;charset=utf-8,${INJECTED_CODE_PREFIX}${encodeURIComponent(jsCode)}"></script>`
+}
+
+function isFullHtmlDocument(html: string): boolean {
+  return /^\s*(<!doctype\b|<html\b)/i.test(html)
+}
+
+/** Use index.html as the document (full page or body fragment) and keep the platform CSP. */
+function injectHtmlDocument(html: string, extraScripts: string): string {
+  const cspMeta = `<meta http-equiv="Content-Security-Policy" content="${GADGET_UI_CSP}">`
+  if (!isFullHtmlDocument(html)) {
+    return `<!DOCTYPE html>
 <html>
 <head>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src 'none'; script-src data: 'unsafe-inline'; style-src data: 'unsafe-inline'; img-src data:; media-src data:; object-src 'none'; base-uri 'none'; form-action 'none'; connect-src 'none';">
+  ${cspMeta}
 </head>
 <body>
-    <script type="module" src="data:text/javascript;charset=utf-8,${INJECTED_CODE_PREFIX}${encodeURIComponent(jsCode)}"></script>
+${html}
+${extraScripts}
+</body>
+</html>`
+  }
+
+  if (/<head\b[^>]*>/i.test(html)) {
+    html = html.replace(/<head\b[^>]*>/i, (open) => open + cspMeta)
+  } else if (/<html\b[^>]*>/i.test(html)) {
+    html = html.replace(/<html\b[^>]*>/i, (open) => `${open}<head>${cspMeta}</head>`)
+  } else {
+    html = html.replace(/<!doctype[^>]*>/i, (open) => `${open}<head>${cspMeta}</head>`)
+  }
+
+  if (extraScripts) {
+    if (/<\/body>/i.test(html)) {
+      html = html.replace(/<\/body>/i, () => extraScripts + '</body>')
+    } else if (/<\/html>/i.test(html)) {
+      html = html.replace(/<\/html>/i, () => extraScripts + '</html>')
+    } else {
+      html += extraScripts
+    }
+  }
+  return html
+}
+
+const createSandboxedHtml = (bundle: UiBundle): string => {
+  if (bundle.html === undefined) {
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="Content-Security-Policy" content="${GADGET_UI_CSP}">
+</head>
+<body>
+    ${clientModuleTag(bundle.jsCode)}
 </body>
 </html>`.trim()
+  }
+
+  return injectHtmlDocument(bundle.html, bundle.jsCode ? clientModuleTag(bundle.jsCode) : '')
 }
 
 interface GadgetUIProps {
@@ -293,7 +343,7 @@ function GadgetUISession({ gadget, height, reloadTrigger, isVisible = true, chat
         const bundle = await gadget.getUiBundle(chatId)
         if (!isCurrent()) return
         if (bundle) {
-          const html = createSandboxedHtml(bundle.jsCode)
+          const html = createSandboxedHtml(bundle)
           setSandboxedHtml(html)
         } else {
           setSandboxedHtml(null)

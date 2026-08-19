@@ -1,6 +1,7 @@
 import { launch, type Page } from "@cloudflare/puppeteer";
 import { RpcSession, type RpcStub, type RpcTransport } from "capnweb";
 import { createLogger } from "@gadgets/backend-utils/logger";
+import type { UiBundle } from "@gadgets/workshop-shared/api";
 import BROWSER_EXPORT_RUNTIME from "./generated/browser-export-runtime.txt";
 
 type BrowserExportLogFields = {
@@ -132,25 +133,54 @@ function scriptUrl(source: string): string {
   return `data:text/javascript;charset=utf-8,${encodeURIComponent(source)}`;
 }
 
-function makeExportHtml(clientCode: string): string {
-  let clientPrefix = String.raw`//# sourceURL=client.js
-const { gadget, RpcStub, RpcTarget } = globalThis.__workshopExportRuntime;
-delete globalThis.__workshopExportRuntime;
-`;
-  let clientUrl = scriptUrl(clientPrefix + clientCode);
-  let runtimeUrl = scriptUrl(
-      `globalThis.__workshopExportClientUrl = ${JSON.stringify(clientUrl)};\n` +
-      BROWSER_EXPORT_RUNTIME);
+function isFullHtmlDocument(html: string): boolean {
+  return /^\s*(<!doctype\b|<html\b)/i.test(html);
+}
 
-  return `<!DOCTYPE html>
+/** Inject export scripts into a full document, or wrap a body fragment. */
+function injectExportScripts(html: string, scripts: string): string {
+  if (!isFullHtmlDocument(html)) {
+    return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
 </head>
 <body>
-  <script src="${runtimeUrl}"></script>
+${html}
+${scripts}
 </body>
 </html>`;
+  }
+  if (/<\/body>/i.test(html)) return html.replace(/<\/body>/i, () => scripts + "</body>");
+  if (/<\/html>/i.test(html)) return html.replace(/<\/html>/i, () => scripts + "</html>");
+  return html + scripts;
+}
+
+/** Build the HTML document rendered by the remote export browser. */
+export function makeExportHtml(bundle: UiBundle): string {
+  let clientPrefix = String.raw`//# sourceURL=client.js
+const { gadget, RpcStub, RpcTarget } = globalThis.__workshopExportRuntime;
+delete globalThis.__workshopExportRuntime;
+`;
+  let clientUrl = scriptUrl(clientPrefix + bundle.jsCode);
+  let runtimeUrl = scriptUrl(
+      `globalThis.__workshopExportClientUrl = ${JSON.stringify(clientUrl)};\n` +
+      BROWSER_EXPORT_RUNTIME);
+  let scripts = `<script src="${runtimeUrl}"></script>`;
+
+  if (bundle.html === undefined) {
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+</head>
+<body>
+  ${scripts}
+</body>
+</html>`;
+  }
+
+  return injectExportScripts(bundle.html, scripts);
 }
 
 /** Limits the size of the exported file streamed back to the client. */
@@ -238,13 +268,17 @@ async function waitForDomSettled(page: Page): Promise<void> {
 /**
  * Renders a Gadget's UI as PDF in a remote browser and streams the bytes back.
  *
+ * If `bundle.html` is set, that document is rendered (with client.js injected
+ * when present) so static HTML paints without client.js. Otherwise the
+ * JavaScript-only wrapper is used.
+ *
  * Takes ownership of `gadget` and disposes it once the export settles. The
  * returned stream must be consumed or cancelled: the browser session stays open
  * until it settles or times out.
  */
 export async function renderGadgetPdf(
   browserBinding: BrowserRun,
-  clientCode: string,
+  bundle: UiBundle,
   documentTitle: string,
   gadget: RpcStub<any>,
 ): Promise<ReadableStream<Uint8Array>> {
@@ -298,7 +332,7 @@ export async function renderGadgetPdf(
             status: 200,
             contentType: "text/html",
             headers: {"Content-Security-Policy": EXPORT_DOCUMENT_CSP},
-            body: makeExportHtml(clientCode),
+            body: makeExportHtml(bundle),
           });
         } else if (url === "about:blank" || url.startsWith("data:") || url.startsWith("blob:")) {
           void request.continue();

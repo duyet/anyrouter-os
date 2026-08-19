@@ -118,12 +118,13 @@ class TestCallbacks extends RpcTarget implements TestSubscriber {
 
 function fakeGadget(
   value: string,
-  bundleCode: string,
+  bundle: string | UiBundle,
   connectToGadget = vi.fn<() => Promise<RpcStub<TestGadget>>>(
     async () => new RpcStub(new TestGadgetTarget(value)) as unknown as RpcStub<TestGadget>,
   ),
 ) {
-  const getUiBundle = vi.fn<() => Promise<UiBundle>>(async () => ({ jsCode: bundleCode }))
+  const resolved: UiBundle = typeof bundle === 'string' ? { jsCode: bundle } : bundle
+  const getUiBundle = vi.fn<() => Promise<UiBundle>>(async () => resolved)
   return {
     connectToGadget,
     getUiBundle,
@@ -189,6 +190,46 @@ describe('GadgetUI RPC recovery', () => {
       'allow-scripts allow-popups allow-popups-to-escape-sandbox',
     )
     expect(iframe.getAttribute('sandbox')).not.toContain('allow-same-origin')
+  })
+
+  it('paints static index.html without client.js so first paint does not depend on JS', async () => {
+    const gadget = fakeGadget('ui', { jsCode: '', html: '<h1 id="title">Invoice</h1>' })
+    await act(async () => {
+      root.render(<GadgetUI gadget={gadget.stub} height="100px" />)
+    })
+    await vi.waitFor(() => expect(container.querySelector('iframe')).not.toBeNull())
+    const srcdoc = container.querySelector('iframe')!.srcdoc
+    expect(srcdoc).toContain('<h1 id="title">Invoice</h1>')
+    expect(srcdoc).toContain("connect-src 'none'")
+    expect(srcdoc).not.toContain('<script type="module"')
+  })
+
+  it('keeps the JavaScript-only wrapper when index.html is absent', async () => {
+    const gadget = fakeGadget('ui', 'document.body.textContent = "js-only"')
+    await act(async () => {
+      root.render(<GadgetUI gadget={gadget.stub} height="100px" />)
+    })
+    await vi.waitFor(() => expect(container.querySelector('iframe')).not.toBeNull())
+    const srcdoc = container.querySelector('iframe')!.srcdoc
+    expect(srcdoc).toContain(encodeURIComponent('document.body.textContent = "js-only"'))
+    expect(srcdoc).toContain('<script type="module"')
+    expect(srcdoc).toContain("connect-src 'none'")
+  })
+
+  it('injects client.js into index.html so the gadget stub still works', async () => {
+    const gadget = fakeGadget('ui', {
+      jsCode: 'gadget.ping()',
+      html: '<!DOCTYPE html><html><body><h1>Deck</h1></body></html>',
+    })
+    await act(async () => {
+      root.render(<GadgetUI gadget={gadget.stub} height="100px" />)
+    })
+    await vi.waitFor(() => expect(container.querySelector('iframe')).not.toBeNull())
+    const srcdoc = container.querySelector('iframe')!.srcdoc
+    expect(srcdoc).toContain('<h1>Deck</h1>')
+    expect(srcdoc).toContain('gadget.ping()')
+    expect(srcdoc).toContain('<script type="module"')
+    expect(srcdoc).toContain("connect-src 'none'")
   })
 
   it('keeps the iframe while redirecting calls to the replacement gadget client', async () => {

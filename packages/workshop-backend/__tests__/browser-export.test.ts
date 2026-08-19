@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const launch = vi.hoisted(() => vi.fn());
 vi.mock("@cloudflare/puppeteer", () => ({ launch }));
 
-const { BrowserRpcTransport, limitStream, renderGadgetPdf } =
+const { BrowserRpcTransport, limitStream, makeExportHtml, renderGadgetPdf } =
     await import("../src/browser-export.js");
 
 type Harness = {
@@ -82,7 +82,7 @@ function render(pdfChunks?: string[], closePdf = true) {
   let { gadget, harness } = makeHarness(pdfChunks, closePdf);
   let stream = renderGadgetPdf(
     {} as BrowserRun,
-    "export default {}",
+    { jsCode: "export default {}" },
     "Test Gadget",
     gadget as never,
   );
@@ -185,7 +185,7 @@ describe("renderGadgetPdf", () => {
       launch.mockReturnValue(pendingLaunch.promise);
       let result = renderGadgetPdf(
         {} as BrowserRun,
-        "export default {}",
+        { jsCode: "export default {}" },
         "Test Gadget",
         { [Symbol.dispose]: () => { gadgetDisposed = true; } } as never,
       );
@@ -211,10 +211,36 @@ describe("renderGadgetPdf", () => {
 
     await expect(renderGadgetPdf(
       {} as BrowserRun,
-      "export default {}",
+      { jsCode: "export default {}" },
       "Test Gadget",
       { [Symbol.dispose]: () => { gadgetDisposed = true; } } as never,
     )).rejects.toThrow("no browser available");
     expect(gadgetDisposed).toBe(true);
+  });
+});
+
+describe("makeExportHtml", () => {
+  it("renders static index.html so PDF can paint without client.js", () => {
+    let html = makeExportHtml({ jsCode: "", html: "<h1>Invoice</h1>" });
+    expect(html).toContain("<h1>Invoice</h1>");
+    expect(html).toContain("<!DOCTYPE html>");
+  });
+
+  it("keeps the JavaScript-only wrapper when index.html is absent", () => {
+    let html = makeExportHtml({ jsCode: "document.body.textContent = 'js'" });
+    expect(html).toMatch(/^<!DOCTYPE html>\s*<html>\s*<head>/);
+    expect(html).toContain('<script src="data:text/javascript');
+    // client.js is nested in a data: URL inside the runtime script, so it is encoded twice
+    expect(html).toContain(encodeURIComponent(encodeURIComponent("document.body.textContent = 'js'")));
+    expect(html).not.toContain("<h1>");
+  });
+
+  it("injects client.js into index.html when both are present", () => {
+    let html = makeExportHtml({
+      jsCode: "gadget.ready()",
+      html: "<!DOCTYPE html><html><body><p>Deck</p></body></html>",
+    });
+    expect(html).toContain("<p>Deck</p>");
+    expect(html).toContain("gadget.ready()");
   });
 });

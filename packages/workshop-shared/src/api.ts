@@ -1432,9 +1432,12 @@ export type OutputSummary = {
 }
 
 /**
- * Describes the client-side UI code for a Gadget. Such code is intended to run inside an iframe
+ * Describes the client-side UI for a Gadget. Such UI is intended to run inside an iframe
  * sandbox with no access to the outside world except through an RPC interface to the Workshop
  * and to the Gadget's server.
+ *
+ * A gadget may ship static `index.html` for first paint and PDF, optional `client.js` for
+ * behavior, or both.
  */
 export type UiBundle = {
   // URL from which the main bundle of UI code can be downloaded. This download contains all the
@@ -1447,12 +1450,19 @@ export type UiBundle = {
 //  url: string;
 
   /**
-   * Returns the raw JS code to execute in the Gadget iframe.
+   * client.js, or "" when the gadget is HTML-only.
+   *
    * TODO: For now we just return the code but we should switch to serving over HTTP as described
    *   above, for caching. Or... maybe we should actually serve over RPC, but also employ the
    *   Cache API in the browser? Or some other local storage?
    */
   jsCode: string;
+
+  /**
+   * index.html when present (full document or body fragment). Omitted for JavaScript-only
+   * gadgets so existing callers stay backward compatible.
+   */
+  html?: string;
 
   // Other metadata could be placed here in the future, e.g. to specify what version of support
   // libraries should be loaded.
@@ -3350,10 +3360,11 @@ export interface WorkpieceClient extends RpcTarget {
  */
 export interface GadgetClient extends WorkpieceClient {
   /**
-   * Get the gadget's deployed UI code, to be run inside an iframe sandbox.
+   * Get the gadget's deployed UI, to be run inside an iframe sandbox.
    *
-   * Returns null if the gadget has no deployed UI code (e.g. if it's new, or if it's just an AI
-   * agent with no code).
+   * Returns a bundle with `jsCode` (client.js, or "" when the gadget is HTML-only) and optional
+   * `html` (index.html). Returns null only if the gadget has neither file (e.g. if it's new, or
+   * if it's just an AI agent with no UI).
    */
   getUiBundle(chatId?: number): Promise<UiBundle | null>;
 
