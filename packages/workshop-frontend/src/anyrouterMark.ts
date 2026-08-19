@@ -5,6 +5,10 @@
 export const ANYROUTER_MARK_CDN =
   'https://anyrouter.dev/brand/anyrouter-logo.svg'
 
+/** Solid white mark for surfaces that force a dark theme (the landing footer). */
+export const ANYROUTER_MARK_WHITE_CDN =
+  'https://anyrouter.dev/brand/anyrouter-logo-white.svg'
+
 /** Provider marks from the same CDN (openai-color.svg, …). */
 export const ANYROUTER_PROVIDER_CDN = 'https://anyrouter.dev/providers'
 

@@ -21,8 +21,8 @@ import DemoPromptToApp from './components/landing/DemoPromptToApp'
 import DemoGatekeeperApproval from './components/landing/DemoGatekeeperApproval'
 import DemoOwnKey from './components/landing/DemoOwnKey'
 import DemoBlueprintShare from './components/landing/DemoBlueprintShare'
+import LandingFooter from './components/landing/LandingFooter'
 import { LANDING_SHELL } from './components/landing/tokens'
-import { PRIMARY_BTN } from './components/profile/controls'
 
 interface LoginPageProps {
   rpcStub: RpcStub<PublicApi>
@@ -197,17 +197,7 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
         <DemoBlueprintShare />
       </div>
 
-      <div className={`${LANDING_SHELL} py-10 text-center sm:py-14`}>
-        <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-3xl">
-          See it for yourself
-        </h2>
-        <p className="mx-auto mt-2 max-w-md text-[14px] text-muted-foreground sm:text-[15px]">
-          Sign in and describe the first thing you want built.
-        </p>
-        <a href="#sign-in" className={`${PRIMARY_BTN} mt-5`}>
-          Sign in
-        </a>
-      </div>
+      <LandingFooter />
     </div>
   )
 }
