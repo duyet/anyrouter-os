@@ -1458,6 +1458,34 @@ export type UiBundle = {
   // libraries should be loaded.
 };
 
+/**
+ * JSON body for `POST /api/gadgets/:gadgetId/call`.
+ *
+ * HTTP is not a capability channel: only gadget server methods may be invoked. Bindings
+ * (`this.env`) stay behind those methods so gadget code and HITL remain on the path.
+ */
+export type GadgetHttpCallRequest = {
+  /** Name of a method on the gadget server class. */
+  method: string;
+  /** JSON-serializable positional arguments. Omitted means no arguments. */
+  args?: unknown[];
+};
+
+/** Successful JSON body for `POST /api/gadgets/:gadgetId/call`. */
+export type GadgetHttpCallSuccess = {
+  ok: true;
+  result: unknown;
+};
+
+/** Failed JSON body for `POST /api/gadgets/:gadgetId/call`. */
+export type GadgetHttpCallFailure = {
+  ok: false;
+  error: string;
+};
+
+/** Result envelope for `POST /api/gadgets/:gadgetId/call`. */
+export type GadgetHttpCallResponse = GadgetHttpCallSuccess | GadgetHttpCallFailure;
+
 /** Represents an incremental update to the code. */
 export type CodeUpdate = {
   /** Version number of the code AFTER this update has been applied. */

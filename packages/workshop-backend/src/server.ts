@@ -27,6 +27,7 @@ import { ExternalMessageGateway } from "./external-message-gateway";
 import { RpcStub as NativeRpcStub } from "cloudflare:workers";
 import { recordAnalytics } from "./analytics";
 import { handleClientErrorRequest } from "./client-errors.js";
+import { handleGadgetHttpRequest } from "./gadget-http.js";
 import { resolveUiFeatureFlags } from "./feature-flags";
 import { serveSiteLogo, SITE_LOGO_PATH } from "./site-logo.js";
 import { createWorkshopLogger } from "./observability";
@@ -883,6 +884,12 @@ export default {
 
     if (url.pathname === "/api/client-errors") {
       return handleClientErrorRequest(req, env, ctx);
+    }
+
+    if (url.pathname.startsWith("/api/gadgets/")) {
+      // Same session token as PublicApi.authenticate(); bindings stay behind gadget methods.
+      return (await handleGadgetHttpRequest(req, new PublicApiImpl(ctx, env, () => {})))
+          ?? new Response("Not Found", {status: 404});
     }
 
     if (url.pathname === "/api") {
