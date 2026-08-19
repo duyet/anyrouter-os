@@ -22,6 +22,7 @@ import DemoGatekeeperApproval from './components/landing/DemoGatekeeperApproval'
 import DemoOwnKey from './components/landing/DemoOwnKey'
 import DemoBlueprintShare from './components/landing/DemoBlueprintShare'
 import LandingFooter from './components/landing/LandingFooter'
+import SignInCard from './components/landing/SignInCard'
 
 interface LoginPageProps {
   rpcStub: RpcStub<PublicApi>
@@ -93,10 +94,6 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
     </div>
   ) : (
     <>
-      <p className="mb-5 text-center text-[15px] font-semibold text-foreground">
-        Sign in to {siteName}
-      </p>
-
       {/* AnyRouter is the only way in when enabled: users sign in with their anyrouter.dev account. */}
       {anyrouterOnly && (
         <AnyRouterLoginButton
@@ -181,7 +178,7 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
   return (
     <div className="min-h-screen overflow-x-hidden bg-background">
       <LandingHeader />
-      <Hero signIn={signIn} />
+      <Hero signIn={<SignInCard siteName={siteName}>{signIn}</SignInCard>} />
 
       <div className="flex flex-col">
         <div className="pb-2">

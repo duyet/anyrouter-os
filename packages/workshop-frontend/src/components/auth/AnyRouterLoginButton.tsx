@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { CircleNotch } from '@phosphor-icons/react'
 import { Banner } from '@/components/ui/alert'
 import { ANYROUTER_OAUTH_CHANNEL, beginAnyRouterOAuth } from '../../anyrouterOAuth'
+import AnyRouterMark from '../AnyRouterMark'
 
 interface AnyRouterLoginButtonProps {
   /** The deployment's AnyRouter OAuth client id (ServerConfig.anyrouterOauthClientId). */
@@ -80,15 +81,21 @@ export default function AnyRouterLoginButton({ clientId, onSuccess }: AnyRouterL
   return (
     <div className="space-y-3">
       {error && <Banner variant="error" title={error} />}
-      <Button
-        variant="primary"
+      <button
+        type="button"
         onClick={start}
-        loading={pending}
         disabled={pending}
-        className="w-full justify-center"
+        className="group inline-flex h-11 w-full items-center justify-center gap-2.5 rounded-xl border border-border bg-background px-4 text-sm font-medium text-foreground shadow-sm transition-all hover:border-primary/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60"
       >
-        Continue with AnyRouter
-      </Button>
+        {pending ? (
+          <CircleNotch size={16} className="animate-spin text-primary" />
+        ) : (
+          <AnyRouterMark className="size-4 shrink-0 text-primary transition-transform group-hover:scale-110" />
+        )}
+        <span className="whitespace-nowrap">
+          {pending ? 'Waiting for AnyRouter…' : 'Sign in with AnyRouter'}
+        </span>
+      </button>
     </div>
   )
 }
