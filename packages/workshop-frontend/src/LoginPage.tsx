@@ -9,6 +9,7 @@ import { useDocumentTitle } from './useDocumentTitle'
 import { useConnectionLost } from './RpcContext'
 import OAuthButtons from './components/auth/OAuthButtons'
 import ClerkLogin from './components/auth/ClerkLogin'
+import AnyRouterLoginButton from './components/auth/AnyRouterLoginButton'
 import ThemeModeButton from './components/ThemeModeButton'
 import Hero from './components/landing/Hero'
 import FeatureGrid from './components/landing/FeatureGrid'
@@ -90,10 +91,13 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
     )
   }
 
-  const authVendors = serverConfig.authVendors ?? []
+  // "Sign in with AnyRouter" (when enabled) is the sole method — it suppresses every other one,
+  // just as Clerk does. Both are mutually exclusive with password + gatekeeper sign-in.
+  const anyrouterOnly = serverConfig.anyrouterAuthEnabled && !!serverConfig.anyrouterOauthClientId
+  const authVendors = anyrouterOnly ? [] : (serverConfig.authVendors ?? [])
   // Clerk replaces every other sign-in method when configured (see ServerConfig.clerkPublishableKey).
-  const clerkKey = serverConfig.clerkPublishableKey
-  const passwordAuthEnabled = !clerkKey && serverConfig.passwordAuthEnabled
+  const clerkKey = anyrouterOnly ? undefined : serverConfig.clerkPublishableKey
+  const passwordAuthEnabled = !anyrouterOnly && !clerkKey && serverConfig.passwordAuthEnabled
 
   // The sign-in card's content, unchanged from the original LoginPage other than its heading (the
   // page headline in Hero is now the only <h1>). Passed into Hero as a slot rather than owned by
@@ -103,6 +107,14 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
       <div className="text-center mb-6">
         <p className="text-base font-semibold text-kumo-default">Sign in to {siteName}</p>
       </div>
+
+      {/* AnyRouter is the only way in when enabled: users sign in with their anyrouter.dev account. */}
+      {anyrouterOnly && (
+        <AnyRouterLoginButton
+          clientId={serverConfig.anyrouterOauthClientId!}
+          onSuccess={onLoginSuccess}
+        />
+      )}
 
       {/* Clerk is the only way in when configured (shared with anyrouter.dev). */}
       {clerkKey && (

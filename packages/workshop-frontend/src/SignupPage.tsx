@@ -9,6 +9,7 @@ import { useServerConfig, useServerConfigError, useSiteName } from "./ServerConf
 import { useDocumentTitle } from "./useDocumentTitle";
 import OAuthButtons from "./components/auth/OAuthButtons";
 import ClerkLogin from "./components/auth/ClerkLogin";
+import AnyRouterLoginButton from "./components/auth/AnyRouterLoginButton";
 import SiteLogo from "./components/SiteLogo";
 import { useConnectionLost } from "./RpcContext";
 
@@ -102,13 +103,17 @@ export default function SignupPage({ rpcStub }: SignupPageProps) {
     );
   }
 
-  const authVendors = serverConfig.authVendors ?? [];
+  // "Sign in with AnyRouter" (when enabled) covers sign-up too — the account is created on first
+  // OAuth sign-in — so it replaces every other method, like Clerk does.
+  const anyrouterOnly = serverConfig.anyrouterAuthEnabled && !!serverConfig.anyrouterOauthClientId;
+  const authVendors = anyrouterOnly ? [] : (serverConfig.authVendors ?? []);
   // Clerk covers sign-up too (its <SignIn> UI links to account creation), so it replaces the
   // password form and gatekeeper buttons entirely when configured.
-  const clerkKey = serverConfig.clerkPublishableKey;
+  const clerkKey = anyrouterOnly ? undefined : serverConfig.clerkPublishableKey;
   const signupsEnabled = serverConfig.signupsEnabled;
   // The password create-account form requires both password auth AND open signups.
-  const passwordAuthEnabled = !clerkKey && serverConfig.passwordAuthEnabled && signupsEnabled;
+  const passwordAuthEnabled =
+    !anyrouterOnly && !clerkKey && serverConfig.passwordAuthEnabled && signupsEnabled;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-kumo-base px-4 relative overflow-hidden">
@@ -140,9 +145,14 @@ export default function SignupPage({ rpcStub }: SignupPageProps) {
           <p className="text-sm text-kumo-subtle mt-1">Create your account</p>
         </div>
 
+        {/* AnyRouter sign-in doubles as sign-up when it's the deployment's sole method. */}
+        {anyrouterOnly && (
+          <AnyRouterLoginButton clientId={serverConfig.anyrouterOauthClientId!} />
+        )}
+
         {clerkKey && <ClerkLogin rpcStub={rpcStub} publishableKey={clerkKey} />}
 
-        {!clerkKey && !signupsEnabled && (
+        {!anyrouterOnly && !clerkKey && !signupsEnabled && (
           <Banner
             variant="default"
             title="Signups are closed"

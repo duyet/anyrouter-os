@@ -33,19 +33,21 @@ function RootComponent() {
   // Routes that don't require auth (public routes)
   const isSignup = pathname === '/signup'
   const isBlueprint = pathname.startsWith('/blueprint/')
+  // AnyRouter's consent redirect lands here in a popup. When it's driving "Sign in with AnyRouter"
+  // the opener is signed out, so the callback must render without the auth wrapper (it completes
+  // sign-in through PublicApi); when it's the post-login connect flow the authenticated branch
+  // below renders it inside AuthProvider instead.
+  const isAnyRouterCallback = pathname === ANYROUTER_OAUTH_CALLBACK_PATH
 
   // A standalone (no app shell) render is used only for signed-out visitors of public routes.
   // Signed-in users get the full app chrome so public pages (esp. the blueprint detail) feel
   // native — sidebar and all — instead of floating on a bare page.
-  const standalone = isSignup || (isBlueprint && !isAuthenticated)
+  const standalone =
+    isSignup || (isBlueprint && !isAuthenticated) || (isAnyRouterCallback && !isAuthenticated)
 
   // The workspace editor renders fullscreen (no app chrome). /gadget/ is the legacy URL, kept
   // here so the chrome doesn't flash in during the redirect to /workspace/.
   const isWorkspaceEditor = pathname.startsWith('/workspace/') || pathname.startsWith('/gadget/')
-  // AnyRouter's consent redirect lands here in a popup. It completes the grant that onboarding is
-  // waiting on, so it renders instead of the onboarding shell — gating it behind the wizard would
-  // leave the code unexchanged and the user stuck in a connect loop.
-  const isAnyRouterCallback = pathname === ANYROUTER_OAUTH_CALLBACK_PATH
 
   const handleLoginSuccess = () => {
     const token = localStorage.getItem('authToken')
@@ -86,7 +88,8 @@ function RootComponent() {
 
   // Signed-out visitors of public routes render without the auth wrapper / app shell.
   if (standalone) {
-    const showHeader = !isSignup
+    // No app header on the signup form or the AnyRouter consent popup.
+    const showHeader = !isSignup && !isAnyRouterCallback
     return (
       <TooltipProvider>
         <Toasty>
