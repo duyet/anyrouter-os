@@ -30,16 +30,13 @@ export default function Header() {
 
   const closeMobileMenu = () => setMobileMenuOpen(false)
 
-  const navLinkClass = "text-sm px-3 py-1.5 rounded-md transition-colors text-kumo-subtle"
-  const navLinkActiveClass = "text-sm font-medium px-3 py-1.5 rounded-md transition-colors text-kumo-default bg-kumo-tint"
+  const navLinkClass = "text-sm px-3 py-1.5 rounded-md transition-colors text-muted-foreground"
+  const navLinkActiveClass = "text-sm font-medium px-3 py-1.5 rounded-md transition-colors text-foreground bg-muted"
 
   return (
     <header
       ref={headerRef}
-      className="app-header sticky top-0 z-50 backdrop-blur-md border-b border-kumo-line"
-      style={{
-        backgroundColor: 'color-mix(in srgb, var(--color-kumo-base) 80%, transparent)',
-      }}
+      className="app-header sticky top-0 z-50 border-b border-border bg-background"
       >
       <div className="relative px-4 sm:px-6 h-14 flex items-center justify-between">
         <TopBarNotice />
@@ -47,9 +44,9 @@ export default function Header() {
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-center gap-2">
             <SiteLogo size={22} className="shrink-0">
-              <Hexagon size={22} className="text-kumo-brand" weight="bold" />
+              <Hexagon size={22} className="text-primary" weight="bold" />
             </SiteLogo>
-            <span className="text-base font-semibold tracking-tight text-kumo-default">
+            <span className="text-base font-semibold tracking-tight text-foreground">
               {siteName}
             </span>
           </Link>
@@ -106,7 +103,7 @@ export default function Header() {
           <div className="sm:hidden">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-kumo-tint transition-colors text-kumo-default"
+              className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-muted transition-colors text-foreground"
             >
               {mobileMenuOpen ? <X size={20} /> : <List size={20} />}
             </button>
@@ -116,7 +113,7 @@ export default function Header() {
 
       {/* Mobile dropdown menu */}
       {mobileMenuOpen && (
-        <div className="sm:hidden border-t border-kumo-line bg-kumo-base">
+        <div className="sm:hidden border-t border-border bg-background">
           <nav className="flex flex-col px-4 py-3 gap-1">
             <Link
               to="/"
@@ -159,7 +156,7 @@ export default function Header() {
 
             {auth && (
               <>
-                <hr className="my-2 border-kumo-line" />
+                <hr className="my-2 border-border" />
 
                 <Link
                   to="/profile"
@@ -189,7 +186,7 @@ export default function Header() {
                 )}
                 <button
                   onClick={() => { closeMobileMenu(); auth.logout() }}
-                  className="text-left text-sm px-3 py-1.5 rounded-md text-kumo-danger hover:bg-kumo-tint transition-colors"
+                  className="text-left text-sm px-3 py-1.5 rounded-md text-destructive hover:bg-muted transition-colors"
                 >
                   Sign out
                 </button>

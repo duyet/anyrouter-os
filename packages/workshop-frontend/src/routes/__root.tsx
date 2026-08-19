@@ -1,7 +1,8 @@
 import { logRpcFailure } from '../rpcErrors'
 import { useState, useEffect } from 'react'
 import { createRootRoute, Outlet, useRouterState } from '@tanstack/react-router'
-import { TooltipProvider, Toasty } from '@cloudflare/kumo'
+import { TooltipProvider } from '@/components/ui/tooltip'
+import { Toasty } from '@/components/ui/sonner'
 import { RpcStub } from 'capnweb'
 import { AuthenticatedApi } from '@gadgets/workshop-shared/api'
 import { useRpcStub, useConnectionLost } from '../RpcContext'
@@ -59,9 +60,9 @@ function RootComponent() {
   // Loading state
   if (isLoading && !standalone) {
     return (
-      <div className="min-h-screen flex items-center justify-center flex-col gap-4 bg-kumo-base">
-        <div className="w-8 h-8 border-2 border-kumo-brand border-t-transparent rounded-full animate-spin" />
-        <p className="text-sm text-kumo-subtle">{connectionLost ? 'Waiting for server…' : 'Loading...'}</p>
+      <div className="min-h-screen flex items-center justify-center flex-col gap-4 bg-background">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm text-muted-foreground">{connectionLost ? 'Waiting for server…' : 'Loading...'}</p>
       </div>
     )
   }
@@ -69,11 +70,11 @@ function RootComponent() {
   // Auth error
   if (error && !standalone) {
     return (
-      <div className="min-h-screen flex items-center justify-center flex-col gap-4 bg-kumo-base p-6">
-        <p className="text-sm text-kumo-danger">Authentication error: {error}</p>
+      <div className="min-h-screen flex items-center justify-center flex-col gap-4 bg-background p-6">
+        <p className="text-sm text-destructive">Authentication error: {error}</p>
         <button
           onClick={() => window.location.reload()}
-          className="px-4 py-2 text-sm font-medium text-kumo-inverse bg-kumo-brand rounded-lg hover:bg-kumo-brand-hover transition-colors"
+          className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-lg hover:bg-primary/80 transition-colors"
         >
           Retry
         </button>
@@ -92,10 +93,9 @@ function RootComponent() {
     const showHeader = !isSignup && !isAnyRouterCallback
     return (
       <TooltipProvider>
-        <Toasty>
-          {showHeader && <Header />}
-          <Outlet />
-        </Toasty>
+        <Toasty />
+        {showHeader && <Header />}
+        <Outlet />
       </TooltipProvider>
     )
   }
@@ -108,16 +108,15 @@ function RootComponent() {
     <AuthProvider authenticatedApi={authenticatedApi} onLogout={logout}>
       <FeatureFlagsProvider>
         <TooltipProvider>
-          <Toasty>
-            {isAnyRouterCallback ? (
-              <Outlet />
-            ) : (
-              <AuthenticatedShell
-                authenticatedApi={authenticatedApi}
-                isWorkspaceEditor={isWorkspaceEditor}
-              />
-            )}
-          </Toasty>
+          <Toasty />
+          {isAnyRouterCallback ? (
+            <Outlet />
+          ) : (
+            <AuthenticatedShell
+              authenticatedApi={authenticatedApi}
+              isWorkspaceEditor={isWorkspaceEditor}
+            />
+          )}
         </TooltipProvider>
       </FeatureFlagsProvider>
     </AuthProvider>
@@ -154,8 +153,8 @@ function AuthenticatedShell({
   // Still checking onboarding status
   if (onboardingNeeded === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center flex-col gap-4 bg-kumo-base">
-        <div className="w-8 h-8 border-2 border-kumo-brand border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center flex-col gap-4 bg-background">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }

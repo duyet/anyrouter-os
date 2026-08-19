@@ -4,7 +4,9 @@ import { PublicApi } from '@gadgets/workshop-shared/api'
 import { useAuth } from './useAuth'
 import { AuthProvider } from './AuthContext'
 import LoginPage from './LoginPage'
-import { Loader, Banner, Button } from '@cloudflare/kumo'
+import { Loader } from '@/components/ui/loader'
+import { Banner } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 
 interface ProtectedRouteProps {
   children: ReactNode

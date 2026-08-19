@@ -53,7 +53,7 @@ export default function Sidebar({
       className={[
         // Sidebar is the app chrome: a hair greyer than the (lighter) content canvas so the two
         // surfaces read as distinct without a heavy divider.
-        'flex h-screen flex-col border-r border-kumo-line bg-kumo-elevated',
+        'flex h-screen flex-col border-r border-sidebar-border bg-sidebar',
         collapsed ? 'w-[56px]' : 'w-[260px]',
         'shrink-0 transition-[width] duration-200 ease-out',
       ].join(' ')}
@@ -61,16 +61,16 @@ export default function Sidebar({
       {/* Brand row */}
       <div
         className={[
-          'flex h-14 shrink-0 items-center border-b border-kumo-line',
+          'flex h-14 shrink-0 items-center border-b border-sidebar-border',
           collapsed ? 'justify-center px-1.5' : 'justify-between gap-2 px-3',
         ].join(' ')}
       >
         <Link to="/" aria-label={siteName} className="flex min-w-0 items-center gap-2">
           <SiteLogo size={20} className="shrink-0">
-            <Hexagon size={20} weight="bold" className="text-kumo-brand shrink-0" />
+            <Hexagon size={20} weight="bold" className="text-primary shrink-0" />
           </SiteLogo>
           {!collapsed && (
-            <span className="truncate text-[14px] leading-5 font-semibold tracking-[-0.25px] text-kumo-default">
+            <span className="truncate text-[14px] leading-5 font-semibold tracking-[-0.25px] text-sidebar-foreground">
               {siteName}
             </span>
           )}
@@ -82,7 +82,7 @@ export default function Sidebar({
               onClick={() => openCommandPalette()}
               aria-label="Search"
               title="Search (⌘K)"
-              className="press flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-kumo-inactive transition-colors hover:bg-kumo-tint hover:text-kumo-default"
+              className="press flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             >
               <MagnifyingGlass size={15} />
             </button>
@@ -91,7 +91,7 @@ export default function Sidebar({
               onClick={onToggleCollapsed}
               aria-label="Collapse sidebar"
               title="Collapse sidebar"
-              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-kumo-inactive transition-colors hover:bg-kumo-tint hover:text-kumo-default"
+              className="flex h-7 w-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             >
               <SidebarSimple size={15} />
             </button>
@@ -106,7 +106,7 @@ export default function Sidebar({
           onClick={onToggleCollapsed}
           aria-label="Expand sidebar"
           title="Expand sidebar"
-          className="mx-auto mt-2 flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-kumo-inactive transition-colors hover:bg-kumo-tint hover:text-kumo-default"
+          className="mx-auto mt-2 flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
           <SidebarSimple size={15} className="rotate-180" />
         </button>

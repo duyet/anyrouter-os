@@ -1,6 +1,7 @@
 import { logRpcFailure } from './rpcErrors'
 import { useState, useEffect, useMemo, useCallback, type MutableRefObject } from 'react'
-import { Tooltip, useKumoToastManager } from '@cloudflare/kumo'
+import { useKumoToastManager } from '@/components/ui/toast'
+import { Tooltip } from '@cloudflare/kumo'
 import { Plus, CaretRight, Warning } from '@phosphor-icons/react'
 import { RpcStub } from 'capnweb'
 import { AuthenticatedApi } from '@gadgets/workshop-shared/api'
@@ -477,7 +478,7 @@ export default function ResourcePicker({
                       onRefine(newUrl, newUrl.length, newUrl.length)
                     }
                   }}
-                  className={`${PICKER_ROW} ${i > 0 ? 'border-t border-kumo-line' : ''} ${isActive ? PICKER_ROW_ACTIVE : ''}`}
+                  className={`${PICKER_ROW} ${i > 0 ? 'border-t border-border' : ''} ${isActive ? PICKER_ROW_ACTIVE : ''}`}
                 >
                   {/* The name is what the row is for, so it gets the space it needs first, up to
                     * 70% of the row; the pattern is a hint and yields. Reversing this (a pattern
@@ -485,13 +486,13 @@ export default function ResourcePicker({
                     * truncate, so both carry their full text as a tooltip. */}
                   <span
                     title={resource.title}
-                    className="max-w-[70%] flex-none truncate text-[13px] leading-[18px] tracking-[-0.25px] text-kumo-default"
+                    className="max-w-[70%] flex-none truncate text-[13px] leading-[18px] tracking-[-0.25px] text-foreground"
                   >
                     {resource.title}
                   </span>
                   <span
                     title={resource.urlPattern}
-                    className="min-w-0 flex-1 truncate text-right font-mono text-[11.5px] leading-4 text-kumo-inactive"
+                    className="min-w-0 flex-1 truncate text-right font-mono text-[11.5px] leading-4 text-muted-foreground"
                   >
                     {resource.urlPattern.replace(/^https?:\/\//, '')}
                   </span>
@@ -520,10 +521,10 @@ export default function ResourcePicker({
             const hostname = extractHostname(resource.urlPattern)
 
             return (
-              <div key={`${vendor.id}-${resource.urlPattern}`} className={i > 0 ? 'border-t border-kumo-line' : ''}>
+              <div key={`${vendor.id}-${resource.urlPattern}`} className={i > 0 ? 'border-t border-border' : ''}>
                 <div className="flex items-baseline gap-2 px-3.5 pb-1 pt-2.5">
                   <span className={`flex-shrink-0 ${PICKER_CAPTION}`}>{resource.title}</span>
-                  <span className="min-w-0 flex-1 truncate text-[11.5px] leading-4 tracking-[-0.1px] text-kumo-subtle">
+                  <span className="min-w-0 flex-1 truncate text-[11.5px] leading-4 tracking-[-0.1px] text-muted-foreground">
                     {resource.description}
                   </span>
                 </div>
@@ -564,31 +565,31 @@ export default function ResourcePicker({
                         className="h-6 w-6 rounded-md"
                       />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[13px] leading-[18px] tracking-[-0.25px] text-kumo-default">
+                        <span className="block truncate text-[13px] leading-[18px] tracking-[-0.25px] text-foreground">
                           {account.description.uniqueName || account.description.displayName}
                         </span>
                         {hostname && hostname !== '*' && (
-                          <span className="block truncate text-[11.5px] leading-4 tracking-[-0.1px] text-kumo-inactive">
+                          <span className="block truncate text-[11.5px] leading-4 tracking-[-0.1px] text-muted-foreground">
                             {hostname}
                           </span>
                         )}
                       </span>
                       {isReconnecting || isGranting ? (
-                        <div className="h-3 w-3 flex-shrink-0 animate-spin rounded-full border-2 border-kumo-brand border-t-transparent" />
+                        <div className="h-3 w-3 flex-shrink-0 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                       ) : isExpired ? (
                         <span className="flex flex-shrink-0 items-center gap-1">
-                          <Warning size={12} className="text-kumo-warning" />
-                          <span className="text-[11.5px] leading-4 text-kumo-warning">Expired — click to re-authenticate</span>
+                          <Warning size={12} className="text-warning" />
+                          <span className="text-[11.5px] leading-4 text-warning">Expired — click to re-authenticate</span>
                         </span>
                       ) : needsAccess ? (
                         <span className="flex flex-shrink-0 items-center gap-1">
-                          <Warning size={12} className="text-kumo-warning" />
-                          <span className="text-[11.5px] leading-4 text-kumo-warning">Grant access</span>
+                          <Warning size={12} className="text-warning" />
+                          <span className="text-[11.5px] leading-4 text-warning">Grant access</span>
                         </span>
                       ) : isActive && !searchHasPlaceholders ? (
                         <TabHint />
                       ) : (
-                        <CaretRight size={12} className="flex-shrink-0 text-kumo-inactive" />
+                        <CaretRight size={12} className="flex-shrink-0 text-muted-foreground" />
                       )}
                     </div>
                   )
@@ -616,14 +617,14 @@ export default function ResourcePicker({
                       cursor: connectingVendor === vendor.id ? 'wait' : 'pointer',
                     }}
                   >
-                    <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-md border border-dashed border-kumo-line text-kumo-inactive">
+                    <span className="grid h-6 w-6 flex-shrink-0 place-items-center rounded-md border border-dashed border-border text-muted-foreground">
                       {connectingVendor === vendor.id ? (
-                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-kumo-brand border-t-transparent" />
+                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                       ) : (
                         <Plus size={11} />
                       )}
                     </span>
-                    <span className="flex-1 text-[13px] leading-[18px] tracking-[-0.25px] text-kumo-subtle">
+                    <span className="flex-1 text-[13px] leading-[18px] tracking-[-0.25px] text-muted-foreground">
                       {connectingVendor === vendor.id ? 'Opening…' : 'Connect new account'}
                     </span>
                     {isActive && <TabHint />}

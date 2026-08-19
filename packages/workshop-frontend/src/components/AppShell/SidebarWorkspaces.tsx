@@ -17,7 +17,7 @@ import {
   Star,
 } from '@phosphor-icons/react'
 import { openCommandPalette } from './commandPaletteBus'
-import { useKumoToastManager } from '@cloudflare/kumo'
+import { useKumoToastManager } from '@/components/ui/toast'
 import type { RpcStub } from 'capnweb'
 import {
   GadgetMetadataWithTimestamps,
@@ -278,7 +278,7 @@ export function SidebarWorkspacesTools({ collapsed = false }: { collapsed?: bool
         onClick={() => openCommandPalette()}
         aria-label="Search"
         title="Search (⌘K)"
-        className="press flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-kumo-subtle transition-colors hover:bg-kumo-tint hover:text-kumo-default"
+        className="press flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
       >
         <MagnifyingGlass size={15} />
       </button>
@@ -337,10 +337,10 @@ export function SidebarWorkspacesLists({ collapsed = false }: { collapsed?: bool
         count={favorites.length}
         open={favOpen}
         onToggle={() => setFavOpen((o) => !o)}
-        icon={<Star size={12} weight="regular" className="text-kumo-inactive" />}
+        icon={<Star size={12} weight="regular" className="text-muted-foreground" />}
       >
         {favorites.length === 0 ? (
-          <p className="px-2.5 py-1.5 text-[12px] leading-4 tracking-[-0.2px] text-kumo-inactive">
+          <p className="px-2.5 py-1.5 text-[12px] leading-4 tracking-[-0.2px] text-muted-foreground">
             Favorite a workspace to keep it here.
           </p>
         ) : (
@@ -368,11 +368,11 @@ export function SidebarWorkspacesLists({ collapsed = false }: { collapsed?: bool
         {gadgetsLoading ? (
           <div className="flex flex-col gap-1 px-1">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="h-7 rounded-md bg-kumo-elevated animate-pulse" />
+              <div key={i} className="h-7 rounded-md bg-card animate-pulse" />
             ))}
           </div>
         ) : recent.length === 0 ? (
-          <p className="px-2.5 py-1.5 text-[12px] leading-4 tracking-[-0.2px] text-kumo-inactive">
+          <p className="px-2.5 py-1.5 text-[12px] leading-4 tracking-[-0.2px] text-muted-foreground">
             {search ? 'No matches.' : 'No workspaces yet.'}
           </p>
         ) : (
@@ -391,7 +391,7 @@ export function SidebarWorkspacesLists({ collapsed = false }: { collapsed?: bool
             </div>
             <Link
               to="/workspaces"
-              className="mt-0.5 flex h-7 items-center gap-1 rounded-md px-2.5 text-[12px] font-medium tracking-[-0.2px] text-kumo-subtle transition-colors hover:bg-kumo-tint hover:text-kumo-default"
+              className="mt-0.5 flex h-7 items-center gap-1 rounded-md px-2.5 text-[12px] font-medium tracking-[-0.2px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             >
               {recentHidden > 0 ? `Show all (${recent.length})` : 'Show all'}
               <ArrowRight size={11} weight="bold" />
@@ -424,7 +424,7 @@ function SidebarSection({
       <button
         type="button"
         onClick={onToggle}
-        className="flex h-6 cursor-pointer items-center gap-1 px-1.5 text-[11px] font-medium uppercase tracking-[0.06em] text-kumo-inactive transition-colors hover:text-kumo-subtle"
+        className="flex h-6 cursor-pointer items-center gap-1 px-1.5 text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground transition-colors hover:text-muted-foreground"
       >
         <CaretDown
           size={10}
@@ -433,7 +433,7 @@ function SidebarSection({
         />
         {icon}
         <span>{label}</span>
-        {count !== undefined && <span className="ml-1 text-kumo-inactive">{count}</span>}
+        {count !== undefined && <span className="ml-1 text-muted-foreground">{count}</span>}
       </button>
       {open && <div className="mt-0.5">{children}</div>}
     </div>

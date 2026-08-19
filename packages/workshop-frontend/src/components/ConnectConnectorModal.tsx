@@ -157,10 +157,10 @@ export default function ConnectConnectorModal({
     : `Connect ${vendorDescription.displayName}`
 
   const headerSubline = isManage ? (
-    <div className="mt-0.5 flex items-center gap-1.5 text-[13px] leading-[18px] font-normal tracking-[-0.25px] text-kumo-subtle">
+    <div className="mt-0.5 flex items-center gap-1.5 text-[13px] leading-[18px] font-normal tracking-[-0.25px] text-muted-foreground">
       <span
         className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-          credentialsValid ? 'bg-kumo-success' : 'bg-kumo-danger'
+          credentialsValid ? 'bg-success' : 'bg-destructive'
         }`}
         aria-hidden
       />
@@ -174,7 +174,7 @@ export default function ConnectConnectorModal({
     </div>
   ) : (
     vendorDescription.tagline && (
-      <Dialog.Description className="mt-0.5 text-[13px] leading-[18px] font-normal tracking-[-0.25px] text-kumo-subtle">
+      <Dialog.Description className="mt-0.5 text-[13px] leading-[18px] font-normal tracking-[-0.25px] text-muted-foreground">
         {vendorDescription.tagline}
       </Dialog.Description>
     )
@@ -187,7 +187,7 @@ export default function ConnectConnectorModal({
     const icon = resource?.icon?.url ?? logoUrl
     return (
       <div
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-kumo-strong"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-foreground"
         style={{ backgroundColor: color ?? 'var(--color-kumo-tint)' }}
       >
         {icon ? (
@@ -208,10 +208,10 @@ export default function ConnectConnectorModal({
       }}
     >
       <Dialog
-        className="!z-[1000] !top-[clamp(28px,8vh,80px)] !flex !max-h-[calc(100vh-clamp(28px,8vh,80px)-28px)] !w-[min(640px,calc(100vw-32px))] !-translate-y-0 flex-col overflow-hidden bg-kumo-base p-0"
+        className="!z-[1000] !top-[clamp(28px,8vh,80px)] !flex !max-h-[calc(100vh-clamp(28px,8vh,80px)-28px)] !w-[min(640px,calc(100vw-32px))] !-translate-y-0 flex-col overflow-hidden bg-background p-0"
         size="lg"
       >
-        <div className="shrink-0 flex items-start justify-between gap-4 border-b border-kumo-line px-5 py-4">
+        <div className="shrink-0 flex items-start justify-between gap-4 border-b border-border px-5 py-4">
           <div className="flex min-w-0 items-start gap-3">
             <div
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
@@ -220,13 +220,13 @@ export default function ConnectConnectorModal({
               {logoUrl ? (
                 <img src={logoUrl} alt="" className="h-5 w-5 object-contain" />
               ) : (
-                <span className="text-sm font-semibold text-kumo-strong">
+                <span className="text-sm font-semibold text-foreground">
                   {vendorDescription.displayName[0]}
                 </span>
               )}
             </div>
             <div className="min-w-0">
-              <Dialog.Title className="text-[17px] leading-6 font-medium tracking-[-0.35px] text-kumo-default">
+              <Dialog.Title className="text-[17px] leading-6 font-medium tracking-[-0.35px] text-foreground">
                 {headerTitle}
               </Dialog.Title>
               {headerSubline}
@@ -243,14 +243,14 @@ export default function ConnectConnectorModal({
 
         <div className="new-gatekeeper-scroll-balanced min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {vendorDescription.description && (
-            <p className="text-[13px] leading-[19px] font-normal tracking-[-0.25px] text-kumo-default">
+            <p className="text-[13px] leading-[19px] font-normal tracking-[-0.25px] text-foreground">
               {vendorDescription.description}
             </p>
           )}
 
           {supportedResources.length > 0 && (
             <div className="mt-5">
-              <h3 className="mb-2 text-[12px] leading-4 font-semibold uppercase tracking-[0.6px] text-kumo-inactive">
+              <h3 className="mb-2 text-[12px] leading-4 font-semibold uppercase tracking-[0.6px] text-muted-foreground">
                 {granular
                   ? isManage
                     ? 'Resources'
@@ -271,14 +271,14 @@ export default function ConnectConnectorModal({
                   return (
                     <li
                       key={resource.urlPattern}
-                      className="flex items-center gap-3 rounded-lg border border-kumo-line bg-kumo-base px-3 py-2.5"
+                      className="flex items-center gap-3 rounded-lg border border-border bg-background px-3 py-2.5"
                     >
                       {resourceIcon(resource)}
                       <div className="min-w-0 flex-1">
-                        <p className="text-[13px] leading-[18px] font-medium tracking-[-0.25px] text-kumo-default">
+                        <p className="text-[13px] leading-[18px] font-medium tracking-[-0.25px] text-foreground">
                           {resource.title}
                         </p>
-                        <p className="mt-0.5 text-[12px] leading-4 font-normal tracking-[-0.2px] text-kumo-subtle">
+                        <p className="mt-0.5 text-[12px] leading-4 font-normal tracking-[-0.2px] text-muted-foreground">
                           {resource.description}
                         </p>
                       </div>
@@ -307,7 +307,7 @@ export default function ConnectConnectorModal({
 
           {!isManage && !autoProvisions && (
             <div
-              className="relative mt-5 overflow-hidden rounded-lg border border-kumo-line px-4 py-3"
+              className="relative mt-5 overflow-hidden rounded-lg border border-border px-4 py-3"
               style={{
                 background:
                   'linear-gradient(180deg, rgba(255, 72, 1, 0.04) 0%, rgba(255, 72, 1, 0.02) 100%)',
@@ -316,14 +316,14 @@ export default function ConnectConnectorModal({
               <div className="flex items-start gap-3">
                 <ShieldCheck
                   size={18}
-                  className="mt-0.5 shrink-0 text-kumo-brand"
+                  className="mt-0.5 shrink-0 text-primary"
                   weight="duotone"
                 />
-                <div className="text-[12px] leading-[17px] font-normal tracking-[-0.2px] text-kumo-default">
+                <div className="text-[12px] leading-[17px] font-normal tracking-[-0.2px] text-foreground">
                   <span className="font-medium">
                     Gatekeeper sits between {vendorDescription.displayName} and your Gadgets.
                   </span>{' '}
-                  <span className="text-kumo-subtle">
+                  <span className="text-muted-foreground">
                     Each Gadget only sees the resources you connect. If the workspace is shared,
                     Gatekeeper verifies other users have the required permissions before they can
                     access those resources.
@@ -334,24 +334,24 @@ export default function ConnectConnectorModal({
           )}
 
           {isManage && (
-            <div className="mt-5 rounded-lg border border-kumo-line bg-kumo-elevated px-4 py-3 text-[12px] leading-[17px] font-normal tracking-[-0.2px] text-kumo-subtle">
+            <div className="mt-5 rounded-lg border border-border bg-card px-4 py-3 text-[12px] leading-[17px] font-normal tracking-[-0.2px] text-muted-foreground">
               This account can be used by Gadgets you connect it to. Shared users must have the
               required permissions before they can access those connected resources.
             </div>
           )}
         </div>
 
-        <div className="shrink-0 flex items-center justify-between gap-3 border-t border-kumo-line bg-kumo-base px-5 py-3">
+        <div className="shrink-0 flex items-center justify-between gap-3 border-t border-border bg-background px-5 py-3">
           {isManage && confirmingDisconnect ? (
-            <p className="m-0 min-w-0 flex-1 text-[12px] leading-4 font-normal tracking-[-0.2px] text-kumo-default">
+            <p className="m-0 min-w-0 flex-1 text-[12px] leading-4 font-normal tracking-[-0.2px] text-foreground">
               Disconnect {vendorDescription.displayName}? Gadgets using this will lose access.
             </p>
           ) : isManage && hasPending ? (
-            <p className="m-0 min-w-0 flex-1 text-[12px] leading-4 font-normal tracking-[-0.2px] text-kumo-subtle">
+            <p className="m-0 min-w-0 flex-1 text-[12px] leading-4 font-normal tracking-[-0.2px] text-muted-foreground">
               {pendingPatterns.length} resource{pendingPatterns.length === 1 ? '' : 's'} to add
             </p>
           ) : !isManage && granular && noneSelected ? (
-            <p className="m-0 min-w-0 flex-1 text-[12px] leading-4 font-normal tracking-[-0.2px] text-kumo-subtle">
+            <p className="m-0 min-w-0 flex-1 text-[12px] leading-4 font-normal tracking-[-0.2px] text-muted-foreground">
               Select at least one resource to continue.
             </p>
           ) : (

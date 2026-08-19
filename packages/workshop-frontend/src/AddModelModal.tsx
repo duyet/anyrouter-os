@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Dialog, Button, Input, Select, SensitiveInput, Collapsible, useKumoToastManager } from '@cloudflare/kumo'
+import { useKumoToastManager } from '@/components/ui/toast'
+import { Dialog, Button, Input, Select, SensitiveInput, Collapsible } from '@cloudflare/kumo'
 import {
   AiChatAuthorInfo,
   AiModelConfig,
@@ -233,7 +234,7 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
                 {model.name} · {model.id}
               </Select.Option>
             ))}
-            <div className="h-px bg-kumo-line my-1 mx-2" />
+            <div className="h-px bg-border my-1 mx-2" />
             <Select.Option value={CUSTOM_VALUE}>
               Other AnyRouter model...
             </Select.Option>
@@ -270,8 +271,8 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
               {apiToken ? 'API key: using a pasted key' : `API key: ${connectionSummary}`}
             </Collapsible.DefaultTrigger>
             <Collapsible.DefaultPanel>
-              <div className="space-y-3 rounded-lg border border-kumo-line bg-kumo-tint/40 p-3">
-                <p className="text-[12px] leading-[16px] tracking-[-0.2px] text-kumo-subtle">
+              <div className="space-y-3 rounded-lg border border-border bg-muted/40 p-3">
+                <p className="text-[12px] leading-[16px] tracking-[-0.2px] text-muted-foreground">
                   Models use the key granted by your AnyRouter account (billed to you, revocable
                   from the AnyRouter dashboard). Reconnect when it expires, or paste a key below
                   to use a specific one instead.
@@ -279,8 +280,8 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
 
                 {connect.state === 'waiting' ? (
                   <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-kumo-brand border-t-transparent rounded-full animate-spin" />
-                    <span className="text-[12px] text-kumo-subtle">
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    <span className="text-[12px] text-muted-foreground">
                       Approve access in the AnyRouter tab…
                     </span>
                     <Button variant="secondary" onClick={() => connect.start()}>
@@ -299,12 +300,12 @@ export default function AddModelModal({ visible, onCancel, onSuccess, authentica
                           size={20}
                           fallback={initials(connectedProfileLabel)}
                         />
-                        <span className="text-[12px] text-kumo-subtle">
+                        <span className="text-[12px] text-muted-foreground">
                           {connectedProfileLabel}
                         </span>
                       </span>
                     ) : (
-                      <span className="text-[12px] text-kumo-subtle">
+                      <span className="text-[12px] text-muted-foreground">
                         AnyRouter account linked
                       </span>
                     )}

@@ -55,15 +55,15 @@ export default function SidebarGadgetRow({
     <Link
       to="/workspace/$id"
       params={{ id: gadget.id }}
-      className="group flex h-8 items-center gap-2 rounded-lg pl-1.5 pr-1 text-[13px] leading-[18px] tracking-[-0.25px] text-kumo-default transition-colors hover:bg-kumo-tint"
-      activeProps={{ className: 'flex h-8 items-center gap-2 rounded-lg pl-1.5 pr-1 text-[13px] leading-[18px] tracking-[-0.25px] bg-kumo-fill text-kumo-strong font-medium' }}
+      className="group flex h-8 items-center gap-2 rounded-lg pl-1.5 pr-1 text-[13px] leading-[18px] tracking-[-0.25px] text-foreground transition-colors hover:bg-muted"
+      activeProps={{ className: 'flex h-8 items-center gap-2 rounded-lg pl-1.5 pr-1 text-[13px] leading-[18px] tracking-[-0.25px] bg-muted text-foreground font-medium' }}
       onClick={(e) => {
         if (renaming) e.preventDefault()
       }}
       title={collapsed ? gadget.title || 'Untitled workspace' : undefined}
     >
       <div
-        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-kumo-fill text-[10px] font-medium text-kumo-subtle"
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-muted text-[10px] font-medium text-muted-foreground"
         aria-hidden="true"
       >
         {initials(gadget.title)}
@@ -81,7 +81,7 @@ export default function SidebarGadgetRow({
                 if (e.key === 'Enter') commit()
                 if (e.key === 'Escape') setRenaming(false)
               }}
-              className="min-w-0 flex-1 bg-transparent text-[13px] leading-[18px] tracking-[-0.25px] outline-none border-b border-kumo-brand text-kumo-default"
+              className="min-w-0 flex-1 bg-transparent text-[13px] leading-[18px] tracking-[-0.25px] outline-none border-b border-primary text-foreground"
               onClick={(e) => e.preventDefault()}
             />
           ) : (
@@ -97,7 +97,7 @@ export default function SidebarGadgetRow({
                   <button
                     type="button"
                     aria-label="Workspace actions"
-                    className="flex h-6 w-6 items-center justify-center rounded-md text-kumo-subtle opacity-0 transition-[opacity,color,background-color] group-hover:opacity-100 hover:bg-kumo-fill hover:text-kumo-default focus:opacity-100"
+                    className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-[opacity,color,background-color] group-hover:opacity-100 hover:bg-muted hover:text-foreground focus:opacity-100"
                   >
                     <DotsThree size={14} weight="bold" />
                   </button>

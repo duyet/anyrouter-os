@@ -9,6 +9,20 @@
       tokens at dark-preferring visitors. Keep the localStorage key in sync with
       THEME_MODE_STORAGE_KEY in src/theme.ts.
     -->
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0a0a" media="(prefers-color-scheme: dark)" />
+    <style>
+      html,body{background-color:#ffffff;color:#0a0a0a;color-scheme:light}
+      @media (prefers-color-scheme: dark){
+        html:not(.light):not([data-mode=light]),
+        html:not(.light):not([data-mode=light]) body
+        {background-color:#0a0a0a;color:#fafafa;color-scheme:dark}
+      }
+      html.dark,html[data-mode=dark],body.dark,body[data-mode=dark]
+      {background-color:#0a0a0a;color:#fafafa;color-scheme:dark}
+      html.light,html[data-mode=light],body.light,body[data-mode=light]
+      {background-color:#ffffff;color:#0a0a0a;color-scheme:light}
+    </style>
     <script>
       (function () {
         var mode = 'light'
@@ -21,7 +35,10 @@
           }
         } catch (e) {}
         var root = document.documentElement
+        var dark = mode === 'dark'
         root.setAttribute('data-mode', mode)
+        root.classList.toggle('dark', dark)
+        root.classList.toggle('light', !dark)
         root.style.colorScheme = mode
         var meta = document.querySelector('meta[name="color-scheme"]')
         if (!meta) {

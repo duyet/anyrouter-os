@@ -191,7 +191,7 @@ export function GadgetPresence({
         render={
           <button
             type="button"
-            className="inline-flex shrink-0 cursor-pointer items-center rounded-full border border-kumo-line bg-kumo-base/60 p-0.5 transition-[background-color,transform] duration-150 ease-out hover:bg-kumo-tint focus-visible:bg-kumo-tint focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-kumo-ring active:scale-[0.97]"
+            className="inline-flex shrink-0 cursor-pointer items-center rounded-full border border-border bg-background/60 p-0.5 transition-[background-color,transform] duration-150 ease-out hover:bg-muted focus-visible:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.97]"
             aria-label={ariaLabel}
           >
             <span ref={stackRef} className="relative inline-flex">
@@ -202,7 +202,7 @@ export function GadgetPresence({
                         Kept on separate elements so the two transforms don't overwrite each other. */}
                     <span data-flip-id={p.user.id} className="inline-flex cursor-pointer">
                       <span
-                        className={`rounded-full ring-2 ring-kumo-base ${exiting.has(p.user.id) ? 'presence-pop-out' : 'presence-pop-in'}`}
+                        className={`rounded-full ring-2 ring-background ${exiting.has(p.user.id) ? 'presence-pop-out' : 'presence-pop-in'}`}
                       >
                         <PersonAvatar
                           api={authenticatedApi}
@@ -217,14 +217,14 @@ export function GadgetPresence({
                 {overflow > 0 && (
                   <span data-flip-id="__overflow" className="inline-flex cursor-pointer">
                     <span
-                      className="presence-pop-in grid h-[26px] w-[26px] place-items-center rounded-full bg-kumo-tint text-[10px] font-semibold text-kumo-strong ring-2 ring-kumo-base"
+                      className="presence-pop-in grid h-[26px] w-[26px] place-items-center rounded-full bg-muted text-[10px] font-semibold text-foreground ring-2 ring-background"
                     >
                       +{overflow}
                     </span>
                   </span>
                 )}
               </span>
-              <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-kumo-success ring-2 ring-kumo-base" />
+              <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-success ring-2 ring-background" />
             </span>
           </button>
         }
@@ -232,9 +232,9 @@ export function GadgetPresence({
       <Popover.Content
         align="end"
         sideOffset={6}
-        className="!z-[1100] !w-[260px] !min-w-0 flex max-h-[min(60vh,420px)] flex-col overflow-hidden rounded-2xl bg-kumo-base p-1 shadow-lg shadow-kumo-tip-shadow"
+        className="!z-[1100] !w-[260px] !min-w-0 flex max-h-[min(60vh,420px)] flex-col overflow-hidden rounded-2xl bg-background p-1 shadow-lg shadow-none"
       >
-        <Popover.Title className="shrink-0 px-2.5 pt-1.5 pb-1 text-[11px] leading-4 font-medium tracking-[-0.2px] text-kumo-subtle">
+        <Popover.Title className="shrink-0 px-2.5 pt-1.5 pb-1 text-[11px] leading-4 font-medium tracking-[-0.2px] text-muted-foreground">
           {label}
         </Popover.Title>
         <div className="presence-scroll min-h-0 flex-1 overflow-y-auto">
@@ -250,10 +250,10 @@ export function GadgetPresence({
                 size={28}
               />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[12px] leading-4 font-medium text-kumo-default">
+                <span className="block truncate text-[12px] leading-4 font-medium text-foreground">
                   {p.user.name}
                 </span>
-                <span className="mt-0.5 block text-[11px] leading-4 font-normal text-kumo-subtle">
+                <span className="mt-0.5 block text-[11px] leading-4 font-normal text-muted-foreground">
                   {ROLE_LABELS[p.role]}
                 </span>
               </span>
