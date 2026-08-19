@@ -490,7 +490,7 @@ function HomeFeaturedBlueprintCard({
   const badges = uniqueBindingBadges(blueprint.metadata.bindings).slice(0, 1)
 
   return (
-    <div className="themed-card-hover-shadow group relative isolate flex min-h-[190px] flex-col overflow-hidden rounded-2xl border border-border bg-background text-left transition-[border-color,box-shadow,transform] duration-150 ease-out hover:-translate-y-px hover:border-border active:scale-[0.995]">
+    <div className="group relative isolate flex min-h-[190px] flex-col overflow-hidden rounded-2xl border border-border bg-background text-left transition-[border-color,box-shadow,transform] duration-150 ease-out hover:-translate-y-px hover:border-border active:scale-[0.995]">
       <Link
         to="/blueprint/$id"
         params={{ id: blueprint.id }}

@@ -405,7 +405,7 @@ function FileRow({
           />
           <DropdownMenu.Content
             onClick={(event) => event.stopPropagation()}
-            className="themed-floating-shadow !z-[1100] !min-w-[144px] rounded-lg border border-border bg-background p-1"
+            className="!z-[1100] !min-w-[144px] rounded-lg border border-border bg-background p-1"
           >
             <DropdownMenu.Item
               icon={<DownloadSimple size={12} className="mr-2" />}

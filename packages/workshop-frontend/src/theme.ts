@@ -18,6 +18,10 @@ export type ResolvedThemeMode = 'light' | 'dark'
  */
 export const THEME_MODE_STORAGE_KEY = 'gadgets:theme-mode'
 
+/** Browser chrome color for the resolved light/dark mode — not `prefers-color-scheme`. */
+export const THEME_COLOR_LIGHT = '#ffffff'
+export const THEME_COLOR_DARK = '#0a0a0a'
+
 function isThemeMode(value: string | null): value is ThemeMode {
   return value === 'light' || value === 'dark' || value === 'system'
 }
@@ -65,6 +69,15 @@ export function applyThemeMode(mode: ThemeMode): ResolvedThemeMode {
     document.head.appendChild(meta)
   }
   meta.setAttribute('content', resolved)
+
+  const themeColor = resolved === 'dark' ? THEME_COLOR_DARK : THEME_COLOR_LIGHT
+  let colorMeta = document.querySelector('meta[name="theme-color"]:not([media])')
+  if (!colorMeta) {
+    colorMeta = document.createElement('meta')
+    colorMeta.setAttribute('name', 'theme-color')
+    document.head.appendChild(colorMeta)
+  }
+  colorMeta.setAttribute('content', themeColor)
 
   return resolved
 }

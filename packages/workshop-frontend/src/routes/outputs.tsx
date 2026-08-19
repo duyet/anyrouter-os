@@ -155,7 +155,7 @@ function OutputCard({
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen() } }}
-      className="themed-card-hover-shadow press group flex cursor-pointer flex-col overflow-hidden rounded-xl border border-border bg-background text-left transition-[border-color,box-shadow] duration-150 ease-out hover:border-border"
+      className="press group flex cursor-pointer flex-col overflow-hidden rounded-xl border border-border bg-background text-left transition-[border-color,box-shadow] duration-150 ease-out hover:border-border"
     >
       <div className="relative aspect-[4/3] w-full border-b border-border">
         <FormatThumbnail output={output.output} />

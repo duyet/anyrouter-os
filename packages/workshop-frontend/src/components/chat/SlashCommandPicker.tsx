@@ -222,7 +222,7 @@ export function useSlashCommandPicker({
   let popup = open && layout ? createPortal(
     <div
       ref={popupRef}
-      className="themed-floating-shadow fixed z-[1000] flex flex-col overflow-hidden rounded-lg border border-border bg-background"
+      className="fixed z-[1000] flex flex-col overflow-hidden rounded-lg border border-border bg-background"
       style={{
         left: layout.left,
         top: layout.top,

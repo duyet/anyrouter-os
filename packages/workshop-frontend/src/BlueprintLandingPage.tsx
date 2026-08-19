@@ -1121,7 +1121,7 @@ function BlueprintScreenshotHero({
         render={(
           <button
             type="button"
-            className="themed-compact-shadow themed-card-hover-shadow group relative block w-full cursor-zoom-in overflow-hidden rounded-2xl border border-border bg-background text-left transition-[border-color,box-shadow,transform] duration-150 ease-out hover:-translate-y-px hover:border-border active:scale-[0.995]"
+            className="group relative block w-full cursor-zoom-in overflow-hidden rounded-2xl border border-border bg-background text-left transition-[border-color,box-shadow,transform] duration-150 ease-out hover:-translate-y-px hover:border-border active:scale-[0.995]"
             aria-label={`Open larger screenshot of ${title}`}
           >
             <img
@@ -1179,7 +1179,7 @@ function BlueprintStatePage({
   return (
     <div className="min-h-full bg-background">
       <div className="mx-auto flex min-h-[60vh] w-full max-w-[1040px] items-center justify-center px-4 py-12 sm:px-8">
-        <div className="themed-compact-shadow w-full max-w-md rounded-2xl border border-border bg-background px-6 py-8 text-center">
+        <div className="w-full max-w-md rounded-2xl border border-border bg-background px-6 py-8 text-center">
           {loading && (
             <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           )}

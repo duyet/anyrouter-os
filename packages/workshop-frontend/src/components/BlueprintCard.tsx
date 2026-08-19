@@ -118,7 +118,7 @@ export function BlueprintCard({
   const badges = uniqueBindingBadges(metadata.bindings);
 
   return (
-    <div className="themed-card-hover-shadow group relative isolate flex min-h-[150px] flex-col overflow-hidden rounded-2xl border border-border bg-background text-left transition-[border-color,transform,box-shadow] duration-150 ease-out hover:-translate-y-px hover:border-border active:scale-[0.995]">
+    <div className="group relative isolate flex min-h-[150px] flex-col overflow-hidden rounded-2xl border border-border bg-background text-left transition-[border-color,transform,box-shadow] duration-150 ease-out hover:-translate-y-px hover:border-border active:scale-[0.995]">
       {featured && (
         <Star
           size={72}

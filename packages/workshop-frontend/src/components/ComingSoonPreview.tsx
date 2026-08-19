@@ -24,7 +24,7 @@ export default function ComingSoonPreview({
       </div>
 
       <div className="absolute inset-0 z-10 flex items-start justify-center bg-background/55 px-6 pt-16 sm:pt-20">
-        <div className="themed-compact-shadow flex flex-col items-center gap-3 rounded-2xl border border-border bg-background px-6 py-5 text-center">
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-border bg-background px-6 py-5 text-center">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
             <Icon size={18} />
           </div>

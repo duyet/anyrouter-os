@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useKumoToastManager } from '@/components/ui/toast'
 import { Dialog, Select, Loader, Text } from '@/components/ui'
-import { Warning, Plus, ArrowClockwise, CheckCircle } from '@phosphor-icons/react'
+import { Warning, Plus, ArrowClockwise, CheckCircle, X } from '@phosphor-icons/react'
 import { RpcStub } from 'capnweb'
 import {
   AuthenticatedApi,
@@ -15,7 +15,7 @@ import {
   SupportedResource,
   resolveRequestedResource,
 } from '@gadgets/workshop-shared/gatekeeper'
-import { WorkshopButton } from './components/WorkshopControls'
+import { WorkshopButton, WorkshopIconButton } from './components/WorkshopControls'
 import Avatar from './components/Avatar'
 import { AccountsSubscriberAdapter } from './accountsSubscriber'
 
@@ -315,9 +315,18 @@ export default function ObserverConfigModal({
   return (
     <Dialog.Root open disablePointerDismissal onOpenChange={open => { if (!open) onCancel() }}>
       <Dialog className="p-6" size="lg">
-        <Dialog.Title className="mb-2 text-lg font-semibold">
-          {isRetry ? 'Verify your access again' : 'Verify your access'}
-        </Dialog.Title>
+        <div className="mb-2 flex items-start justify-between gap-4">
+          <Dialog.Title className="text-lg font-semibold">
+            {isRetry ? 'Verify your access again' : 'Verify your access'}
+          </Dialog.Title>
+          <Dialog.Close
+            render={(props) => (
+              <WorkshopIconButton {...props} className="!h-7 !w-7" aria-label="Close">
+                <X size={16} />
+              </WorkshopIconButton>
+            )}
+          />
+        </div>
         <Text variant="secondary" size="sm" as="p">
           {isRetry
             ? 'We couldn’t confirm your access to everything this workspace has read. Re-authenticate ' +

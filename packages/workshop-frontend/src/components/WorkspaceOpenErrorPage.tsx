@@ -63,7 +63,7 @@ export default function WorkspaceOpenErrorPage({ kind, onRetry, onGoToWorkspaces
         aria-describedby={descriptionId}
         aria-labelledby={titleId}
         aria-live="polite"
-        className="themed-compact-shadow w-full max-w-md rounded-2xl border border-border bg-background px-6 py-8 text-center"
+        className="w-full max-w-md rounded-2xl border border-border bg-background px-6 py-8 text-center"
       >
         <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground">
           <Icon aria-hidden="true" size={20} weight="bold" />

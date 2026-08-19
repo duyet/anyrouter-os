@@ -186,7 +186,9 @@ function CompatDialog({
     const { className: _className, showCloseButton: _showCloseButton, ...rootProps } = props
     return <DialogPrimitive.Root {...rootProps}>{children}</DialogPrimitive.Root>
   }
-  return <DialogContent {...props}>{children}</DialogContent>
+  // Kumo-style `<Dialog className>` already paints its own chrome; do not inject a second X.
+  // Direct `<Dialog.Content>` still defaults `showCloseButton` to true.
+  return <DialogContent {...props} showCloseButton={props.showCloseButton ?? false}>{children}</DialogContent>
 }
 
 const DialogCompound = Object.assign(CompatDialog, {

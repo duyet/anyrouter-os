@@ -25,6 +25,8 @@ vi.mock('@/components/ui', () => {
     {
       Root: ({ children }: { children: ReactNode }) => <>{children}</>,
       Title: ({ children }: { children: ReactNode }) => <h1>{children}</h1>,
+      Close: ({ render }: { render?: (props: object) => ReactNode }) =>
+        render ? render({ 'aria-label': 'Close' }) : null,
     },
   )
   const Select = Object.assign(
@@ -41,6 +43,9 @@ vi.mock('@/components/ui', () => {
 
 vi.mock('./components/WorkshopControls', () => ({
   WorkshopButton: ({ children, ...props }: ComponentProps<'button'>) => (
+    <button type="button" {...props}>{children}</button>
+  ),
+  WorkshopIconButton: ({ children, ...props }: ComponentProps<'button'>) => (
     <button type="button" {...props}>{children}</button>
   ),
 }))

@@ -99,7 +99,7 @@ function RoleMenu({
         container={container}
         align="end"
         sideOffset={6}
-        className="themed-floating-shadow-lg !z-[1100] !w-[300px] !min-w-0 rounded-2xl border border-border/70 bg-background p-1 !ring-border"
+        className="!z-[1100] !w-[300px] !min-w-0 rounded-2xl border border-border/70 bg-background p-1 !ring-border"
       >
         {ROLE_OPTIONS.map(role => (
           <DropdownMenu.Item
@@ -792,9 +792,9 @@ export default function ShareModal({ open, onClose, overseer, metadata, currentU
             </div>
           ) : (
           <>
-          <div className={`sticky top-0 z-10 bg-background pb-3 transition-shadow duration-200 ${scrolled ? 'themed-bottom-shadow border-b border-border/60' : ''}`}>
+          <div className={`sticky top-0 z-10 bg-background pb-3 transition-shadow duration-200 ${scrolled ? 'border-b border-border/60' : ''}`}>
           <div
-            className="themed-compact-shadow grid min-h-12 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border border-border/80 bg-background p-1.5 pl-3 transition-[border-color,box-shadow] focus-within:border-border sm:flex sm:overflow-hidden"
+            className="grid min-h-12 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border border-border/80 bg-background p-1.5 pl-3 transition-[border-color,box-shadow] focus-within:border-border sm:flex sm:overflow-hidden"
             data-keeper-ignore="true"
             data-1p-ignore="true"
             data-lpignore="true"
@@ -841,7 +841,7 @@ export default function ShareModal({ open, onClose, overseer, metadata, currentU
           </div>
 
           {invitedName && (
-            <div className="themed-compact-shadow mt-2 flex flex-wrap items-center gap-3 rounded-2xl border border-border/80 bg-background px-3 py-2.5 share-fade-in">
+            <div className="mt-2 flex flex-wrap items-center gap-3 rounded-2xl border border-border/80 bg-background px-3 py-2.5 share-fade-in">
               <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
                 {invitedLinkCopied ? <Check size={15} weight="bold" /> : <UserPlus size={15} weight="duotone" />}
               </div>
@@ -872,7 +872,7 @@ export default function ShareModal({ open, onClose, overseer, metadata, currentU
           <div className="mt-2">
             {(showLinkComposer || newShareLink) ? (
               newShareLink ? (
-                <div className="themed-compact-shadow flex flex-wrap items-center gap-3 rounded-2xl border border-border/80 bg-background px-3 py-2.5 share-fade-in">
+                <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border/80 bg-background px-3 py-2.5 share-fade-in">
                     <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
                       {newShareLinkCopied ? <Check size={15} weight="bold" /> : <Link size={15} />}
                     </div>
@@ -899,7 +899,7 @@ export default function ShareModal({ open, onClose, overseer, metadata, currentU
                     </WorkshopIconButton>
                 </div>
               ) : (
-                <div className="themed-compact-shadow flex h-12 items-center gap-2 overflow-hidden rounded-2xl border border-border/80 bg-background p-1.5 pl-3 transition-[border-color,box-shadow] focus-within:border-border share-fade-in">
+                <div className="flex h-12 items-center gap-2 overflow-hidden rounded-2xl border border-border/80 bg-background p-1.5 pl-3 transition-[border-color,box-shadow] focus-within:border-border share-fade-in">
                     <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
                       <Link size={15} />
                     </div>
@@ -933,7 +933,7 @@ export default function ShareModal({ open, onClose, overseer, metadata, currentU
                 type="button"
                 onClick={() => setShowLinkComposer(true)}
                 disabled={sharingProhibited}
-                className="themed-compact-shadow flex h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-border/80 bg-background px-3 text-[13px] font-medium text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-card/60 hover:text-foreground active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-12 w-full cursor-pointer items-center justify-center gap-1.5 rounded-2xl border border-border/80 bg-background px-3 text-[13px] font-medium text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out hover:bg-card/60 hover:text-foreground active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <Link size={14} /> Create a share link
               </button>

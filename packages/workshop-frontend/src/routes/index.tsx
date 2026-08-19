@@ -152,7 +152,7 @@ export function HomePageContent({ prompt }: HomeSearch) {
   );
 
   return (
-    // Flat enterprise treatment: no mesh, no watermark hexagon, no prompt-glow. The AppShell's
+    // Flat enterprise treatment: no mesh, no watermark hexagon, no composer glow. The AppShell's
     // <main> already supplies a faint dotted grid as the page background.
     <div className="relative isolate flex min-h-full w-full flex-col items-center justify-start px-4 pb-16 pt-10 sm:px-8 sm:pt-16 lg:pt-24">
       {/* The brand hex mesh, restored and de-warmed for the new system: a gentle perspective hex

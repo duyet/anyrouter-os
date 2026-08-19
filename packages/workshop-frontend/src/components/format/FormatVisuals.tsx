@@ -227,7 +227,7 @@ export function FormatThumbnail({
   const Wireframe = WIREFRAMES[wireframeOf(output)]
   return (
     <div className={`absolute inset-0 bg-muted ${className}`} aria-hidden="true">
-      <div className="themed-thumbnail-shadow absolute left-1/2 top-4 h-[calc(100%-1rem)] w-[78%] -translate-x-1/2 overflow-hidden rounded-t-[6px] bg-background ring-1 ring-border/20">
+      <div className="absolute left-1/2 top-4 h-[calc(100%-1rem)] w-[78%] -translate-x-1/2 overflow-hidden rounded-t-[6px] bg-background ring-1 ring-border/20">
         <div className="h-full w-full p-3.5">
           <Wireframe />
         </div>

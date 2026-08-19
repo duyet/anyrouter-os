@@ -201,30 +201,6 @@ code {
   display: none;
 }
 
-/* Decorative shadows / glow from the Kumo era — no-ops so leftover class names stay harmless. */
-.themed-surface-inset,
-.themed-inset-outline,
-.themed-prompt-card-shadow,
-.themed-prompt-card-shadow:focus-within,
-.themed-user-bubble-shadow,
-.themed-thumbnail-shadow,
-.themed-floating-shadow,
-.themed-floating-shadow-lg,
-.themed-bottom-shadow,
-.themed-compact-shadow,
-.themed-compact-shadow:focus-within,
-.themed-card-hover-shadow:hover,
-.themed-row-hover-shadow:hover,
-.themed-accent-glow,
-.prompt-glow,
-.prompt-glow-hidden {
-  box-shadow: none;
-  background: none;
-  filter: none;
-  animation: none;
-  opacity: 1;
-}
-
 .prompt-input {
   border-color: var(--border);
   background: var(--background);

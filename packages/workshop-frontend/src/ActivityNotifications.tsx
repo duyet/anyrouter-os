@@ -52,13 +52,11 @@ export default function ActivityNotifications({
           </button>
         }
       />
-      {/* Kumo always renders base-ui's arrow as the popup's first child; hide it so this sits flush
-          like the header's profile menu, which has no arrow. */}
       <Popover.Content
         align="end"
         sideOffset={8}
         positionMethod="fixed"
-        className="themed-floating-shadow !z-[1100] !w-[min(340px,calc(100vw-24px))] !min-w-0 overflow-hidden rounded-lg border border-border !outline-none bg-background !p-0 [&>:first-child]:hidden"
+        className="!z-[1100] !w-[min(340px,calc(100vw-24px))] !min-w-0 overflow-hidden rounded-lg border border-border !outline-none bg-background !p-0"
       >
         <div className="flex items-center justify-between gap-2 px-3.5 pb-1 pt-2.5">
           <Popover.Title className="text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">

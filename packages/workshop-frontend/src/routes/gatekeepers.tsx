@@ -205,7 +205,7 @@ function ConnectorCard({
       tabIndex={0}
       onClick={onClick}
       onKeyDown={handleKeyDown}
-      className="themed-card-hover-shadow group grid w-full cursor-pointer grid-cols-[48px_1fr_auto] items-center gap-4 rounded-2xl border border-border bg-background px-5 py-5 text-left transition-[border-color,transform,box-shadow] duration-150 ease-out hover:-translate-y-px hover:border-border active:scale-[0.995]"
+      className="group grid w-full cursor-pointer grid-cols-[48px_1fr_auto] items-center gap-4 rounded-2xl border border-border bg-background px-5 py-5 text-left transition-[border-color,transform,box-shadow] duration-150 ease-out hover:-translate-y-px hover:border-border active:scale-[0.995]"
     >
       <div className="self-start">
         <div className="relative">
@@ -376,7 +376,7 @@ function ConnectorsHeroDiagram({
             onMouseLeave={() => setHoveredSource(null)}
             onFocus={() => setHoveredSource(index)}
             onBlur={() => setHoveredSource(null)}
-            className={`themed-card-hover-shadow absolute grid h-11 w-11 place-items-center rounded-2xl border border-border bg-background transition-[border-color,transform,box-shadow] duration-150 ease-out hover:-translate-y-px hover:border-border ${sourceNodes[index].className}`}
+            className={`absolute grid h-11 w-11 place-items-center rounded-2xl border border-border bg-background transition-[border-color,transform,box-shadow] duration-150 ease-out hover:-translate-y-px hover:border-border ${sourceNodes[index].className}`}
           >
             <VendorIconTile
               logoUrl={node.logoUrl}
@@ -394,7 +394,7 @@ function ConnectorsHeroDiagram({
               key={index}
               onMouseEnter={() => setHoveredSource(index)}
               onMouseLeave={() => setHoveredSource(null)}
-              className={`themed-card-hover-shadow absolute h-11 w-11 rounded-2xl border border-border bg-card transition-[border-color,transform,box-shadow] duration-150 ease-out hover:-translate-y-px hover:border-border ${node.className}`}
+              className={`absolute h-11 w-11 rounded-2xl border border-border bg-card transition-[border-color,transform,box-shadow] duration-150 ease-out hover:-translate-y-px hover:border-border ${node.className}`}
             />
           ))}
         </>
@@ -403,12 +403,12 @@ function ConnectorsHeroDiagram({
       <div className="group absolute left-[176px] top-[58px] z-20">
         <button
           type="button"
-          className="themed-card-hover-shadow grid h-[52px] w-[52px] place-items-center rounded-2xl border border-border bg-background text-primary transition-[border-color,box-shadow] hover:border-border focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="grid h-[52px] w-[52px] place-items-center rounded-2xl border border-border bg-background text-primary transition-[border-color,box-shadow] hover:border-border focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           aria-label="Gatekeeper keeps Gadget access limited to connected resources"
         >
           <ShieldCheck size={21} weight="duotone" />
         </button>
-        <div className="themed-floating-shadow-lg pointer-events-none absolute left-1/2 top-[-108px] z-30 w-[228px] origin-bottom -translate-x-1/2 translate-y-1 scale-[0.98] rounded-2xl border border-border bg-background p-3 text-left opacity-0 transition-[opacity,transform] delay-0 duration-150 ease-out group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100 group-hover:delay-100 group-focus-within:translate-y-0 group-focus-within:scale-100 group-focus-within:opacity-100 group-focus-within:delay-100">
+        <div className="pointer-events-none absolute left-1/2 top-[-108px] z-30 w-[228px] origin-bottom -translate-x-1/2 translate-y-1 scale-[0.98] rounded-2xl border border-border bg-background p-3 text-left opacity-0 transition-[opacity,transform] delay-0 duration-150 ease-out group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100 group-hover:delay-100 group-focus-within:translate-y-0 group-focus-within:scale-100 group-focus-within:opacity-100 group-focus-within:delay-100">
           <div className="flex items-start gap-2.5">
             <div className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted text-primary">
               <ShieldCheck size={16} weight="duotone" />

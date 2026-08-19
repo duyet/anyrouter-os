@@ -348,7 +348,7 @@ export default function CommandPalette({
       }}
     >
       <div className="absolute inset-0 bg-black/20" aria-hidden="true" onMouseDown={onClose} />
-      <div className="themed-floating-shadow-lg relative w-full max-w-xl overflow-hidden rounded-xl border border-border bg-background">
+      <div className="relative w-full max-w-xl overflow-hidden rounded-xl border border-border bg-background">
         <div className="flex items-center gap-2.5 border-b border-border px-3.5">
           <MagnifyingGlass size={16} className="shrink-0 text-muted-foreground" />
           <input

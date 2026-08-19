@@ -17,12 +17,12 @@ export function EmptyState({
   return (
     <div className="relative overflow-hidden rounded-xl border border-dashed border-border bg-background px-6 py-9 text-center">
       <div
-        className="themed-accent-glow pointer-events-none absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full"
         style={{
           filter: 'blur(14px)',
         }}
       />
-      <div className="themed-user-bubble-shadow relative mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground">
+      <div className="relative mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground">
         <EmptyIcon size={18} />
       </div>
       <div className="relative">

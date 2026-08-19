@@ -464,14 +464,14 @@ function GadgetUISession({ gadget, height, reloadTrigger, isVisible = true, chat
         }}
       >
         <div
-          className="themed-accent-glow absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none"
+          className="absolute left-1/2 top-1/2 h-80 w-80 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none"
           style={{
             filter: 'blur(18px)',
           }}
         />
 
         <div className="relative flex max-w-sm flex-col items-center gap-3 px-6 text-center">
-          <div className="themed-user-bubble-shadow flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground">
             <Sparkle size={22} weight="regular" />
           </div>
           <div className="space-y-1">

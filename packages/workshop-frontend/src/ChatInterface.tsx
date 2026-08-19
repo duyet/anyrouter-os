@@ -1595,7 +1595,7 @@ const NestedToolCallRow = memo(function NestedToolCallRow({
         </span>
       </button>
       {open && (
-        <div className="themed-surface-inset ml-8 mt-1 space-y-3 rounded-2xl border border-border/70 bg-card/45 p-3">
+        <div className="ml-8 mt-1 space-y-3 rounded-2xl border border-border/70 bg-card/45 p-3">
           <ToolCallDetails toolCall={tc} />
         </div>
       )}
@@ -1637,7 +1637,7 @@ const NestedObservationRow = memo(function NestedObservationRow({
         </span>
       </button>
       {open && (
-        <div className="themed-surface-inset ml-8 mt-1 space-y-3 rounded-2xl border border-border/70 bg-card/45 p-3">
+        <div className="ml-8 mt-1 space-y-3 rounded-2xl border border-border/70 bg-card/45 p-3">
           <ObservationDetails observation={observation} />
         </div>
       )}
@@ -1721,11 +1721,11 @@ const ToolGroupRow = memo(function ToolGroupRow({
       </button>
       {open && (
         group.calls.length === 1 && group.observations.length === 0 ? (
-          <div className="themed-surface-inset ml-8 mt-1 space-y-3 rounded-2xl border border-border/70 bg-card/45 p-3">
+          <div className="ml-8 mt-1 space-y-3 rounded-2xl border border-border/70 bg-card/45 p-3">
             <ToolCallDetails toolCall={group.calls[0]} />
           </div>
         ) : group.calls.length === 0 && group.observations.length === 1 ? (
-          <div className="themed-surface-inset ml-8 mt-1 space-y-3 rounded-2xl border border-border/70 bg-card/45 p-3">
+          <div className="ml-8 mt-1 space-y-3 rounded-2xl border border-border/70 bg-card/45 p-3">
             <ObservationDetails observation={group.observations[0]} />
           </div>
         ) : (
@@ -3198,7 +3198,7 @@ export const ChatInput = ({
       {pendingConsoleLogCount > 0 && (
         <div className="pointer-events-none absolute inset-x-4 -top-10 z-10 flex justify-center">
           <div
-            className={`themed-floating-shadow pointer-events-auto flex items-center gap-2 rounded-full border px-3 py-1.5 text-[12px] leading-4 tracking-[-0.2px] ${logBannerClass}`}
+            className={`pointer-events-auto flex items-center gap-2 rounded-full border px-3 py-1.5 text-[12px] leading-4 tracking-[-0.2px] ${logBannerClass}`}
           >
             <Tooltip
               content={
@@ -3239,15 +3239,15 @@ export const ChatInput = ({
           into the canvas; the lift intensifies a touch on focus. */}
       <div
         ref={promptCardRef}
-        className="themed-prompt-card-shadow relative overflow-visible rounded-2xl border border-border bg-card transition-shadow duration-150 ease-out"
+        className="relative overflow-visible rounded-2xl border border-border bg-card transition-shadow duration-150 ease-out"
         onDragEnter={handleAttachmentDragEnter}
         onDragOver={handleAttachmentDragOver}
         onDragLeave={handleAttachmentDragLeave}
         onDrop={handleAttachmentDrop}
       >
         {isAttachmentDragActive && (
-          <div className={`themed-inset-outline pointer-events-none absolute inset-0 z-20 grid place-items-center rounded-2xl border-2 border-dashed p-4 transition-[opacity,transform] duration-150 ease-out ${canAttachMore ? "border-primary/55 bg-primary/10" : "border-warning/60 bg-warning/10"}`}>
-            <div className={`themed-floating-shadow flex items-center gap-2 rounded-full border bg-background/90 px-3 py-2 text-[13px] font-medium leading-4 tracking-[-0.2px] text-foreground ${canAttachMore ? "border-primary/25" : "border-warning/30"}`}>
+          <div className={`pointer-events-none absolute inset-0 z-20 grid place-items-center rounded-2xl border-2 border-dashed p-4 transition-[opacity,transform] duration-150 ease-out ${canAttachMore ? "border-primary/55 bg-primary/10" : "border-warning/60 bg-warning/10"}`}>
+            <div className={`flex items-center gap-2 rounded-full border bg-background/90 px-3 py-2 text-[13px] font-medium leading-4 tracking-[-0.2px] text-foreground ${canAttachMore ? "border-primary/25" : "border-warning/30"}`}>
               <span className={`grid h-7 w-7 place-items-center rounded-full ${canAttachMore ? "bg-primary/12 text-primary" : "bg-warning/15 text-warning"}`}>
                 <FileIcon size={16} weight="duotone" />
               </span>
@@ -3489,7 +3489,7 @@ export const ChatInput = ({
                   </button>
                 }
               />
-              <DropdownMenu.Content collisionPadding={16} className="themed-floating-shadow-lg !z-[1100] !min-w-[170px] rounded-2xl border border-border/70 bg-background p-1">
+              <DropdownMenu.Content collisionPadding={16} className="!z-[1100] !min-w-[170px] rounded-2xl border border-border/70 bg-background p-1">
                 {/* The deployment's standard formats. Picking one drops its name into the message at
                     the caret; the agent is told what to build from it. */}
                 {canChooseFormat && (
@@ -3548,7 +3548,7 @@ export const ChatInput = ({
                     </button>
                   }
                 />
-                <DropdownMenu.Content className="themed-floating-shadow-lg !z-[1100] !min-w-[190px] rounded-2xl border border-border/70 bg-background p-1">
+                <DropdownMenu.Content className="!z-[1100] !min-w-[190px] rounded-2xl border border-border/70 bg-background p-1">
                   {models.map((model) => {
                     const active = selectedModel === model.id;
                     return (
@@ -3816,7 +3816,7 @@ function DiscardPendingChangesPopover({
         side="top"
         sideOffset={8}
         positionMethod="fixed"
-        className="themed-floating-shadow !z-[1100] !w-[min(300px,calc(100vw-24px))] !min-w-0 overflow-hidden rounded-xl border border-border bg-background !p-0 !outline-none [&>:first-child]:hidden"
+        className="!z-[1100] !w-[min(300px,calc(100vw-24px))] !min-w-0 overflow-hidden rounded-xl border border-border bg-background !p-0 !outline-none"
       >
         <div className="px-3.5 pb-2.5 pt-3">
           <Popover.Title className="text-[13px] font-medium leading-[18px] tracking-[-0.25px] text-foreground">
@@ -6428,7 +6428,7 @@ function ChatInterface({
             </span>
           </button>
           {open && (
-            <div className="themed-surface-inset ml-8 mt-1 rounded-2xl border border-border/70 bg-card/45 p-3 text-[13px] leading-[19px] text-muted-foreground">
+            <div className="ml-8 mt-1 rounded-2xl border border-border/70 bg-card/45 p-3 text-[13px] leading-[19px] text-muted-foreground">
               <MarkdownMessage message={log.description.description} />
             </div>
           )}
@@ -6599,7 +6599,7 @@ function ChatInterface({
           </button>
         )}
         {showDescription && (
-          <div className="themed-surface-inset ml-8 mt-1 space-y-1.5 rounded-2xl border border-border/70 bg-card/45 p-3 text-[13px] leading-[19px] tracking-[-0.25px] text-muted-foreground">
+          <div className="ml-8 mt-1 space-y-1.5 rounded-2xl border border-border/70 bg-card/45 p-3 text-[13px] leading-[19px] tracking-[-0.25px] text-muted-foreground">
             <div className={`chat-panel max-h-[200px] overflow-y-auto pr-1 ${styles.markdownContent}`}>
               <MarkdownMessage message={log.description.description} />
             </div>
@@ -6634,7 +6634,7 @@ function ChatInterface({
               </button>
             }
           />
-          <DropdownMenu.Content className="themed-floating-shadow !z-[1100] !min-w-[200px] rounded-lg border border-border bg-background p-1">
+          <DropdownMenu.Content className="!z-[1100] !min-w-[200px] rounded-lg border border-border bg-background p-1">
             {chatListScopes.map((scope) => {
               const active = chatListScope === scope.value;
               return (
@@ -6784,7 +6784,7 @@ function ChatInterface({
                         />
                         <DropdownMenu.Content
                           onClick={(event) => event.stopPropagation()}
-                          className="themed-floating-shadow !z-[1100] !min-w-[144px] rounded-lg border border-border bg-background p-1"
+                          className="!z-[1100] !min-w-[144px] rounded-lg border border-border bg-background p-1"
                         >
                           <DropdownMenu.Item
                             icon={<Pencil size={12} className="mr-2" />}
@@ -7031,7 +7031,7 @@ function ChatInterface({
                         const expanded = expandedCompactions.has(entry.boundary.to);
                         const kept = entry.keptRows;
                         const summary = (
-                          <div className="themed-surface-inset mt-3 rounded-2xl border border-border/70 bg-card/45 p-3.5">
+                          <div className="mt-3 rounded-2xl border border-border/70 bg-card/45 p-3.5">
                             {kept !== undefined && (
                               // Says what the agent traded away and what it still has, since the
                               // marker sits at the request rather than at the cut it describes.
@@ -7225,7 +7225,7 @@ function ChatInterface({
                         {/* ── user / AI text message ── */}
                         {msg.type === "slashCommand" && (
                           <div className="group/message relative flex flex-col items-end">
-                            <div className="themed-user-bubble-shadow w-fit max-w-[min(680px,78%)] rounded-[24px] rounded-br-lg border border-transparent bg-muted px-4 py-2.5 text-[14px] leading-[22px] tracking-[-0.25px] text-foreground">
+                            <div className="w-fit max-w-[min(680px,78%)] rounded-[24px] rounded-br-lg border border-transparent bg-muted px-4 py-2.5 text-[14px] leading-[22px] tracking-[-0.25px] text-foreground">
                               <span className="whitespace-pre-wrap">
                                 <SlashCommandMention
                                   name={msg.skillName}
@@ -7254,7 +7254,7 @@ function ChatInterface({
                         {msg.type === "message" && (
                           msg.author.type === "user" ? (
                             <div className="group/message relative flex flex-col items-end">
-                              <div className={`themed-user-bubble-shadow w-fit max-w-[min(680px,78%)] rounded-[24px] rounded-br-lg border border-transparent bg-muted px-4 py-2.5 text-[14px] leading-[22px] tracking-[-0.25px] text-foreground ${styles.markdownContent}`}>
+                              <div className={`w-fit max-w-[min(680px,78%)] rounded-[24px] rounded-br-lg border border-transparent bg-muted px-4 py-2.5 text-[14px] leading-[22px] tracking-[-0.25px] text-foreground ${styles.markdownContent}`}>
                                 {msg.attachments && msg.attachments.length > 0 && (
                                   <ChatAttachmentGrid
                                     attachments={msg.attachments}
@@ -7735,7 +7735,7 @@ function ChatInterface({
                                       {detailCalls.map((toolCall) => (
                                         <div
                                           key={`stream-tool-${toolCall.toolCallId}`}
-                                          className="themed-surface-inset space-y-3 rounded-2xl border border-border/70 bg-card/45 p-3"
+                                          className="space-y-3 rounded-2xl border border-border/70 bg-card/45 p-3"
                                         >
                                           {toolCall.code && (
                                             <>
@@ -7829,7 +7829,7 @@ function ChatInterface({
                       );
                       const changesActionsDisabled = isAgentActive || isDiscardingChanges;
                       return (
-                        <div className="themed-surface-inset relative flex items-center gap-2 overflow-hidden rounded-t-[calc(1rem-1px)] border-b border-border bg-card px-3.5 py-2">
+                        <div className="relative flex items-center gap-2 overflow-hidden rounded-t-[calc(1rem-1px)] border-b border-border bg-card px-3.5 py-2">
                           <span className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" aria-hidden="true" />
                           <span className="min-w-0 flex-1 truncate text-[12px] font-medium leading-4 tracking-[-0.2px] text-foreground">
                             Pending changes
