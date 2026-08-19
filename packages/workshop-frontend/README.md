@@ -1,6 +1,6 @@
-# Gadgets Workshop Frontend
+# AnyRouter OS frontend
 
-Single-page app for the Gadgets Workshop UI. Built with React, Kumo, and Vite.
+Single-page app for AnyRouter OS. Built with React, Kumo, and Vite. Speaks to the backend over Cap'n Web RPC.
 
 ## Development
 
@@ -12,5 +12,6 @@ pnpm preview    # preview production build locally
 
 ## Authentication
 
-Users log in with a username and password, via Clerk, or via an OAuth-button sign-in gatekeeper.
-Account creation is available via `/signup`. No extra configuration needed.
+This instance signs in with Clerk (the same instance as anyrouter.dev). Password login is available only when Clerk is not configured. Account creation is at `/signup` when password auth is on.
+
+Model access uses **Sign in with AnyRouter** (`ANYROUTER_OAUTH_CLIENT_ID`), not a deployment-wide API key.

@@ -69,7 +69,7 @@ declare global {
       ANYROUTER_AUTH_ONLY?: string;
 
       // URL of a second mark shown alongside the (admin-uploaded) primary site logo as a
-      // horizontal lockup, e.g. pairing a vendor mark with the default Cloudflare OS mark.
+      // horizontal lockup, e.g. pairing a vendor mark with the default AnyRouter OS mark.
       SITE_LOGO_SECONDARY_URL?: string;
 
       // Deployment-wide default for AdminConfig.ambientGatekeeperModes (see provisioning-policy.ts):

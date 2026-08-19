@@ -1,5 +1,9 @@
 # Sign-in via authentication gatekeepers
 
+**AnyRouter OS** uses Clerk as the only sign-in path on os.anyrouter.dev, plus **Sign in with
+AnyRouter** for model access. The rest of this document describes the generic Workshop gatekeeper
+sign-in option, which this instance does not currently offer as the primary login.
+
 Sign-in is provided by **authentication gatekeepers** — gatekeepers that advertise `providesAuth`
 and can return a provider-verified email. Each such gatekeeper uses a single OAuth app for both
 sign-in and (when the user later connects it) its capabilities, so there's only one OAuth app per
@@ -7,7 +11,7 @@ provider — no separate "login" vs. "gatekeeper" apps.
 
 It's an optional, **additive** feature: for each allowlisted, auth-capable gatekeeper a "Continue
 with …" button appears **alongside** the normal username/password form. Off by default — with an
-empty allowlist the Workshop behaves as before (username/password, or Cloudflare Access).
+empty allowlist the Workshop behaves as before (username/password, or Clerk on this instance).
 
 The deployment opts gatekeepers into sign-in via the `AUTH_GATEKEEPERS` allowlist (comma-separated
 vendor ids). Set `DISABLE_PASSWORD_AUTH=true` to hide username/password and offer gatekeeper sign-in
@@ -17,7 +21,7 @@ only (ignored unless the allowlist is non-empty, to avoid locking everyone out).
 
 The primary account key is always the user's **verified email**. Signing in with any allowlisted
 gatekeeper that yields the same verified email resolves to the same account — its `UserDurableObject`
-is addressed by `idFromName(email)` (the same scheme as Cloudflare Access). Each gatekeeper must only
+is addressed by `idFromName(email)` (the same scheme as Clerk and other email-keyed sign-in). Each gatekeeper must only
 return an email the provider has verified (Google `email_verified`, a GitHub primary+verified email,
 the Cloudflare account email); otherwise it returns null and can't be used to sign in.
 

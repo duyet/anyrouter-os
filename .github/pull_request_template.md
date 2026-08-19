@@ -3,9 +3,8 @@
 > change only when, in the maintainers' assessment, it is obviously correct and
 > trivially verifiable by reading the patch.
 >
-> If you found a bug, please [file an issue](https://github.com/cloudflare/cloudflare-os/issues/new)
-> first. For feature requests and other proposals, please
-> [open a discussion](https://github.com/cloudflare/cloudflare-os/discussions).
+> If you found a bug, please [file an issue on duyet/anyrouter](https://github.com/duyet/anyrouter/issues/new)
+> with a title prefix `[os]`. Search existing `[os]` titles first.
 
 ## What does this change?
 

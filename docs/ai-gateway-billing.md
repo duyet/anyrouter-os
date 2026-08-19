@@ -1,5 +1,9 @@
 # AI Gateway billing
 
+**AnyRouter OS** does not use this flow. Inference is billed to each user's AnyRouter key via
+**Sign in with AnyRouter**. Keep this document if you self-host the Workshop with Cloudflare
+credits instead.
+
 An optional flow that gives each user a **free daily allowance** of AI usage and, once that runs
 out, bills further usage to the user's **own Cloudflare AI Gateway credits**. Off by default
 (`ENABLE_CLOUDFLARE_LIMITS` unset) — usage is then unlimited, as for self-hosted deployments.

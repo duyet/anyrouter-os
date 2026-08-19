@@ -1,6 +1,11 @@
 # Running Gadgets as a public, multi-user service
 
-By default the Workshop uses built-in username/password accounts (or Cloudflare Access) and gives
+**AnyRouter OS** ([os.anyrouter.dev](https://os.anyrouter.dev)) signs in with Clerk (the same
+instance as anyrouter.dev) and bills inference to each user's AnyRouter key. It does not use
+Cloudflare Access, and it does not use the Cloudflare AI Gateway credits flow below unless you
+turn that on yourself.
+
+By default the Workshop uses built-in username/password accounts (or Clerk, on AnyRouter OS) and gives
 every user unlimited AI usage — ideal for self-hosting. It can optionally run as a public,
 multi-user service instead: users sign in with Google, GitHub, or Cloudflare, every account gets a
 free daily allowance of AI usage, and once that runs out they connect their own Cloudflare account

@@ -1,4 +1,4 @@
-// This file defines the API spoken between the Gadgets Workshop service and the front-end UI.
+// This file defines the API spoken between the AnyRouter OS backend and the front-end UI.
 //
 // The UI is a good old "fat client" SPA. Why not use SSR? Because:
 // - Users of this UI are likely to have it open often, maybe even all the time. Startup time is
@@ -876,7 +876,7 @@ export type AdminSettingsView = {
   signupsEnabled: boolean;
   /** Site name shown next to the top-bar logo ("" falls back to DEFAULT_SITE_NAME). */
   siteName: string;
-  /** Custom deployment logo, or undefined to use the default Cloudflare OS mark. */
+  /** Custom deployment logo, or undefined to use the default AnyRouter OS mark. */
   siteLogo?: AvatarImage;
   /** Agent system-prompt instructions ("" when unset). */
   instanceInstructions: string;
@@ -956,7 +956,7 @@ export interface AdminApi {
   setSiteName(name: string): Promise<void>;
 
   /** Set the deployment logo from browser-rasterized PNG bytes and return its canonical public
-   * image, or undefined after reset. Pass null to restore the default Cloudflare OS mark. The
+   * image, or undefined after reset. Pass null to restore the default AnyRouter OS mark. The
    * caller must supply decodable PNG data; the server enforces its header, size, and dimensions. */
   setSiteLogo(data: Uint8Array | null): Promise<AvatarImage | undefined>;
 
@@ -1066,11 +1066,11 @@ export type AuthVendorInfo = {
 
 /**
  * The deployment's custom logo, optionally paired with a second mark shown alongside it as a
- * horizontal lockup (e.g. a vendor mark next to the default Cloudflare OS mark). `secondary` is
+ * horizontal lockup (e.g. a vendor mark next to the default AnyRouter OS mark). `secondary` is
  * env-var configured, not admin-managed.
  */
 export type SiteLogo = {
-  /** Admin-uploaded primary logo, or undefined to fall back to the default Cloudflare OS mark. */
+  /** Admin-uploaded primary logo, or undefined to fall back to the default AnyRouter OS mark. */
   url?: string;
 
   /** Second mark rendered alongside the primary as a horizontal lockup, when configured. */
@@ -1108,7 +1108,7 @@ export type ServerConfig = {
   siteName: string;
 
   /** Custom deployment logo, optionally paired with a second mark, or undefined to use the default
-   * Cloudflare OS mark. */
+   * AnyRouter OS mark. */
   siteLogo?: SiteLogo;
 
   /** Deployment-wide top-bar notice (centered text in the top navigation bar). Empty when none is set. */
@@ -1607,7 +1607,7 @@ export type AgentSpawnerConfig = {
 };
 
 /**
- * Interface to a workspace's Overseer, used to display the Gadget Workshop shell UI around that
+ * Interface to a workspace's Overseer, used to display the AnyRouter OS shell UI around that
  * workspace. Workspace-level concerns live here: the gadget registry, code sync (one Yjs doc for
  * the whole workspace), chats, actions/hooks, sharing, and blueprint listing. Per-gadget
  * operations live on the GadgetClient sub-capability (see createGadget()/getGadget()).
