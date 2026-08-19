@@ -490,6 +490,11 @@ for (const gk of gatekeepers) {
     // Clerk sign-in. Setting CLERK_PUBLISHABLE_KEY locally replaces password auth with Clerk, and
     // CLERK_SECRET_KEY lets the backend resolve the signed-in account's email.
     "CLERK_PUBLISHABLE_KEY", "CLERK_SECRET_KEY",
+    // "Sign in with AnyRouter". ANYROUTER_OAUTH_CLIENT_ID enables the authorize/consent flow;
+    // setting ANYROUTER_AUTH_ONLY=true alongside it makes AnyRouter the sole sign-in method.
+    "ANYROUTER_OAUTH_CLIENT_ID", "ANYROUTER_AUTH_ONLY",
+    // Second mark shown alongside the primary site logo (lets you preview the branding lockup).
+    "SITE_LOGO_SECONDARY_URL",
     // Platform AI Gateway — makes the cross-provider model catalog available. The
     // ACCOUNT_ID/API_TOKEN pair is required whenever CF_AI_GATEWAY is set (all inference goes
     // over HTTPS with tokens).

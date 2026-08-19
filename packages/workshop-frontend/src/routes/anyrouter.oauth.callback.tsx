@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Banner, Loader } from '@cloudflare/kumo'
 import { Check } from '@phosphor-icons/react'
 import { WorkshopButton } from '../components/WorkshopControls'
-import { useAuthenticatedApi } from '../AuthContext'
+import { useOptionalAuthenticatedApi } from '../AuthContext'
+import { useRpcStub } from '../RpcContext'
 import {
   ANYROUTER_OAUTH_CHANNEL,
   anyrouterOAuthRedirectUri,
@@ -35,10 +36,14 @@ export const Route = createFileRoute('/anyrouter/oauth/callback')({
  * Model dialog) over a BroadcastChannel and closes itself when it ran in a popup.
  */
 function AnyRouterOAuthCallback() {
-  const { authenticatedApi } = useAuthenticatedApi()
+  // Signed-in: this is the post-login "connect" flow (add/refresh the inference key). Signed-out:
+  // it's "Sign in with AnyRouter" itself — the account resolved here becomes the OS identity.
+  const auth = useOptionalAuthenticatedApi()
+  const publicApi = useRpcStub()
   const navigate = useNavigate()
   const { code, state, error, error_description } = Route.useSearch()
-  useDocumentTitle('Connecting AnyRouter')
+  const signingIn = auth === null
+  useDocumentTitle(signingIn ? 'Signing in with AnyRouter' : 'Connecting AnyRouter')
 
   const [status, setStatus] = useState<'working' | 'done' | 'error'>('working')
   const [message, setMessage] = useState<string | null>(null)
@@ -66,12 +71,26 @@ function AnyRouterOAuthCallback() {
       fail('This authorization attempt is stale or was not started here. Try connecting again.')
       return
     }
+    const redirectUri = anyrouterOAuthRedirectUri()
 
-    authenticatedApi
-      .completeAnyRouterOAuth(code, verifier, anyrouterOAuthRedirectUri())
-      .then(() => {
+    // Both paths return whether the exchange succeeded. Sign-in additionally stores the returned
+    // session token, which the opener (AnyRouterLoginButton) reads to complete login.
+    const exchange = signingIn
+      ? publicApi.loginWithAnyRouter(code, verifier, redirectUri).then((token) => {
+          if (!token) {
+            fail('New sign-ups are currently disabled on this deployment.')
+            return false
+          }
+          localStorage.setItem('authToken', token)
+          return true
+        })
+      : auth.authenticatedApi.completeAnyRouterOAuth(code, verifier, redirectUri).then(() => true)
+
+    exchange
+      .then((ok) => {
+        if (!ok) return
         setStatus('done')
-        // Tell whoever opened the popup that the grant landed (they also poll as a fallback).
+        // Tell whoever opened the popup that it landed (they also poll as a fallback).
         try {
           const channel = new BroadcastChannel(ANYROUTER_OAUTH_CHANNEL)
           // BroadcastChannel.postMessage takes no targetOrigin (that is window.postMessage).
@@ -81,10 +100,13 @@ function AnyRouterOAuthCallback() {
         } catch {
           // BroadcastChannel unavailable — the opener's polling covers it.
         }
-        // Popups close themselves once the user has had a moment to read the confirmation; a
-        // full tab has nothing to close, so it returns to the app instead.
+        // Popups close themselves once the user has had a moment to read the confirmation; a full
+        // tab has nothing to close, so it returns to the app instead. When signing in a full tab
+        // must fully reload so the app boots with the freshly stored token.
         if (window.opener) {
           setTimeout(() => window.close(), 1500)
+        } else if (signingIn) {
+          window.location.assign('/')
         } else {
           navigate({ to: '/' })
         }
@@ -93,7 +115,7 @@ function AnyRouterOAuthCallback() {
         console.error('AnyRouter token exchange failed:', err)
         fail(err instanceof Error ? err.message : 'Connecting AnyRouter failed. Try again.')
       })
-  }, [authenticatedApi, code, state, error, error_description, navigate])
+  }, [auth, publicApi, signingIn, code, state, error, error_description, navigate])
 
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-4">
@@ -108,7 +130,9 @@ function AnyRouterOAuthCallback() {
           <div className="w-10 h-10 rounded-full bg-kumo-brand flex items-center justify-center">
             <Check size={20} weight="bold" className="text-kumo-inverse" />
           </div>
-          <p className="text-base font-medium text-kumo-default">AnyRouter connected</p>
+          <p className="text-base font-medium text-kumo-default">
+            {signingIn ? 'Signed in with AnyRouter' : 'AnyRouter connected'}
+          </p>
           <p className="text-sm text-kumo-subtle">
             You can close this window and go back to AnyRouter OS.
           </p>

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  anyRouterAccountKey,
   clearAnyRouterSuggestedModelsCache,
   exchangeAnyRouterOAuthCode,
   fetchAnyRouterProfile,
@@ -118,6 +119,27 @@ describe("fetchAnyRouterProfile", () => {
       vi.stubGlobal("fetch", vi.fn(async () => new Response("nope", { status })));
       await expect(fetchAnyRouterProfile("sk-ar-v1-bad")).rejects.toThrow(/approve access again/i);
     }
+  });
+});
+
+describe("anyRouterAccountKey", () => {
+  it("prefers the account email so ADMINS / email-keyed sign-in paths stay consistent", () => {
+    expect(anyRouterAccountKey({
+      id: "user-1", username: "duyet", name: "Duyet Le",
+      email: "duyet@example.com", avatarUrl: null,
+    })).toBe("duyet@example.com");
+  });
+
+  it("falls back to a namespaced account id when there is no email", () => {
+    expect(anyRouterAccountKey({
+      id: "user-1", username: "duyet", name: null, email: null, avatarUrl: null,
+    })).toBe("anyrouter:user-1");
+  });
+
+  it("throws when the account has no stable identity at all", () => {
+    expect(() => anyRouterAccountKey({
+      id: null, username: null, name: null, email: null, avatarUrl: null,
+    })).toThrow(/identity/i);
   });
 });
 

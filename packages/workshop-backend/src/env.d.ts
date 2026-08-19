@@ -62,6 +62,12 @@ declare global {
       // authorize/consent flow that grants each user's own inference key.
       ANYROUTER_OAUTH_CLIENT_ID?: string;
 
+      // Set to "true" (together with ANYROUTER_OAUTH_CLIENT_ID) to make "Sign in with AnyRouter"
+      // the sole sign-in/sign-up method: users authenticate with their anyrouter.dev account, which
+      // is also the account billed for inference. Suppresses password, gatekeeper, and Clerk
+      // sign-in. Ignored unless the client id is set, so a stray flag can't lock everyone out.
+      ANYROUTER_AUTH_ONLY?: string;
+
       // URL of a second mark shown alongside the (admin-uploaded) primary site logo as a
       // horizontal lockup, e.g. pairing a vendor mark with the default Cloudflare OS mark.
       SITE_LOGO_SECONDARY_URL?: string;

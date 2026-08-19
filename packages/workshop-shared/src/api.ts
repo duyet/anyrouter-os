@@ -73,6 +73,19 @@ export interface PublicApi extends RpcTarget {
    */
   loginWithClerk(clerkSessionToken: string): Promise<string | null>;
 
+  /**
+   * Sign in with AnyRouter: exchange the authorization code (+ PKCE verifier) the browser obtained
+   * from AnyRouter's consent flow for the user's own `sk-ar-…` key, resolve their anyrouter.dev
+   * account via `/me`, and use that account as the OS identity — creating the user on first sign-in.
+   * The minted key is also stored as the account's AnyRouter grant, so sign-in and inference share
+   * one account. `redirectUri` must be the one the authorize request used. Returns a session token
+   * to store and pass to `authenticate()`, or null when the account doesn't exist yet and signups
+   * are disabled. Throws when AnyRouter sign-in is not enabled (see ServerConfig.anyrouterAuthEnabled)
+   * or the exchange fails.
+   */
+  loginWithAnyRouter(code: string, codeVerifier: string, redirectUri: string)
+      : Promise<string | null>;
+
   /** Authenticates the user using an auth token (typically stored in localStorage). */
   authenticate(token: string): Promise<AuthenticatedApi>;
 
@@ -1124,6 +1137,14 @@ export type ServerConfig = {
    * when unset, users paste a key manually.
    */
   anyrouterOauthClientId?: string;
+
+  /**
+   * Whether "Sign in with AnyRouter" is the deployment's exclusive sign-in/sign-up method. When
+   * true the client renders only the AnyRouter button (password, gatekeeper, and Clerk sign-in are
+   * suppressed) and completes login via `PublicApi.loginWithAnyRouter()`. Implies a usable
+   * `anyrouterOauthClientId`.
+   */
+  anyrouterAuthEnabled: boolean;
 };
 
 /**

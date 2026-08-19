@@ -95,7 +95,7 @@ export type ProductAnalyticsInput =
   | {
       event_name: "user_authenticated";
       user_id: string;
-      source: "password" | "cf_access" | "session_token" | "clerk";
+      source: "password" | "cf_access" | "session_token" | "clerk" | "anyrouter";
     }
   | {
       event_name: "blueprint_imported";
