@@ -16,6 +16,7 @@ import AnyRouterLoginButton from './components/auth/AnyRouterLoginButton'
 import ThemeModeButton from './components/ThemeModeButton'
 import Hero from './components/landing/Hero'
 import FeatureGrid from './components/landing/FeatureGrid'
+import LogoStrip from './components/landing/LogoStrip'
 import DemoPromptToApp from './components/landing/DemoPromptToApp'
 import DemoGatekeeperApproval from './components/landing/DemoGatekeeperApproval'
 import DemoOwnKey from './components/landing/DemoOwnKey'
@@ -188,6 +189,7 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
       <div className="flex flex-col">
         <div className="pb-2">
           <FeatureGrid />
+          <LogoStrip />
         </div>
         <DemoPromptToApp />
         <DemoGatekeeperApproval />

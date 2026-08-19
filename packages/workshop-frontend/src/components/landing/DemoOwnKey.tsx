@@ -1,7 +1,15 @@
 import { Key } from '@phosphor-icons/react'
 import { SUGGESTED_MODELS } from '@gadgets/workshop-shared/api'
+import { anyrouterProviderLogo } from '../../anyrouterMark'
 import { DemoFrame, LandingSection } from './tokens'
 import { useDemoStep } from './useDemoStep'
+
+const MODEL_LOGOS: Record<string, { file: string; invert?: boolean }> = {
+  'z-ai/glm-5.2': { file: 'z-ai.svg', invert: true },
+  'moonshotai/kimi-k3': { file: 'moonshotai-color.svg' },
+  'stepfun-ai/step-3.7-flash': { file: 'stepfun-color.svg' },
+  'meituan/longcat-2.0': { file: 'longcat.svg', invert: true },
+}
 
 // Pulled from the same catalog `OnboardingWizard` offers, rather than a hand-picked list, so this
 // never drifts from what the product actually suggests.
@@ -39,6 +47,7 @@ export default function DemoOwnKey() {
           <div className="flex flex-1 flex-wrap gap-2">
             {MODELS.map((model, index) => {
               const active = index === step
+              const logo = MODEL_LOGOS[model.id]
               return (
                 <div
                   key={model.id}
@@ -46,7 +55,18 @@ export default function DemoOwnKey() {
                     active ? 'border-primary bg-primary/5' : 'border-border bg-background'
                   }`}
                 >
-                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${active ? 'bg-primary' : 'bg-border'}`} />
+                  {logo ? (
+                    <img
+                      src={anyrouterProviderLogo(logo.file)}
+                      alt=""
+                      width={14}
+                      height={14}
+                      decoding="async"
+                      className={`size-3.5 shrink-0 object-contain ${logo.invert ? 'dark:invert' : ''}`}
+                    />
+                  ) : (
+                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${active ? 'bg-primary' : 'bg-border'}`} />
+                  )}
                   <span className="truncate text-[12px] font-medium text-foreground">{model.name}</span>
                 </div>
               )
