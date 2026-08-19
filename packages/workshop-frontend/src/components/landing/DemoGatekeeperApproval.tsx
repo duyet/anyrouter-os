@@ -34,14 +34,16 @@ export default function DemoGatekeeperApproval() {
       <DemoFrame>
         <div ref={containerRef} className="flex flex-col gap-3">
           {/* Read action */}
-          <div className="flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3">
-            <ShieldCheck size={18} weight="duotone" aria-hidden="true" className="shrink-0 text-primary" />
-            <span className="min-w-0 flex-1 truncate text-[14px] text-foreground">
-              Read: check this week's report
-            </span>
+          <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-background px-3 py-3 sm:flex-row sm:items-center sm:gap-3 sm:px-4">
+            <div className="flex min-w-0 items-center gap-3">
+              <ShieldCheck size={18} weight="duotone" aria-hidden="true" className="shrink-0 text-primary" />
+              <span className="min-w-0 flex-1 truncate text-[14px] text-foreground">
+                Read: check this week's report
+              </span>
+            </div>
             <span
               aria-hidden="true"
-              className="flex shrink-0 items-center gap-1.5 text-[12px] font-medium text-muted-foreground"
+              className="flex items-center gap-1.5 pl-8 text-[12px] font-medium text-muted-foreground sm:shrink-0 sm:pl-0"
             >
               {step === 0 && <span className="text-muted-foreground">Queued</span>}
               {readPending && (
@@ -60,13 +62,15 @@ export default function DemoGatekeeperApproval() {
           </div>
 
           {/* Write action */}
-          <div className="rounded-xl border border-border bg-background px-4 py-3">
-            <div className="flex items-center gap-3">
-              <ShieldCheck size={18} weight="duotone" aria-hidden="true" className="shrink-0 text-primary" />
-              <span className="min-w-0 flex-1 truncate text-[14px] text-foreground">
-                Write: share it with the team
-              </span>
-              <span aria-hidden="true" className="flex shrink-0 items-center gap-1.5 text-[12px] font-medium">
+          <div className="rounded-xl border border-border bg-background px-3 py-3 sm:px-4">
+            <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <ShieldCheck size={18} weight="duotone" aria-hidden="true" className="shrink-0 text-primary" />
+                <span className="min-w-0 flex-1 truncate text-[14px] text-foreground">
+                  Write: share it with the team
+                </span>
+              </div>
+              <span aria-hidden="true" className="flex items-center gap-1.5 pl-8 text-[12px] font-medium sm:shrink-0 sm:pl-0">
                 {step < 3 && <span className="text-muted-foreground">Queued</span>}
                 {writePending && (
                   <span className="flex items-center gap-1.5 text-warning">

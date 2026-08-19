@@ -20,6 +20,7 @@ import DemoPromptToApp from './components/landing/DemoPromptToApp'
 import DemoGatekeeperApproval from './components/landing/DemoGatekeeperApproval'
 import DemoOwnKey from './components/landing/DemoOwnKey'
 import DemoBlueprintShare from './components/landing/DemoBlueprintShare'
+import { LANDING_SHELL } from './components/landing/tokens'
 import { PRIMARY_BTN } from './components/profile/controls'
 
 interface LoginPageProps {
@@ -178,8 +179,8 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
   )
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="flex items-center justify-end px-6 py-3 sm:px-8">
+    <div className="min-h-screen overflow-x-hidden bg-background">
+      <header className={`${LANDING_SHELL} flex items-center justify-end py-3`}>
         <ThemeModeButton size="lg" />
       </header>
       <Hero siteName={siteName} signIn={signIn} />
@@ -194,14 +195,14 @@ export default function LoginPage({ rpcStub, onLoginSuccess }: LoginPageProps) {
         <DemoBlueprintShare />
       </div>
 
-      <div className="mx-auto max-w-5xl px-6 py-14 text-center sm:px-8">
-        <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+      <div className={`${LANDING_SHELL} py-10 text-center sm:py-14`}>
+        <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-3xl">
           See it for yourself
         </h2>
-        <p className="mx-auto mt-2 max-w-md text-[15px] text-muted-foreground">
+        <p className="mx-auto mt-2 max-w-md text-[14px] text-muted-foreground sm:text-[15px]">
           Sign in and describe the first thing you want built.
         </p>
-        <a href="#sign-in" className={`${PRIMARY_BTN} mt-6`}>
+        <a href="#sign-in" className={`${PRIMARY_BTN} mt-5`}>
           Sign in
         </a>
       </div>

@@ -156,7 +156,7 @@ function ClerkSessionBridge({
   }
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex w-full min-w-0 flex-col items-center gap-4 overflow-x-hidden">
       {error && <Banner variant="error" title={error} />}
       {/* Hosted <SignIn> iframe — keep it compact so it fits the landing card. */}
       <SignIn

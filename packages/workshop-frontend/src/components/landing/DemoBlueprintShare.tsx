@@ -26,9 +26,9 @@ export default function DemoBlueprintShare() {
       body="A blueprint shares a gadget's source code, not its data. Anyone with the link can create their own copy, pointed at their own storage and their own connections."
     >
       <DemoFrame>
-        <div ref={containerRef} aria-hidden="true" className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+        <div ref={containerRef} aria-hidden="true" className="flex w-full flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">
           <div
-            className={`w-full max-w-[170px] rounded-xl border bg-background p-4 transition-colors duration-150 ${
+            className={`w-full rounded-xl border bg-background p-4 transition-colors duration-150 sm:max-w-[200px] ${
               connecting || copying || done ? 'border-primary' : 'border-border'
             }`}
           >
@@ -55,7 +55,7 @@ export default function DemoBlueprintShare() {
           </div>
 
           <div
-            className={`w-full max-w-[170px] rounded-xl border border-border bg-background p-4 transition-all duration-200 ${
+            className={`w-full rounded-xl border border-border bg-background p-4 transition-all duration-200 sm:max-w-[200px] ${
               copying || done ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
             }`}
           >

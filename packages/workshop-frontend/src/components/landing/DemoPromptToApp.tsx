@@ -34,7 +34,7 @@ export default function DemoPromptToApp() {
       body="Type a prompt and it gets written, run, and iterated on for you — no separate build step, no deploy button."
     >
       <DemoFrame>
-        <div ref={containerRef} aria-hidden="true" className="flex flex-col items-center gap-4 sm:flex-row">
+        <div ref={containerRef} aria-hidden="true" className="flex w-full flex-col gap-4 sm:flex-row sm:items-center">
           {/* Composer mock */}
           <div className="w-full min-w-0 flex-1">
             <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-4 py-3">
@@ -55,7 +55,7 @@ export default function DemoPromptToApp() {
           />
 
           {/* App preview mock */}
-          <div className="w-full max-w-[220px] shrink-0 overflow-hidden rounded-xl border border-border bg-background">
+          <div className="w-full shrink-0 overflow-hidden rounded-xl border border-border bg-background sm:max-w-[220px]">
             <div className="flex h-7 items-center gap-1.5 border-b border-border bg-muted px-3">
               <span className="h-1.5 w-1.5 rounded-full bg-border" />
               <span className="h-1.5 w-1.5 rounded-full bg-border" />

@@ -5,6 +5,10 @@
 
 import type { ReactNode } from 'react'
 
+/** One content column for the whole signed-out page — hero, facts, demos, and the closing CTA. */
+export const LANDING_GUTTER = 'px-4 sm:px-6'
+export const LANDING_SHELL = `mx-auto w-full max-w-5xl ${LANDING_GUTTER}`
+
 /** Small uppercase label above a section heading, e.g. "Demo". Matches the app's existing eyebrow
  * style (see `HomeTaskSuggestions`'s "Get started" label and `profile/controls.tsx`'s SectionLabel). */
 export function Eyebrow({ children }: { children: ReactNode }) {
@@ -29,9 +33,9 @@ export function LandingSection({
   children: ReactNode
 }) {
   return (
-    <section className="mx-auto w-full max-w-5xl px-6 py-10 sm:px-8 sm:py-12">
+    <section className={`${LANDING_SHELL} py-8 sm:py-12`}>
       <Eyebrow>{eyebrow}</Eyebrow>
-      <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+      <h2 className="mt-2 text-xl font-semibold tracking-tight text-foreground sm:text-3xl">
         {title}
       </h2>
       <p className="mt-2 max-w-xl text-[15px] leading-6 text-muted-foreground">{body}</p>
@@ -59,7 +63,7 @@ export const DEMO_BTN_SECONDARY =
  * demo's step count changes what it's showing. */
 export function DemoFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="relative isolate min-h-[180px] overflow-hidden rounded-2xl border border-border bg-card p-5 sm:p-6">
+    <div className="relative isolate min-h-[160px] min-w-0 overflow-hidden rounded-2xl border border-border bg-card p-4 sm:p-6">
       {children}
     </div>
   )

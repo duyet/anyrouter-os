@@ -1,6 +1,7 @@
 import { Hexagon } from '@phosphor-icons/react'
 import type { ReactNode } from 'react'
 import SiteLogo from '../SiteLogo'
+import { LANDING_SHELL } from './tokens'
 
 /**
  * Signed-out hero: what the product is, in one line, plus the sign-in slot.
@@ -8,26 +9,26 @@ import SiteLogo from '../SiteLogo'
  */
 export default function Hero({ siteName, signIn }: { siteName: string; signIn: ReactNode }) {
   return (
-    <div className="px-6 pb-12 pt-6 sm:px-8 sm:pb-16 sm:pt-10">
-      <div className="mx-auto grid max-w-5xl items-start gap-10 lg:grid-cols-[1.15fr_22rem] lg:gap-16">
-        <div className="pt-2 text-center lg:pt-6 lg:text-left">
-          <SiteLogo size={28} className="mb-6 inline-flex justify-center lg:justify-start">
+    <div className={`${LANDING_SHELL} pb-8 pt-2 sm:pb-12 sm:pt-6`}>
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-12">
+        <div className="min-w-0 text-left">
+          <SiteLogo size={28} className="mb-5 inline-flex">
             <div className="grid h-7 w-7 place-items-center rounded-lg bg-[#ff4801]">
               <Hexagon size={14} className="text-white" weight="bold" />
             </div>
           </SiteLogo>
           <p className="text-[13px] font-medium tracking-tight text-muted-foreground">{siteName}</p>
-          <h1 className="mt-3 text-balance text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-[3.25rem] lg:leading-[1.08]">
+          <h1 className="mt-2 text-balance text-[1.75rem] font-semibold leading-[1.15] tracking-tight text-foreground sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
             Describe an app. It writes it, runs it, sandboxes it.
           </h1>
-          <p className="mx-auto mt-4 max-w-xl text-[16px] leading-6 text-muted-foreground lg:mx-0">
+          <p className="mt-3 max-w-xl text-[15px] leading-6 text-muted-foreground sm:text-[16px]">
             Gadgets are private isolates on Cloudflare. Reads go through instantly.
             Writes wait for your approval. Models run on your AnyRouter key.
           </p>
         </div>
 
-        <div id="sign-in" className="mx-auto w-full max-w-md scroll-mt-8 lg:mx-0 lg:max-w-none">
-          <div className="overflow-hidden rounded-2xl border border-border bg-card p-5 sm:p-6">
+        <div id="sign-in" className="min-w-0 w-full scroll-mt-8">
+          <div className="overflow-x-hidden rounded-2xl border border-border bg-card p-4 sm:p-6">
             {signIn}
           </div>
         </div>
