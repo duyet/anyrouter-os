@@ -1,0 +1,10 @@
+{
+  "name": "AnyRouter OS",
+  "install": "pnpm install --frozen-lockfile",
+  "terminals": [
+    {
+      "name": "run-local",
+      "command": "pnpm run-local"
+    }
+  ]
+}
