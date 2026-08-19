@@ -3,7 +3,7 @@
 
 import { AuthVendorInfo, ServerConfig, SiteLogo } from "@gadgets/workshop-shared/api";
 import { createWorkshopLogger } from "./observability";
-import { getAuthGatekeeperAllowlist, isPasswordAuthEnabled } from "./auth/config.js";
+import { getAuthGatekeeperAllowlist, isAnyRouterAuthEnabled, isPasswordAuthEnabled } from "./auth/config.js";
 import { getAuthVendorBinding } from "./auth/auth-vendors.js";
 import { getClerkPublishableKey } from "./auth/clerk.js";
 import { getAnyRouterOauthClientId } from "./anyrouter-oauth.js";
@@ -67,5 +67,6 @@ export async function getServerConfig(env: Cloudflare.Env): Promise<ServerConfig
     accentColor: config.accentColor,
     clerkPublishableKey: getClerkPublishableKey(env),
     anyrouterOauthClientId: getAnyRouterOauthClientId(env),
+    anyrouterAuthEnabled: isAnyRouterAuthEnabled(env),
   };
 }

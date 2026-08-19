@@ -138,6 +138,20 @@ export async function fetchAnyRouterProfile(apiToken: string): Promise<AnyRouter
   };
 }
 
+/**
+ * The stable key identifying an AnyRouter account, used to key the user DO (via idFromName) when
+ * "Sign in with AnyRouter" is the deployment's login method. Prefers the account's email so that
+ * ADMINS (matched by email) and the other email-keyed sign-in paths (Clerk, gatekeepers, CF Access)
+ * stay consistent; falls back to the opaque account id when AnyRouter reports no email. Throws when
+ * neither is present, since an account with no stable identity can't own a session.
+ */
+export function anyRouterAccountKey(profile: AnyRouterProfile): string {
+  if (profile.email) return profile.email;
+  if (profile.id) return `anyrouter:${profile.id}`;
+  throw new Error("AnyRouter did not return an account identity (no email or id), so sign-in " +
+      "can't establish who you are. Try again.");
+}
+
 /** A suggested AnyRouter model for the Add Model picker. */
 export type AnyRouterSuggestedModel = {
   id: string;

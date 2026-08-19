@@ -3,7 +3,7 @@ import { validateRpc } from "capnweb-validate";
 import { PublicApi, AuthenticatedApi, Overseer, GadgetMetadataWithTimestamps, AiChatAuthorInfo, AiModelConfig, AnyRouterConnectionStatus, ConnectedAccountsSubscriber, ConnectedAccountsFilter, GatekeeperVendorFilter, ObserverConfigCallback, BlueprintLibrarySummary, BlueprintPublicInfo, BlueprintUserSummary, BlueprintBindingAssignment, AgentSpawnerConfig, WorkpieceId, BLUEPRINT_SCREENSHOT_PATH_PREFIX, BLUEPRINT_SCREENSHOT_R2_PREFIX, blueprintScreenshotUrl, ServerConfig, LoginAttempt, GatekeeperAppInfo, AdminApi, GatekeeperVendorInfo, OutputFormatOffer, ListOutputsResult, createOpenGadgetError, getOpenGadgetErrorCode, OPEN_GADGET_ERROR_CODES, AUTH_ERROR_CODES, createAuthError } from '@gadgets/workshop-shared/api';
 import type { UiFeatureFlags } from "@gadgets/workshop-shared/feature-flags";
 import { getServerConfig } from "./deployment-config.js";
-import { isPasswordAuthEnabled, getAuthGatekeeperAllowlist } from "./auth/config.js";
+import { isPasswordAuthEnabled, getAuthGatekeeperAllowlist, isAnyRouterAuthEnabled } from "./auth/config.js";
 import { getAuthVendorBinding } from "./auth/auth-vendors.js";
 import { PendingLogin, LoginConnectCallbackImpl } from "./auth/login-flow.js";
 import { deploymentOutputForBlueprint, listFormatOffers, readAdminConfig } from "./admin-config.js";
@@ -13,6 +13,7 @@ export { PendingLogin, LoginConnectCallbackImpl };
 import { GatekeeperUiFrame } from "@gadgets/workshop-shared/gatekeeper";
 import { LanguageModelGatekeeper } from "./ai-models";
 import {
+  anyRouterAccountKey,
   exchangeAnyRouterOAuthCode,
   fetchAnyRouterProfile,
   fetchAnyRouterSuggestedModels,
@@ -741,6 +742,42 @@ class PublicApiImpl extends RpcTarget implements PublicApi {
     });
 
     return `${email}:${secret}`;
+  }
+
+  async loginWithAnyRouter(code: string, codeVerifier: string, redirectUri: string)
+      : Promise<string | null> {
+    if (!isAnyRouterAuthEnabled(this.env)) {
+      throw new Error("AnyRouter sign-in is not enabled on this deployment.");
+    }
+
+    // Exchange the consent code for the user's own key, then resolve who they are. Unlike the
+    // post-login connect flow (completeAnyRouterOAuth), the profile IS the identity here, so a
+    // failed /me must abort sign-in rather than proceed with an anonymous account.
+    const grant = await exchangeAnyRouterOAuthCode(this.env, { code, codeVerifier, redirectUri });
+    const profile = await fetchAnyRouterProfile(grant.apiToken);
+    const key = anyRouterAccountKey(profile);
+
+    // Same account-resolution semantics as Clerk / gatekeeper sign-in: the user DO is keyed by the
+    // resolved identity, first sign-in creates the account (unless signups are closed), and password
+    // login stays off.
+    let userId = this.users.idFromName(key);
+    let user = this.users.get(userId);
+    let signupsEnabled = (await readAdminConfig(this.env)).signupsEnabled;
+    let secret = await user.loginOrCreateViaGatekeeper(key, signupsEnabled);
+    if (secret === null) return null;
+
+    // Store the minted key on the account so sign-in and inference share one AnyRouter identity: the
+    // first authenticated session adopts the account's name/avatar from this grant, and models with
+    // an empty apiToken resolve to it.
+    await user.setAnyRouterGrant(grant.apiToken, grant.expiresAt, profile);
+
+    recordAnalytics(this.ctx, this.env, {
+      event_name: "user_authenticated",
+      user_id: userId.toString(),
+      source: "anyrouter",
+    });
+
+    return `${key}:${secret}`;
   }
 
   async authenticate(token: string): Promise<AuthenticatedApi> {
