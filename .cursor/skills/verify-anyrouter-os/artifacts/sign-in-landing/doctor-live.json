@@ -1,0 +1,23 @@
+{
+  "ok": true,
+  "target": "live",
+  "chrome": "/usr/bin/google-chrome-stable",
+  "chromeError": null,
+  "session": false,
+  "live": {
+    "url": "https://os.anyrouter.dev",
+    "status": 200,
+    "ms": 93,
+    "title": "AnyRouter OS",
+    "hasRoot": true,
+    "hasAnyRouter": true
+  },
+  "local": {
+    "origin": "http://localhost:8787",
+    "listening": false,
+    "envFilePresent": false,
+    "clerkInLocalWrangler": false,
+    "productionParity": false
+  },
+  "blocked": null
+}

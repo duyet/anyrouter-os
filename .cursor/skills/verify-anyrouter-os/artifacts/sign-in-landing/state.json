@@ -1,0 +1,184 @@
+{
+  "href": "https://os.anyrouter.dev/#sign-in",
+  "hash": "#sign-in",
+  "title": "Sign in - AnyRouter OS",
+  "dataMode": "light",
+  "h1": [
+    "Describe an app. It writes it, runs it, sandboxes it.",
+    "Sign in to AnyRouter"
+  ],
+  "h2": [
+    "Sign in to AnyRouter OS",
+    "Chat what you want, get a running app",
+    "Reads run instantly. Writes wait for you",
+    "Your models, your bill",
+    "Start from what someone already built",
+    "See it for yourself"
+  ],
+  "siteName": null,
+  "hasSignInCard": true,
+  "hasLoading": false,
+  "clerkReady": true,
+  "clerkIframes": [],
+  "iframes": [
+    {
+      "src": "",
+      "title": ""
+    }
+  ],
+  "themeButton": "Theme: system (light). Switch to light.",
+  "primaryNav": [
+    {
+      "text": "Models",
+      "href": "https://anyrouter.dev/models"
+    },
+    {
+      "text": "Docs",
+      "href": "https://docs.anyrouter.dev"
+    },
+    {
+      "text": "GitHub",
+      "href": "https://github.com/duyet/anyrouter-os"
+    }
+  ],
+  "buttons": [
+    {
+      "tag": "a",
+      "name": "AnyRouter OS",
+      "href": "/"
+    },
+    {
+      "tag": "a",
+      "name": "Models",
+      "href": "https://anyrouter.dev/models"
+    },
+    {
+      "tag": "a",
+      "name": "Docs",
+      "href": "https://docs.anyrouter.dev"
+    },
+    {
+      "tag": "a",
+      "name": "GitHub",
+      "href": "https://github.com/duyet/anyrouter-os"
+    },
+    {
+      "tag": "button",
+      "name": "Theme: system (light). Switch to light."
+    },
+    {
+      "tag": "a",
+      "name": "Sign in",
+      "href": "#sign-in"
+    },
+    {
+      "tag": "button",
+      "name": "Open menu"
+    },
+    {
+      "tag": "button",
+      "name": "Continue with GitHub"
+    },
+    {
+      "tag": "button",
+      "name": "Show password"
+    },
+    {
+      "tag": "button",
+      "name": "Continue"
+    },
+    {
+      "tag": "a",
+      "name": "Sign up",
+      "href": "https://accounts.anyrouter.dev/sign-up"
+    },
+    {
+      "tag": "a",
+      "name": "Clerk logo",
+      "href": "https://go.clerk.com/components"
+    },
+    {
+      "tag": "a",
+      "name": "+ catalog",
+      "href": "https://anyrouter.dev/models"
+    },
+    {
+      "tag": "button",
+      "name": "Create my copy"
+    },
+    {
+      "tag": "a",
+      "name": "Sign in",
+      "href": "#sign-in"
+    },
+    {
+      "tag": "a",
+      "name": "AnyRouter",
+      "href": "https://anyrouter.dev"
+    },
+    {
+      "tag": "a",
+      "name": "AnyRouter OS",
+      "href": "#sign-in"
+    },
+    {
+      "tag": "a",
+      "name": "Sign in",
+      "href": "#sign-in"
+    },
+    {
+      "tag": "a",
+      "name": "GitHub",
+      "href": "https://github.com/duyet/anyrouter-os"
+    },
+    {
+      "tag": "a",
+      "name": "Gateway",
+      "href": "https://anyrouter.dev"
+    },
+    {
+      "tag": "a",
+      "name": "Models",
+      "href": "https://anyrouter.dev/models"
+    },
+    {
+      "tag": "a",
+      "name": "Docs",
+      "href": "https://docs.anyrouter.dev"
+    },
+    {
+      "tag": "a",
+      "name": "MCP",
+      "href": "https://anyrouter.dev/mcp"
+    },
+    {
+      "tag": "a",
+      "name": "About",
+      "href": "https://anyrouter.dev/about"
+    },
+    {
+      "tag": "a",
+      "name": "Blog",
+      "href": "https://blog.anyrouter.dev"
+    },
+    {
+      "tag": "a",
+      "name": "Privacy",
+      "href": "https://anyrouter.dev/privacy"
+    },
+    {
+      "tag": "a",
+      "name": "Terms",
+      "href": "https://anyrouter.dev/terms"
+    },
+    {
+      "tag": "button",
+      "name": "Theme: system (light). Switch to light."
+    },
+    {
+      "tag": "a",
+      "name": "Source",
+      "href": "https://github.com/duyet/anyrouter-os"
+    }
+  ]
+}

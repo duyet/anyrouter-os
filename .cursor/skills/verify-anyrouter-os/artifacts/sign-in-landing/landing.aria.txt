@@ -1,0 +1,361 @@
+RootWebArea: Sign in - AnyRouter OS
+  generic
+    banner
+      link: AnyRouter OS
+        image
+        StaticText: AnyRouter OS
+          InlineTextBox: AnyRouter OS
+      navigation: Primary
+        link: Models
+          StaticText: Models
+            InlineTextBox: Models
+        link: Docs
+          StaticText: Docs
+            InlineTextBox: Docs
+        link: GitHub
+          StaticText: GitHub
+            InlineTextBox: GitHub
+      button: Theme: system (light). Switch to light.
+        image
+      link: Sign in
+        StaticText: Sign in
+          InlineTextBox: Sign in
+    heading: Describe an app. It writes it, runs it, sandboxes it.
+      StaticText: Describe an app. It writes it, runs it, sandboxes it.
+        InlineTextBox: Describe an app. It writes 
+        InlineTextBox: it, runs it, sandboxes it.
+    paragraph
+      StaticText: Gadgets are private isolates on Cloudflare. Reads go through instantly. Writes wait for your approval. Models run on your AnyRouter key.
+        InlineTextBox: Gadgets are private isolates on Cloudflare. Reads go through instantly. 
+        InlineTextBox: Writes wait for your approval. Models run on your AnyRouter key.
+    generic
+      banner
+        paragraph
+          StaticText: ANYROUTER · SIGN IN
+            InlineTextBox: ANYROUTER · SIGN IN
+        heading: Sign in to AnyRouter OS
+          StaticText: Sign in to 
+            InlineTextBox: Sign in to 
+          StaticText: AnyRouter OS
+            InlineTextBox: AnyRouter OS
+        paragraph
+          StaticText: Use your anyrouter.dev account. Models run on your key, billed to you.
+            InlineTextBox: Use your anyrouter.dev account. Models run on your 
+            InlineTextBox: key, billed to you.
+        paragraph
+          image
+          StaticText: Built by AnyRouter
+            InlineTextBox: Built by AnyRouter
+      generic
+        generic
+          generic
+            generic
+              link: AnyRouter
+                image: AnyRouter
+              button: Sign in with GitHub Continue with GitHub
+                image: Sign in with GitHub
+                StaticText: Continue with GitHub
+                  InlineTextBox: Continue with GitHub
+              paragraph
+                StaticText: or
+                  InlineTextBox: or
+              generic
+                generic
+                  LabelText
+                    StaticText: Email address or username
+                      InlineTextBox: Email address or username
+                  textbox: Email address or username
+                    generic
+                  generic
+                  generic
+                generic
+                  generic
+                    LabelText
+                      StaticText: Password
+                        InlineTextBox: Password
+                    generic
+                      textbox: Password
+                        generic
+                      button: Show password
+                        image
+                    generic
+                    generic
+                button: Continue
+                  StaticText: Continue
+                    InlineTextBox: Continue
+                  image
+              generic
+            StaticText: Don’t have an account?
+              InlineTextBox: Don’t have an account?
+            link: Sign up
+              StaticText: Sign up
+                InlineTextBox: Sign up
+            generic
+              generic
+                paragraph
+                  StaticText: Secured by
+                    InlineTextBox: Secured by
+                link: Clerk logo
+                  image
+      list
+        listitem
+          image
+          StaticText: OAuth with your AnyRouter account
+            InlineTextBox: OAuth with your AnyRouter account
+        listitem
+          image
+          StaticText: Inference billed to your key — not a shared pool
+            InlineTextBox: Inference billed to your key — not a shared pool
+    region: What it does, at a glance
+      list
+        listitem
+          StaticText: Prompt → running app
+            InlineTextBox: Prompt → running app
+        listitem
+          StaticText: Sandboxed isolate
+            InlineTextBox: Sandboxed isolate
+        listitem
+          StaticText: Your AnyRouter key
+            InlineTextBox: Your AnyRouter key
+        listitem
+          StaticText: Share as a blueprint
+            InlineTextBox: Share as a blueprint
+    region: Models via AnyRouter
+      paragraph
+        StaticText: MODELS VIA ANYROUTER
+          InlineTextBox: MODELS VIA ANYROUTER
+      link: + catalog
+        StaticText: + catalog
+          InlineTextBox: + catalog
+      list
+        listitem
+          StaticText: OpenAI
+            InlineTextBox: OpenAI
+        listitem
+          StaticText: Anthropic
+            InlineTextBox: Anthropic
+        listitem
+          StaticText: xAI
+            InlineTextBox: xAI
+        listitem
+          StaticText: Google
+            InlineTextBox: Google
+        listitem
+          StaticText: DeepSeek
+            InlineTextBox: DeepSeek
+        listitem
+          StaticText: Qwen
+            InlineTextBox: Qwen
+        listitem
+          StaticText: Moonshot
+            InlineTextBox: Moonshot
+        listitem
+          StaticText: Z.ai
+            InlineTextBox: Z.ai
+        listitem
+          StaticText: StepFun
+            InlineTextBox: StepFun
+        listitem
+          StaticText: Cloudflare
+            InlineTextBox: Cloudflare
+    generic
+      paragraph
+        StaticText: DEMO — DESCRIBE IT
+          InlineTextBox: DEMO — DESCRIBE IT
+      heading: Chat what you want, get a running app
+        StaticText: Chat what you want, get a running app
+          InlineTextBox: Chat what you want, get a running app
+      paragraph
+        StaticText: Type a prompt and it gets written, run, and iterated on for you — no separate build step, no deploy button.
+          InlineTextBox: Type a prompt and it gets written, run, and iterated on for you — no separate 
+          InlineTextBox: build step, no deploy button.
+      generic
+    generic
+      paragraph
+        StaticText: DEMO — GATEKEEPERS
+          InlineTextBox: DEMO — GATEKEEPERS
+      heading: Reads run instantly. Writes wait for you
+        StaticText: Reads run instantly. Writes wait for you
+          InlineTextBox: Reads run instantly. Writes wait for you
+      paragraph
+        StaticText: Gatekeepers moderate every connection a gadget or agent makes to the outside world: reads happen straight away, and anything that writes waits for your approval — now, or later, whenever it's convenient.
+          InlineTextBox: Gatekeepers moderate every connection a gadget or agent makes to the outside 
+          InlineTextBox: world: reads happen straight away, and anything that writes waits for your 
+          InlineTextBox: approval — now, or later, whenever it's convenient.
+      generic
+        StaticText: Read: check this week's report
+          InlineTextBox: Read: check this week's report
+        StaticText: Write: share it with the team
+          InlineTextBox: Write: share it with the team
+    generic
+      paragraph
+        StaticText: DEMO — YOUR OWN KEY
+          InlineTextBox: DEMO — YOUR OWN KEY
+      heading: Your models, your bill
+        StaticText: Your models, your bill
+          InlineTextBox: Your models, your bill
+      paragraph
+        StaticText: Inference runs on your own AnyRouter key, not a shared deployment credential — usage is billed to you, and you can pick any model in its catalog.
+          InlineTextBox: Inference runs on your own AnyRouter key, not a shared deployment credential 
+          InlineTextBox: — usage is billed to you, and you can pick any model in its catalog.
+      generic
+    generic
+      paragraph
+        StaticText: DEMO — BLUEPRINTS
+          InlineTextBox: DEMO — BLUEPRINTS
+      heading: Start from what someone already built
+        StaticText: Start from what someone already built
+          InlineTextBox: Start from what someone already built
+      paragraph
+        StaticText: A blueprint shares a gadget's source code, not its data. Anyone with the link can create their own copy, pointed at their own storage and their own connections.
+          InlineTextBox: A blueprint shares a gadget's source code, not its data. Anyone with the link can 
+          InlineTextBox: create their own copy, pointed at their own storage and their own connections.
+      generic
+        generic
+          image
+          paragraph
+            StaticText: Weekly report
+              InlineTextBox: Weekly report
+          paragraph
+            StaticText: Blueprint · Maya · v3
+              InlineTextBox: Blueprint · Maya · v3
+          image
+          paragraph
+            StaticText: INCLUDED
+              InlineTextBox: INCLUDED
+          list
+            listitem
+              image
+              StaticText: Source code
+                InlineTextBox: Source code
+            listitem
+              image
+              StaticText: What to connect
+                InlineTextBox: What to connect
+          paragraph
+            StaticText: NOT INCLUDED
+              InlineTextBox: NOT INCLUDED
+          list
+            listitem
+              image
+              StaticText: Their storage
+                InlineTextBox: Their storage
+            listitem
+              image
+              StaticText: Their chats
+                InlineTextBox: Their chats
+            listitem
+              image
+              StaticText: Their keys
+                InlineTextBox: Their keys
+          paragraph
+            StaticText: CONNECT WITH YOURS
+              InlineTextBox: CONNECT WITH YOURS
+          list
+            listitem
+              StaticText: AnyRouter
+                InlineTextBox: AnyRouter
+              StaticText: Your key
+                InlineTextBox: Your key
+              StaticText: Ready
+                InlineTextBox: Ready
+            listitem
+              StaticText: GitHub
+                InlineTextBox: GitHub
+              StaticText: Needs your repo
+                InlineTextBox: Needs your repo
+              StaticText: Suggested
+                InlineTextBox: Suggested
+          generic
+            button: Create my copy
+              StaticText: Create my copy
+                InlineTextBox: Create my copy
+    contentinfo
+      heading: See it for yourself
+        StaticText: See it for yourself
+          InlineTextBox: See it for yourself
+      paragraph
+        StaticText: Sign in and describe the first thing you want built.
+          InlineTextBox: Sign in and describe the first thing you want built.
+      link: Sign in
+        StaticText: Sign in
+          InlineTextBox: Sign in
+      link: AnyRouter
+        StaticText: AnyRouter
+          InlineTextBox: AnyRouter
+      link: AnyRouter OS
+        image
+        StaticText: AnyRouter OS
+          InlineTextBox: AnyRouter OS
+      paragraph
+        StaticText: Private isolates on Cloudflare. Models on your AnyRouter key.
+          InlineTextBox: Private isolates on Cloudflare. 
+          InlineTextBox: Models on your AnyRouter key.
+      navigation: Product
+        paragraph
+          StaticText: PRODUCT
+            InlineTextBox: PRODUCT
+        list
+          listitem
+            link: Sign in
+              StaticText: Sign in
+                InlineTextBox: Sign in
+          listitem
+            link: GitHub
+              StaticText: GitHub
+                InlineTextBox: GitHub
+      navigation: AnyRouter
+        paragraph
+          StaticText: ANYROUTER
+            InlineTextBox: ANYROUTER
+        list
+          listitem
+            link: Gateway
+              StaticText: Gateway
+                InlineTextBox: Gateway
+          listitem
+            link: Models
+              StaticText: Models
+                InlineTextBox: Models
+          listitem
+            link: Docs
+              StaticText: Docs
+                InlineTextBox: Docs
+          listitem
+            link: MCP
+              StaticText: MCP
+                InlineTextBox: MCP
+      navigation: Company
+        paragraph
+          StaticText: COMPANY
+            InlineTextBox: COMPANY
+        list
+          listitem
+            link: About
+              StaticText: About
+                InlineTextBox: About
+          listitem
+            link: Blog
+              StaticText: Blog
+                InlineTextBox: Blog
+          listitem
+            link: Privacy
+              StaticText: Privacy
+                InlineTextBox: Privacy
+          listitem
+            link: Terms
+              StaticText: Terms
+                InlineTextBox: Terms
+      paragraph
+        StaticText: © 
+          InlineTextBox: © 
+        StaticText: 2026
+          InlineTextBox: 2026
+        StaticText:  AnyRouter OS
+          InlineTextBox:  AnyRouter OS
+      button: Theme: system (light). Switch to light.
+        image
+      link: Source
+        StaticText: Source
+          InlineTextBox: Source
+  generic

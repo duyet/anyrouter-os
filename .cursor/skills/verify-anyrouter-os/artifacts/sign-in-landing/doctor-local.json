@@ -1,0 +1,19 @@
+{
+  "ok": false,
+  "target": "local",
+  "chrome": "/usr/bin/google-chrome-stable",
+  "chromeError": null,
+  "session": false,
+  "live": null,
+  "local": {
+    "origin": "http://localhost:8787",
+    "listening": false,
+    "envFilePresent": false,
+    "clerkInLocalWrangler": false,
+    "productionParity": false
+  },
+  "blocked": {
+    "reason": "local-not-production-parity",
+    "detail": "packages/workshop-backend/wrangler.jsonc has no CLERK_PUBLISHABLE_KEY; no .dev.vars or .env.local in the checkout. Local run-local is password-auth, not the Clerk landing at https://os.anyrouter.dev. Drive --target live."
+  }
+}
