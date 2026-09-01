@@ -23,7 +23,6 @@ const SKILL_DIR = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(SKILL_DIR, "../../..");
 const ARTIFACTS_DIR = join(SKILL_DIR, "artifacts");
 const RUNTIME_DIR = "/tmp/verify-anyrouter-os";
-const SESSION_PATH = join(RUNTIME_DIR, "session.json");
 const LIVE_ORIGIN = "https://os.anyrouter.dev";
 const LOCAL_ORIGIN = "http://localhost:8787";
 const DEFAULT_VIEWPORT = { width: 1280, height: 800 };
@@ -353,7 +352,7 @@ async function httpProbe(url) {
     url,
     status: res.status,
     ms: Date.now() - started,
-    title: (body.match(/<title>([^<]+)<\/title>/i) || [, ""])[1],
+    title: body.match(/<title>([^<]+)<\/title>/i)?.[1] ?? "",
     hasRoot: body.includes('id="root"'),
     hasAnyRouter: /AnyRouter OS/.test(body),
   };
