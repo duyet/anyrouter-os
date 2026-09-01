@@ -70,6 +70,7 @@ BIN=node .cursor/skills/verify-anyrouter-os/control-anyrouter-os.mjs
 $BIN open --target live
 $BIN wait --title "Sign in - AnyRouter OS" --timeout-ms 30000
 $BIN wait --text "Describe an app. It writes it, runs it, sandboxes it."
+$BIN wait --text "Continue with GitHub"
 $BIN click --selector 'header a[href="#sign-in"]'
 $BIN wait --selector '#sign-in'
 $BIN state --path .cursor/skills/verify-anyrouter-os/artifacts/sign-in-landing/state.json
@@ -89,7 +90,7 @@ Handles that exist in this repo (prefer these over coordinates):
 | `nav[aria-label="Primary"]` | Header links: Models, Docs, GitHub |
 | `button[aria-label^="Theme:"]` | Theme cycle: system → light → dark (`gadgets:theme-mode`) |
 | `button[aria-label="Open menu"]` | Mobile header sheet (`< lg`) |
-| iframe `src` host `clerk.anyrouter.dev` | Clerk `<SignIn>` (live). Cross-origin; do not type passwords into it from this harness unless proving the Clerk widget itself. |
+| iframe inside `#sign-in` (often empty `src`) plus copy **Continue with GitHub** / **Secured by Clerk** | Live Clerk `<SignIn>`. Cross-origin; do not type passwords unless proving the Clerk widget itself. |
 | `textarea[role="combobox"]` placeholder `Start a new conversation…` | Signed-in Home composer (`/`) |
 | `aria-label="Send message"` | Composer send |
 | `section[aria-label="Example tasks"]` | Home **Get started** list |

@@ -28,10 +28,10 @@ Preconditions:
 - **Open origin.** Run `control-anyrouter-os.mjs open --target live`. Chrome navigates to `https://os.anyrouter.dev/`.
 - **Wait for SPA + RPC.** Run `wait --title "Sign in - AnyRouter OS"` and `wait --text "Describe an app. It writes it, runs it, sandboxes it."`. Document title is `Sign in - AnyRouter OS` (`useDocumentTitle('Sign in')`), not the static HTML `AnyRouter OS`.
 - **Wait for the card.** Run `wait --text "Sign in to AnyRouter OS"` and `wait --selector '#sign-in'`. The card eyebrow reads `AnyRouter · Sign in`.
-- **Wait for Clerk.** Run `wait --selector 'iframe[src*="clerk.anyrouter.dev"]' --timeout-ms 20000`. The spinner text `Loading…` is gone. Do not type into the iframe.
+- **Wait for Clerk.** Run `wait --text "Continue with GitHub"`. Clerk's hosted `<SignIn>` is in an iframe whose `src` is often empty (not `clerk.anyrouter.dev`). Treat **Continue with GitHub**, **Continue**, and **Secured by Clerk** as the ready markers. Do not type into the widget.
 - **Header Sign in.** Run `click --selector 'header a[href="#sign-in"]'`. `location.hash` is `#sign-in` and `#sign-in` remains in the tree.
 - **Primary nav.** `state` lists Models → `https://anyrouter.dev/models`, Docs → `https://docs.anyrouter.dev`, GitHub → `https://github.com/duyet/anyrouter-os`.
-- **Proof.** Run `state --path artifacts/sign-in-landing/state.json`, `snapshot --aria --path artifacts/sign-in-landing/landing.aria.txt`, `screenshot --path artifacts/sign-in-landing/landing.png`. JSON has `h1` containing `Describe an app`, `h2` containing `Sign in to AnyRouter OS`, `hasSignInCard: true`, `hasLoading: false`, and a `clerkIframes` entry. The screenshot shows the headline, the card, and Clerk — not a full-page spinner.
+- **Proof.** Run `state --path artifacts/sign-in-landing/state.json`, `snapshot --aria --path artifacts/sign-in-landing/landing.aria.txt`, `screenshot --path artifacts/sign-in-landing/landing.png`. JSON has `h1` containing `Describe an app`, `h2` containing `Sign in to AnyRouter OS`, `hasSignInCard: true`, `hasLoading: false`, and `clerkReady: true`. The screenshot shows the headline, the card, and Clerk — not a full-page spinner.
 
 ## Gotchas
 

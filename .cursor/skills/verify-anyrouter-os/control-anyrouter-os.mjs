@@ -10,10 +10,10 @@ import { spawn } from "node:child_process";
 import {
   existsSync,
   mkdirSync,
+  openSync,
   readFileSync,
   rmSync,
   writeFileSync,
-  appendFileSync,
 } from "node:fs";
 import { createConnection } from "node:net";
 import { dirname, isAbsolute, join, resolve } from "node:path";
@@ -239,8 +239,8 @@ class Cdp {
   }
 }
 
-async function connectPage(port, timeoutMs = 20_000) {
-  const version = await waitFor(
+async function waitForCdpHttp(port, timeoutMs = 20_000) {
+  return waitFor(
     async () => {
       try {
         return await fetchJson(`http://127.0.0.1:${port}/json/version`);
@@ -251,12 +251,21 @@ async function connectPage(port, timeoutMs = 20_000) {
     timeoutMs,
     `Chrome CDP on :${port}`,
   );
+}
+
+async function connectPage(port, timeoutMs = 20_000) {
+  const version = await waitForCdpHttp(port, timeoutMs);
 
   const page = await waitFor(
     async () => {
       const list = await fetchJson(`http://127.0.0.1:${port}/json/list`);
       return (
-        list.find((t) => t.type === "page" && t.webSocketDebuggerUrl) || null
+        list.find(
+          (t) =>
+            t.type === "page" &&
+            t.webSocketDebuggerUrl &&
+            !/chrome-extension:/i.test(t.url || ""),
+        ) || null
       );
     },
     timeoutMs,
@@ -265,10 +274,23 @@ async function connectPage(port, timeoutMs = 20_000) {
 
   const ws = new WebSocket(page.webSocketDebuggerUrl);
   await new Promise((resolve, reject) => {
-    ws.addEventListener("open", resolve, { once: true });
-    ws.addEventListener("error", () => reject(new Error("CDP websocket failed")), {
-      once: true,
-    });
+    const timer = setTimeout(() => reject(new Error("CDP websocket open timed out")), 10_000);
+    ws.addEventListener(
+      "open",
+      () => {
+        clearTimeout(timer);
+        resolve();
+      },
+      { once: true },
+    );
+    ws.addEventListener(
+      "error",
+      () => {
+        clearTimeout(timer);
+        reject(new Error("CDP websocket failed"));
+      },
+      { once: true },
+    );
   });
   const cdp = new Cdp(ws);
   await cdp.send("Page.enable");
@@ -479,6 +501,7 @@ async function launchChrome(paths) {
   const chrome = findChrome();
   const port = await pickPort();
   mkdirSync(paths.profile, { recursive: true });
+  const logFd = openSync(paths.log, "a");
   const child = spawn(
     chrome,
     [
@@ -496,20 +519,20 @@ async function launchChrome(paths) {
       "--disable-popup-blocking",
       "--disable-gpu",
       "--disable-dev-shm-usage",
+      "--disable-component-update",
+      "--mute-audio",
       "--no-sandbox",
       `--window-size=${DEFAULT_VIEWPORT.width},${DEFAULT_VIEWPORT.height}`,
       "--force-device-scale-factor=1",
       "about:blank",
     ],
-    { stdio: ["ignore", "pipe", "pipe"], detached: true },
+    { stdio: ["ignore", logFd, logFd], detached: true },
   );
   mkdirSync(paths.dir, { recursive: true });
   writeFileSync(paths.pid, String(child.pid));
-  const logFd = { write(chunk) { appendFileSync(paths.log, chunk); } };
-  child.stdout.on("data", (d) => logFd.write(d));
-  child.stderr.on("data", (d) => logFd.write(d));
   child.unref();
-  await connectPage(port);
+  // Probe HTTP only — holding a CDP websocket here blocks the later attach.
+  await waitForCdpHttp(port);
   return { pid: child.pid, port, chrome };
 }
 
@@ -537,14 +560,17 @@ async function cmdOpen(args) {
     startedAt: new Date().toISOString(),
   });
   const { cdp } = await connectPage(launched.port);
-  await cdp.send("Emulation.setDeviceMetricsOverride", {
-    width: DEFAULT_VIEWPORT.width,
-    height: DEFAULT_VIEWPORT.height,
-    deviceScaleFactor: 1,
-    mobile: false,
-  });
-  await navigate(cdp, url);
-  cdp.close();
+  try {
+    await cdp.send("Emulation.setDeviceMetricsOverride", {
+      width: DEFAULT_VIEWPORT.width,
+      height: DEFAULT_VIEWPORT.height,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+    await navigate(cdp, url);
+  } finally {
+    cdp.close();
+  }
   process.stdout.write(`open ${url}\ncdp :${launched.port} pid ${launched.pid}\n`);
 }
 
@@ -705,6 +731,9 @@ const STATE_EXPR = `(() => {
     siteName: (document.querySelector("header a span") || {}).innerText || null,
     hasSignInCard: !!document.getElementById("sign-in"),
     hasLoading: (document.body.innerText || "").includes("Loading…"),
+    clerkReady:
+      (document.body.innerText || "").includes("Continue with GitHub") ||
+      (document.body.innerText || "").includes("Secured by Clerk"),
     clerkIframes: iframes.filter((f) => /clerk\\.anyrouter\\.dev|accounts\\.anyrouter\\.dev/.test(f.src)),
     iframes,
     themeButton: (document.querySelector('button[aria-label^="Theme:"]') || {}).getAttribute?.("aria-label") || null,
